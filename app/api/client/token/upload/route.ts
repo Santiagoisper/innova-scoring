@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -28,7 +30,6 @@ export async function POST(req: NextRequest) {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1) Buscar submission por token
     const { data: submission, error: submissionError } = await supabase
       .from("client_submissions")
       .select("id, submission_status")
@@ -49,7 +50,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2) Validar criterion existe
     const { data: criterion, error: criterionError } = await supabase
       .from("criteria")
       .select("id")
@@ -63,11 +63,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3) Path obligatorio
     const safeFilename = file.name.replace(/[^\w.\-]/g, "_");
     const filePath = `submissions/${submission.id}/${criterion_id}/${safeFilename}`;
 
-    // 4) Upload a Storage
     const { error: uploadError } = await supabase.storage
       .from("evaluación-adjuntos")
       .upload(filePath, file, {
@@ -82,7 +80,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5) Insert en DB attachments
     const { data: attachment, error: insertError } = await supabase
       .from("client_submission_attachments")
       .insert({
@@ -114,4 +111,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
