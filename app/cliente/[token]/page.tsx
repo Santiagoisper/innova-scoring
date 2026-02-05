@@ -140,7 +140,7 @@ export default function ClienteTokenPage() {
       <div className="w-full max-w-4xl">
         <div className="bg-white shadow rounded-2xl p-6 border border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900">
-            Evaluación del Centro
+            Evaluacin del Centro
           </h1>
 
           <p className="text-gray-600 mt-2">

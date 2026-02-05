@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     const filePath = `submissions/${submission.id}/${criterion_id}/${safeFilename}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("evaluación-adjuntos")
+      .from("evaluacion-adjuntos")
       .upload(filePath, file, {
         upsert: true,
         contentType: file.type,
