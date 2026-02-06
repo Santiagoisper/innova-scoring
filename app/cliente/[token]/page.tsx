@@ -17,37 +17,65 @@ export default function ClienteTokenPage() {
   const [loading, setLoading] = useState(true);
 
   const [submissionId, setSubmissionId] = useState<string>("");
-  const [accessToken, setAccessToken] = useState<string>("");
 
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [files, setFiles] = useState<Record<number, File | null>>({});
   const [uploading, setUploading] = useState<Record<number, boolean>>({});
   const [uploaded, setUploaded] = useState<Record<number, boolean>>({});
 
-  // ⚠️ Esto es DEMO para testear el endpoint upload
-  // En producción real vas a traer submissionId y accessToken desde supabase auth o endpoint.
+  // Obtener submission real a partir del token
   useEffect(() => {
-    // Pegá acá un submissionId real para probar
-    setSubmissionId("PEGAR_SUBMISSION_ID_REAL");
+    const loadSubmission = async () => {
+      if (!token) return;
 
-    // Pegá acá un accessToken real del usuario logueado
-    setAccessToken("PEGAR_ACCESS_TOKEN_REAL");
-  }, []);
+      try {
+        const res = await fetch(`/api/client/submission?token=${token}`);
+        const data = await res.json();
 
-  // Simulación: cargar criteria (idealmente vendrá de un endpoint real /api/client/criteria)
+        if (!res.ok) {
+          alert("Error validando token: " + data.error);
+          return;
+        }
+
+        setSubmissionId(data.submission_id);
+      } catch (err: any) {
+        alert("Error inesperado: " + err.message);
+      }
+    };
+
+    loadSubmission();
+  }, [token]);
+
+  // Cargar preguntas reales desde Supabase
   useEffect(() => {
     const loadCriteria = async () => {
       setLoading(true);
 
-      // 🔥 DEMO: reemplazá esto por un fetch real si ya tenés endpoint
-      const mockCriteria: Criterion[] = [
-        { id: 30, question: "¿Tiene SOP vigente?", requiresDocumentation: true },
-        { id: 31, question: "¿Cuenta con equipo médico disponible?", requiresDocumentation: false },
-        { id: 32, question: "¿Tiene experiencia previa en ensayos clínicos?", requiresDocumentation: true },
-      ];
+      try {
+        const res = await fetch("/api/client/criteria");
+        const data = await res.json();
 
-      setCriteria(mockCriteria);
-      setLoading(false);
+        if (!res.ok) {
+          alert("Error cargando preguntas: " + data.error);
+          setLoading(false);
+          return;
+        }
+
+        // data es array de criteria (tabla vieja: id + name)
+        const mapped: Criterion[] = (data ?? [])
+          .filter((c: any) => c.id >= 19) // Solo preguntas reales (Excel principal)
+          .map((c: any) => ({
+            id: c.id,
+            question: c.name,
+            requiresDocumentation: c.critical ?? false,
+          }));
+
+        setCriteria(mapped);
+      } catch (err: any) {
+        alert("Error inesperado: " + err.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadCriteria();
@@ -56,8 +84,8 @@ export default function ClienteTokenPage() {
   const submitAnswer = async (criterionId: number, answer: string) => {
     setAnswers((prev) => ({ ...prev, [criterionId]: answer }));
 
-    if (!submissionId || !accessToken) {
-      alert("Falta submissionId o accessToken para guardar respuesta.");
+    if (!submissionId) {
+      alert("Falta submissionId para guardar respuesta.");
       return;
     }
 
@@ -65,7 +93,6 @@ export default function ClienteTokenPage() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         submission_id: submissionId,
@@ -90,8 +117,8 @@ export default function ClienteTokenPage() {
       return;
     }
 
-    if (!submissionId || !accessToken) {
-      alert("Falta submissionId o accessToken para subir archivo.");
+    if (!submissionId) {
+      alert("Falta submissionId para subir archivo.");
       return;
     }
 
@@ -105,9 +132,6 @@ export default function ClienteTokenPage() {
 
       const res = await fetch("/api/client/upload", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
         body: formData,
       });
 
@@ -140,7 +164,7 @@ export default function ClienteTokenPage() {
       <div className="w-full max-w-4xl">
         <div className="bg-white shadow rounded-2xl p-6 border border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900">
-            Evaluacin del Centro
+            Evaluación del Centro
           </h1>
 
           <p className="text-gray-600 mt-2">
@@ -148,8 +172,13 @@ export default function ClienteTokenPage() {
           </p>
 
           <div className="mt-4 p-4 rounded-xl bg-gray-100 text-sm text-gray-700">
-            <div><b>Token:</b> {token}</div>
-            <div><b>Submission:</b> {submissionId || "NO CONFIGURADO"}</div>
+            <div>
+              <b>Token:</b> {token}
+            </div>
+            <div>
+              <b>Submission:</b>{" "}
+              {submissionId ? submissionId : "NO ENCONTRADO"}
+            </div>
           </div>
         </div>
 
@@ -181,93 +210,64 @@ export default function ClienteTokenPage() {
 
               {/* respuestas */}
               <div className="mt-4 flex gap-4">
-                <button
-                  onClick={() => submitAnswer(c.id, "yes")}
-                  className={`px-4 py-2 rounded-xl font-semibold border transition ${
-                    answers[c.id] === "yes"
-                      ? "bg-green-600 text-white border-green-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  Sí
-                </button>
-
-                <button
-                  onClick={() => submitAnswer(c.id, "no")}
-                  className={`px-4 py-2 rounded-xl font-semibold border transition ${
-                    answers[c.id] === "no"
-                      ? "bg-red-600 text-white border-red-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  No
-                </button>
-
-                <button
-                  onClick={() => submitAnswer(c.id, "na")}
-                  className={`px-4 py-2 rounded-xl font-semibold border transition ${
-                    answers[c.id] === "na"
-                      ? "bg-gray-700 text-white border-gray-700"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  N/A
-                </button>
+                {["yes", "no", "na"].map((opt) => (
+                  <label
+                    key={opt}
+                    className="flex items-center gap-2 text-gray-700"
+                  >
+                    <input
+                      type="radio"
+                      name={`criterion-${c.id}`}
+                      value={opt}
+                      checked={answers[c.id] === opt}
+                      onChange={() => submitAnswer(c.id, opt)}
+                    />
+                    {opt === "yes" ? "Sí" : opt === "no" ? "No" : "N/A"}
+                  </label>
+                ))}
               </div>
 
-              {/* upload */}
-              <div className="mt-6 border-t pt-4">
-                <div className="flex flex-col md:flex-row md:items-center gap-3">
-                  <input
-                    type="file"
-                    className="block w-full text-sm text-gray-700
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-xl file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
-                    onChange={(e) =>
-                      setFiles((prev) => ({
-                        ...prev,
-                        [c.id]: e.target.files?.[0] || null,
-                      }))
-                    }
-                  />
+              {/* archivo */}
+              <div className="mt-4">
+                <input
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setFiles((prev) => ({ ...prev, [c.id]: file }));
+                  }}
+                />
 
-                  <button
-                    onClick={() => uploadFile(c.id)}
-                    disabled={uploading[c.id]}
-                    className="px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:bg-gray-400"
-                  >
-                    {uploading[c.id] ? "Subiendo..." : "Subir archivo"}
-                  </button>
-                </div>
+                <button
+                  className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                  disabled={uploading[c.id]}
+                  onClick={() => uploadFile(c.id)}
+                >
+                  {uploading[c.id] ? "Subiendo..." : "Subir archivo"}
+                </button>
 
                 <p className="text-xs text-gray-500 mt-2">
-                  Se guardará en: submissions/{submissionId}/{c.id}/archivo
+                  Se guardará en: submissions/{submissionId || "SUBMISSION_ID"}/
+                  {c.id}/archivo
                 </p>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-8 bg-white shadow rounded-2xl p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">Estado</h3>
-
-          <p className="text-gray-600 mt-2 text-sm">
-            Cuando completes todas las respuestas y subas los documentos requeridos,
-            el score se recalcula automáticamente.
+        <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 text-gray-700">
+          <h3 className="font-semibold text-gray-900">Estado</h3>
+          <p className="text-sm text-gray-600 mt-2">
+            Cuando completes todas las respuestas y subas los documentos
+            requeridos, el score se recalcula automáticamente.
           </p>
 
-          <div className="mt-4 text-sm text-gray-700">
+          <div className="mt-3 text-sm">
             <div>
-              <b>Respuestas cargadas:</b>{" "}
-              {Object.keys(answers).length} / {criteria.length}
+              <b>Respuestas cargadas:</b> {Object.keys(answers).length} /{" "}
+              {criteria.length}
             </div>
-
             <div>
-              <b>Documentos subidos:</b>{" "}
-              {Object.keys(uploaded).length}
+              <b>Documentos subidos:</b> {Object.keys(uploaded).length}
             </div>
           </div>
         </div>
