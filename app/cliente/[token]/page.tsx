@@ -29,7 +29,7 @@ export default function ClienteTokenPage() {
       if (!token) return;
 
       try {
-        const res = await fetch(`/api/client/submission?token=${token}`);
+        const res = await fetch(`/api/client/token/validate?token=${token}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -61,9 +61,8 @@ export default function ClienteTokenPage() {
           return;
         }
 
-        // data es array de criteria (tabla vieja: id + name)
         const mapped: Criterion[] = (data ?? [])
-          .filter((c: any) => c.id >= 19) // Solo preguntas reales (Excel principal)
+          .filter((c: any) => c.id >= 19)
           .map((c: any) => ({
             id: c.id,
             question: c.name,
@@ -89,7 +88,7 @@ export default function ClienteTokenPage() {
       return;
     }
 
-    const res = await fetch("/api/client/submit-answer", {
+    const res = await fetch("/api/client/token/submit-answer", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -130,7 +129,7 @@ export default function ClienteTokenPage() {
       formData.append("criterion_id", String(criterionId));
       formData.append("file", file);
 
-      const res = await fetch("/api/client/upload", {
+      const res = await fetch("/api/client/token/upload", {
         method: "POST",
         body: formData,
       });
@@ -208,7 +207,6 @@ export default function ClienteTokenPage() {
                 )}
               </div>
 
-              {/* respuestas */}
               <div className="mt-4 flex gap-4">
                 {["yes", "no", "na"].map((opt) => (
                   <label
@@ -227,7 +225,6 @@ export default function ClienteTokenPage() {
                 ))}
               </div>
 
-              {/* archivo */}
               <div className="mt-4">
                 <input
                   type="file"
@@ -256,6 +253,7 @@ export default function ClienteTokenPage() {
 
         <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 text-gray-700">
           <h3 className="font-semibold text-gray-900">Estado</h3>
+
           <p className="text-sm text-gray-600 mt-2">
             Cuando completes todas las respuestas y subas los documentos
             requeridos, el score se recalcula automáticamente.
