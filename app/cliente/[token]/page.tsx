@@ -52,7 +52,7 @@ export default function ClienteTokenPage() {
       setLoading(true);
 
       try {
-        const res = await fetch("/api/client/criteria");
+        const res = await fetch("/api/criteria");
         const data = await res.json();
 
         if (!res.ok) {
