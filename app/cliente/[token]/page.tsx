@@ -29,15 +29,38 @@ export default function ClienteTokenPage() {
       if (!token) return;
 
       try {
-        const res = await fetch(`/api/client/token/validate?token=${token}`);
-        const data = await res.json();
+        const res = await fetch("/api/client/token/validate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+        });
 
-        if (!res.ok) {
-          alert("Error validando token: " + data.error);
+        const raw = await res.text();
+
+        let data: any = null;
+        try {
+          data = raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          alert(
+            "El endpoint /api/client/token/validate no devolvió JSON.\n\nRespuesta:\n" +
+              raw
+          );
           return;
         }
 
-        setSubmissionId(data.submission_id);
+        if (!res.ok) {
+          alert("Error validando token: " + (data?.error || "Error desconocido"));
+          return;
+        }
+
+        if (!data?.submission?.id) {
+          alert("Token válido pero no se encontró submission.id.");
+          return;
+        }
+
+        setSubmissionId(data.submission.id);
       } catch (err: any) {
         alert("Error inesperado: " + err.message);
       }
@@ -53,10 +76,21 @@ export default function ClienteTokenPage() {
 
       try {
         const res = await fetch("/api/criteria");
-        const data = await res.json();
+        const raw = await res.text();
+
+        let data: any = null;
+        try {
+          data = raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          alert(
+            "El endpoint /api/criteria no devolvió JSON.\n\nRespuesta:\n" + raw
+          );
+          setLoading(false);
+          return;
+        }
 
         if (!res.ok) {
-          alert("Error cargando preguntas: " + data.error);
+          alert("Error cargando preguntas: " + (data?.error || "Error desconocido"));
           setLoading(false);
           return;
         }
@@ -100,10 +134,21 @@ export default function ClienteTokenPage() {
       }),
     });
 
-    const data = await res.json();
+    const raw = await res.text();
+
+    let data: any = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      alert(
+        "El endpoint /api/client/token/submit-answer no devolvió JSON.\n\nRespuesta:\n" +
+          raw
+      );
+      return;
+    }
 
     if (!res.ok) {
-      alert("Error guardando respuesta: " + data.error);
+      alert("Error guardando respuesta: " + (data?.error || "Error desconocido"));
       return;
     }
   };
@@ -134,10 +179,21 @@ export default function ClienteTokenPage() {
         body: formData,
       });
 
-      const data = await res.json();
+      const raw = await res.text();
+
+      let data: any = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        alert(
+          "El endpoint /api/client/token/upload no devolvió JSON.\n\nRespuesta:\n" +
+            raw
+        );
+        return;
+      }
 
       if (!res.ok) {
-        alert("Error subiendo archivo: " + data.error);
+        alert("Error subiendo archivo: " + (data?.error || "Error desconocido"));
         return;
       }
 
@@ -253,7 +309,6 @@ export default function ClienteTokenPage() {
 
         <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 text-gray-700">
           <h3 className="font-semibold text-gray-900">Estado</h3>
-
           <p className="text-sm text-gray-600 mt-2">
             Cuando completes todas las respuestas y subas los documentos
             requeridos, el score se recalcula automáticamente.
