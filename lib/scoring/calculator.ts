@@ -22,8 +22,10 @@ export function calculateWeightedScore(
 ): ScoringResult {
   const criteriaMap = new Map(criteria.map(c => [c.id, c]));
 
+  // Use total weight of ALL criteria so partial evaluations don't inflate scores
+  const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+
   let totalWeightedScore = 0;
-  let totalWeight = 0;
   const weightedScores: ScoringResult['weightedScores'] = [];
 
   for (const item of items) {
@@ -32,7 +34,6 @@ export function calculateWeightedScore(
 
     const weightedScore = item.score * criterion.weight;
     totalWeightedScore += weightedScore;
-    totalWeight += criterion.weight;
 
     weightedScores.push({
       criterion_id: item.criterion_id,

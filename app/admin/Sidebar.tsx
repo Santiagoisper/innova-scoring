@@ -15,7 +15,8 @@ import {
   Settings2,
   Settings,
   Search,
-  History
+  History,
+  Mail
 } from "lucide-react"
 
 export default function Sidebar() {
@@ -25,6 +26,7 @@ export default function Sidebar() {
   const [centerCount, setCenterCount] = useState(0)
   const [pendingCount, setPendingCount] = useState(0)
   const [completedCount, setCompletedCount] = useState(0)
+  const [contactPendingCount, setContactPendingCount] = useState(0)
 
   // ✅ Important: prevents hydration mismatch
   const [ready, setReady] = useState(false)
@@ -33,8 +35,11 @@ export default function Sidebar() {
      Load Sidebar Metrics
   ========================= */
   async function loadSidebarStats() {
-    const centersRes = await supabase.from("centers").select("id")
-    const evalsRes = await supabase.from("evaluations").select("id,status")
+    const [centersRes, evalsRes, contactsRes] = await Promise.all([
+      supabase.from("centers").select("id"),
+      supabase.from("evaluations").select("id,status"),
+      supabase.from("contact_requests").select("id,status")
+    ])
 
     if (centersRes.data) setCenterCount(centersRes.data.length)
 
@@ -43,6 +48,10 @@ export default function Sidebar() {
       setCompletedCount(
         evalsRes.data.filter((e) => e.status === "completed").length
       )
+    }
+
+    if (contactsRes.data) {
+      setContactPendingCount(contactsRes.data.filter((c) => c.status === "pending").length)
     }
 
     // ✅ Render badges only after client loads
@@ -156,6 +165,18 @@ export default function Sidebar() {
           <a href="/admin/export" className={navClass("/admin/export")}>
             <Download className="w-5 h-5" />
             Export Reports
+          </a>
+
+          {/* Contact Requests */}
+          <a href="/admin/contacts" className={navClass("/admin/contacts")}>
+            <Mail className="w-5 h-5" />
+            Contact Requests
+
+            {ready && contactPendingCount > 0 && (
+              <span className="ml-auto px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-700">
+                {contactPendingCount}
+              </span>
+            )}
           </a>
 
           {/* Activity Log */}

@@ -15,6 +15,7 @@ import {
   Search,
   Command,
   History,
+  Mail,
   X
 } from "lucide-react"
 
@@ -99,6 +100,14 @@ const COMMANDS: CommandItem[] = [
     href: "/admin/export",
     icon: Download,
     keywords: ["export", "download", "csv", "json", "reports"]
+  },
+  {
+    id: "contacts",
+    label: "Contact Requests",
+    description: "View landing page inquiries",
+    href: "/admin/contacts",
+    icon: Mail,
+    keywords: ["contact", "requests", "inquiries", "email", "leads", "form"]
   },
   {
     id: "activity",
