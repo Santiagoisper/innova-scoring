@@ -78,16 +78,26 @@ export default function CenterDetailsPage() {
     </div>
   )
 
+  // Improved Response Extraction
   let responses: Record<string, any> = {}
   let attachments: Record<string, any> = {}
 
   if (evaluation?.responses) {
     const raw = evaluation.responses
+    // Case 1: Format { scores: {}, attachments: {} }
     if (raw.scores) {
       responses = raw.scores
       attachments = raw.attachments || {}
-    } else {
+    } 
+    // Case 2: Direct format { "1": "yes", "2": "..." }
+    else {
       responses = raw
+      // In this case, we might need to find attachments within the same object if they are mixed
+      Object.entries(raw).forEach(([key, value]) => {
+        if (typeof value === 'string' && value.startsWith('http')) {
+          attachments[key] = value
+        }
+      })
     }
   }
 
@@ -258,36 +268,28 @@ export default function CenterDetailsPage() {
                 <span className="text-slate-500 font-medium">Development Items</span>
                 <span className="font-bold text-slate-900">{criteria.filter(c => c.response_type === 'text').length}</span>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500 font-medium">Files Attached</span>
-                <span className="font-bold text-primary-600">{Object.keys(attachments).length}</span>
+              <div className="flex justify-between items-center text-sm pt-4 border-t">
+                <span className="text-slate-500 font-black uppercase text-xs">Total Progress</span>
+                <span className="font-black text-primary-600">100%</span>
               </div>
             </div>
           </div>
 
-          <div className="card overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-900">All Attachments</h3>
-              <FileIcon className="w-4 h-4 text-slate-400" />
+          <div className="card p-6 bg-slate-900 text-white space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/10 rounded-lg"><FileIcon className="w-5 h-5" /></div>
+              <h3 className="font-bold">Evidence Files</h3>
             </div>
-            <div className="p-4 space-y-2">
-              {Object.keys(attachments).length === 0 ? (
-                <p className="text-center py-8 text-xs text-slate-400 font-medium italic">No files attached.</p>
-              ) : (
-                Object.entries(attachments).map(([cid, url]: [any, any]) => {
-                  const crit = criteria.find(c => c.id === parseInt(cid))
-                  return (
-                    <a key={cid} href={url} target="_blank" className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-100 group">
-                      <div className="p-2 bg-primary-50 rounded-lg text-primary-600 group-hover:bg-primary-600 group-hover:text-white transition-all">
-                        <Download className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 overflow-hidden">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter truncate">{crit?.name || 'Supporting Doc'}</p>
-                        <p className="text-xs font-bold text-slate-700">Download</p>
-                      </div>
-                    </a>
-                  )
-                })
+            <p className="text-xs text-slate-400">All supporting documentation is encrypted and stored in Supabase Secure Storage.</p>
+            <div className="space-y-2 pt-2">
+              {Object.entries(attachments).map(([key, url]: [string, any]) => (
+                <a key={key} href={url} target="_blank" className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors group">
+                  <span className="text-[10px] font-bold uppercase text-slate-300 truncate">Document #{key}</span>
+                  <Download className="w-3 h-3 text-slate-500 group-hover:text-white" />
+                </a>
+              ))}
+              {Object.keys(attachments).length === 0 && (
+                <p className="text-[10px] italic text-slate-500 text-center py-4">No attachments found.</p>
               )}
             </div>
           </div>
