@@ -45,7 +45,6 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
   // Scoring Summary Box
   if (evaluation) {
     const score = evaluation.total_score || 0
-    const level = score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red'
     
     doc.setDrawColor(226, 232, 240)
     doc.setFillColor(248, 250, 252)
@@ -117,8 +116,8 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     alternateRowStyles: { fillColor: [249, 250, 251] }
   })
 
-  // Footer
-  const pageCount = doc.internal.getNumberOfPages()
+  // Footer - Usando doc.getNumberOfPages() directamente
+  const pageCount = doc.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
     doc.setFontSize(8)
