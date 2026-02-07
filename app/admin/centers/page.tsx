@@ -114,7 +114,10 @@ export default function CentersPage() {
     approved: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "green"),
     conditional: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "yellow"),
     notApproved: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "red"),
-    pending: filteredCenters.filter(c => !getLatestEvaluation(c.id) || getLatestEvaluation(c.id)?.status === "pending"),
+    pending: filteredCenters.filter(c => {
+      const eval = getLatestEvaluation(c.id);
+      return !eval || eval.status === "pending" || (eval.status === "completed" && !eval.score_level);
+    }),
   }
 
   async function generateEvaluationLink(center: Center, e: React.MouseEvent) {
