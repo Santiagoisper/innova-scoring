@@ -35,17 +35,17 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
   doc.setTextColor(0, 0, 0)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text(center.name.toUpperCase(), 20, 55)
+  doc.text((center?.name || 'SITE NAME').toUpperCase(), 20, 55)
   
   doc.setFontSize(10)
   doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2])
-  doc.text(`Site Code: ${center.code}`, 20, 62)
-  doc.text(`Location: ${center.city}, ${center.country}`, 20, 67)
+  doc.text(`Site Code: ${center?.code || 'N/A'}`, 20, 62)
+  doc.text(`Location: ${center?.city || 'N/A'}, ${center?.country || 'N/A'}`, 20, 67)
 
   // Scoring Summary Box
   if (evaluation) {
     const score = evaluation.total_score || 0
-    const level = evaluation.score_level || (score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red')
+    const level = score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red'
     
     doc.setDrawColor(226, 232, 240)
     doc.setFillColor(248, 250, 252)
@@ -59,11 +59,8 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     doc.setTextColor(0, 0, 0)
     doc.text(`${score}`, pageWidth - 50, 70, { align: 'center' })
     
-    let statusText = level.toUpperCase()
-    let statusColor = secondaryColor
-    if (level === 'green') statusColor = greenColor
-    if (level === 'yellow') statusColor = yellowColor
-    if (level === 'red') statusColor = redColor
+    let statusText = score >= 80 ? 'APPROVED' : score >= 50 ? 'CONDITIONAL' : 'REJECTED'
+    let statusColor = score >= 80 ? greenColor : score >= 50 ? yellowColor : redColor
     
     doc.setFillColor(statusColor[0], statusColor[1], statusColor[2])
     doc.roundedRect(pageWidth - 75, 73, 50, 5, 1, 1, 'F')
@@ -77,9 +74,9 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     startY: 85,
     head: [['Contact Information', 'Details']],
     body: [
-      ['Contact Person', center.contact_name || 'N/A'],
-      ['Email Address', center.contact_email || 'N/A'],
-      ['Phone Number', center.contact_phone || 'N/A'],
+      ['Contact Person', center?.contact_name || 'N/A'],
+      ['Email Address', center?.contact_email || 'N/A'],
+      ['Phone Number', center?.contact_phone || 'N/A'],
       ['Evaluation Date', evaluation ? new Date(evaluation.created_at).toLocaleDateString() : 'N/A'],
       ['Evaluator', evaluation?.evaluator_email || 'N/A']
     ],
@@ -89,8 +86,9 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
   })
 
   // Responses Table
-  let rawResponses = evaluation?.responses || {}
-  let scores = rawResponses.scores || rawResponses
+  const rawResponses = evaluation?.responses || {}
+  const scores = rawResponses.scores || rawResponses
+  const attachments = rawResponses.attachments || {}
 
   const tableBody = criteria.map((c, i) => {
     const ans = scores[c.id] || scores[String(c.id)]
@@ -100,31 +98,33 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     } else {
       displayAns = ans || 'No statement provided'
     }
-    return [i + 1, c.name, displayAns]
+    const hasDoc = attachments[c.id] || attachments[String(c.id)] ? 'YES' : 'NO'
+    return [i + 1, c.name, displayAns, hasDoc]
   })
 
   doc.autoTable({
     startY: (doc as any).lastAutoTable.finalY + 15,
-    head: [['#', 'Criterion', 'Response']],
+    head: [['#', 'Assessment Parameter', 'Response', 'Doc']],
     body: tableBody,
     columnStyles: {
       0: { cellWidth: 10 },
-      1: { cellWidth: 130 },
-      2: { cellWidth: 30, fontStyle: 'bold' }
+      1: { cellWidth: 120 },
+      2: { cellWidth: 30, fontStyle: 'bold' },
+      3: { cellWidth: 15, halign: 'center' }
     },
     headStyles: { fillColor: primaryColor },
-    styles: { fontSize: 8, cellPadding: 3 },
+    styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
     alternateRowStyles: { fillColor: [249, 250, 251] }
   })
 
   // Footer
-  const pageCount = (doc as any).internal.getNumberOfPages()
+  const pageCount = doc.internal.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
     doc.setFontSize(8)
     doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2])
     doc.text(
-      `Confidential - Site Evaluation Report - ${center.name}`,
+      `Confidential - Site Evaluation Report - ${center?.name || 'Innova Trials'}`,
       20,
       doc.internal.pageSize.getHeight() - 10
     )
@@ -135,5 +135,5 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     )
   }
 
-  doc.save(`Report_${center.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
+  doc.save(`Report_${(center?.name || 'Site').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`)
 }

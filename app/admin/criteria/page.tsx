@@ -56,13 +56,29 @@ export default function CriteriaManagement() {
     setSaving(true)
     setMessage(null)
     try {
-      const { error } = await supabase
-        .from('criteria')
-        .upsert(criteria)
+      // Split into updates and inserts
+      const toUpdate = criteria.filter(c => typeof c.id === 'number' && c.id < 1000000000)
+      const toInsert = criteria.filter(c => typeof c.id === 'string' || (typeof c.id === 'number' && c.id >= 1000000000))
+        .map(({ id, ...rest }) => rest) // Remove temporary ID
 
-      if (error) throw error
+      if (toUpdate.length > 0) {
+        const { error: updateErr } = await supabase.from('criteria').upsert(toUpdate)
+        if (updateErr) throw updateErr
+      }
+
+      if (toInsert.length > 0) {
+        const { error: insertErr } = await supabase.from('criteria').insert(toInsert)
+        if (insertErr) throw insertErr
+      }
+
+      // Reload to get real IDs
+      const { data, error: reloadErr } = await supabase.from('criteria').select('*').order('id', { ascending: true })
+      if (reloadErr) throw reloadErr
+      if (data) setCriteria(data)
+
       setMessage({ type: 'success', text: 'All evaluation parameters updated successfully.' })
     } catch (err: any) {
+      console.error("Save error:", err)
       setMessage({ type: 'error', text: err.message })
     } finally {
       setSaving(false)
@@ -74,10 +90,9 @@ export default function CriteriaManagement() {
   }
 
   const addNew = () => {
-    // Generate a temporary ID for new items
-    const newId = Date.now()
+    const tempId = `temp-${Date.now()}`
     setCriteria(prev => [...prev, {
-      id: newId,
+      id: tempId,
       name: '',
       category: 'Technical',
       weight: 5,
@@ -89,7 +104,6 @@ export default function CriteriaManagement() {
 
   const remove = async (id: number | string) => {
     if (confirm("Are you sure you want to remove this parameter?")) {
-      // If it's a number, it's likely already in DB
       if (typeof id === 'number' && id < 1000000000) {
         const { error } = await supabase.from('criteria').delete().eq('id', id)
         if (error) {
@@ -121,18 +135,11 @@ export default function CriteriaManagement() {
         </div>
         
         <div className="flex gap-3">
-          <button 
-            onClick={addNew}
-            className="btn-secondary flex items-center gap-3 px-6 py-4"
-          >
+          <button onClick={addNew} className="btn-secondary flex items-center gap-3 px-6 py-4">
             <Plus className="w-5 h-5" />
             <span className="font-black uppercase tracking-widest text-xs">Add New</span>
           </button>
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            className="btn-primary flex items-center gap-3 px-8 py-4 shadow-xl shadow-primary-100"
-          >
+          <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-3 px-8 py-4 shadow-xl shadow-primary-100">
             {saving ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
             <span className="font-black uppercase tracking-widest text-xs">Save All Changes</span>
           </button>
@@ -206,10 +213,7 @@ export default function CriteriaManagement() {
                     </button>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button 
-                      onClick={() => remove(c.id)}
-                      className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                    >
+                    <button onClick={() => remove(c.id)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </td>
@@ -217,30 +221,6 @@ export default function CriteriaManagement() {
               ))}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="card p-8 bg-slate-50 border-none space-y-4">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-            <BarChart4 className="w-5 h-5 text-primary-600" />
-          </div>
-          <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs">Scoring (Y/N)</h4>
-          <p className="text-slate-500 text-xs leading-relaxed">These questions contribute to the final site score. You can adjust the individual weight of each parameter.</p>
-        </div>
-        <div className="card p-8 bg-slate-50 border-none space-y-4">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-            <FileText className="w-5 h-5 text-indigo-600" />
-          </div>
-          <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs">Development</h4>
-          <p className="text-slate-500 text-xs leading-relaxed">Open-ended questions that allow the site to provide detailed statements. These do not impact the numerical score.</p>
-        </div>
-        <div className="card p-8 bg-slate-50 border-none space-y-4">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-            <AlertCircle className="w-5 h-5 text-rose-600" />
-          </div>
-          <h4 className="font-black text-slate-900 uppercase tracking-widest text-xs">Critical Criteria</h4>
-          <p className="text-slate-500 text-xs leading-relaxed">Marking a parameter as critical will highlight it in the site's audit report for immediate reviewer attention.</p>
         </div>
       </div>
     </div>
