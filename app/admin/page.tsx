@@ -168,8 +168,8 @@ export default function AdminDashboard() {
             <ShieldCheck className="w-4 h-4" />
             System Live
           </div>
-          <button onClick={loadData} disabled={loading} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-primary-600 hover:border-primary-100 transition-all shadow-sm disabled:opacity-50">
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          <button onClick={loadData} disabled={loading} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 hover:border-blue-100 transition-all shadow-sm disabled:opacity-50" title="Actualizar datos">
+            <RefreshCw className="w-5 h-5" />
           </button>
         </div>
       </header>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Settings, Users, Moon, Sun, Plus, Trash2, Eye, EyeOff } from 'lucide-react'
+import { useTheme } from '@/lib/theme/ThemeProvider'
 
 interface AdminUser {
   id: string
@@ -11,8 +12,7 @@ interface AdminUser {
 }
 
 export default function SettingsPage() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
-  const [brightness, setBrightness] = useState(100)
+  const { theme, brightness, setTheme, setBrightness } = useTheme()
   const [users, setUsers] = useState<AdminUser[]>([
     { id: '1', username: 'innova', password: 'trials2026', createdAt: '2026-02-07' }
   ])
@@ -21,14 +21,9 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [message, setMessage] = useState('')
 
-  // Cargar configuración del localStorage
+  // Cargar usuarios del localStorage
   useEffect(() => {
-    const savedTheme = localStorage.getItem('admin_theme') as 'light' | 'dark' || 'dark'
-    const savedBrightness = parseInt(localStorage.getItem('admin_brightness') || '100')
     const savedUsers = localStorage.getItem('admin_users')
-
-    setTheme(savedTheme)
-    setBrightness(savedBrightness)
     if (savedUsers) {
       setUsers(JSON.parse(savedUsers))
     }
@@ -36,8 +31,6 @@ export default function SettingsPage() {
 
   // Guardar configuración
   const saveSettings = () => {
-    localStorage.setItem('admin_theme', theme)
-    localStorage.setItem('admin_brightness', brightness.toString())
     localStorage.setItem('admin_users', JSON.stringify(users))
     setMessage('Configuración guardada exitosamente')
     setTimeout(() => setMessage(''), 3000)
@@ -62,7 +55,9 @@ export default function SettingsPage() {
       createdAt: new Date().toISOString().split('T')[0]
     }
 
-    setUsers([...users, newUser])
+    const updatedUsers = [...users, newUser]
+    setUsers(updatedUsers)
+    localStorage.setItem('admin_users', JSON.stringify(updatedUsers))
     setNewUsername('')
     setNewPassword('')
     setMessage('Usuario agregado exitosamente')
@@ -75,7 +70,9 @@ export default function SettingsPage() {
       setMessage('No puedes eliminar el único usuario')
       return
     }
-    setUsers(users.filter(u => u.id !== id))
+    const updatedUsers = users.filter(u => u.id !== id)
+    setUsers(updatedUsers)
+    localStorage.setItem('admin_users', JSON.stringify(updatedUsers))
     setMessage('Usuario eliminado')
     setTimeout(() => setMessage(''), 3000)
   }
@@ -182,8 +179,12 @@ export default function SettingsPage() {
                 <span className="font-semibold text-slate-900">Innova Trials</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Desarrollador:</span>
-                <span className="font-semibold text-slate-900">Santiago Isbert</span>
+                <span className="text-slate-600">Tema Actual:</span>
+                <span className="font-semibold text-slate-900 capitalize">{theme === 'dark' ? 'Oscuro' : 'Claro'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-600">Brillo:</span>
+                <span className="font-semibold text-slate-900">{brightness}%</span>
               </div>
             </div>
           </div>
