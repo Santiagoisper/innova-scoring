@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { supabaseBrowser } from "@/lib/supabase/client"
+import { generateCenterReport } from "@/lib/utils/pdf-generator"
 import {
   ArrowLeft,
   Building2,
@@ -21,7 +22,8 @@ import {
   Activity,
   XCircle,
   AlertTriangle,
-  Info
+  Info,
+  Printer
 } from "lucide-react"
 
 export default function CenterDetailsPage() {
@@ -34,6 +36,7 @@ export default function CenterDetailsPage() {
   const [evaluation, setEvaluation] = useState<any>(null)
   const [criteria, setCriteria] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [generatingPDF, setGeneratingPDF] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -51,6 +54,18 @@ export default function CenterDetailsPage() {
     }
     if (id) loadData()
   }, [id, supabase])
+
+  const handleDownloadPDF = async () => {
+    setGeneratingPDF(true)
+    try {
+      await generateCenterReport(center, evaluation, criteria)
+    } catch (error) {
+      console.error("PDF generation failed:", error)
+      alert("Failed to generate PDF report.")
+    } finally {
+      setGeneratingPDF(false)
+    }
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -90,13 +105,26 @@ export default function CenterDetailsPage() {
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-20">
-      <button 
-        onClick={() => router.push('/admin/centers')}
-        className="flex items-center gap-2 text-slate-500 hover:text-primary-600 font-bold text-sm uppercase tracking-widest transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Centers
-      </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <button 
+          onClick={() => router.push('/admin/centers')}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary-600 font-bold text-sm uppercase tracking-widest transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Centers
+        </button>
+        
+        {evaluation && (
+          <button 
+            onClick={handleDownloadPDF}
+            disabled={generatingPDF}
+            className="btn-primary flex items-center gap-2 shadow-lg shadow-primary-100"
+          >
+            {generatingPDF ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+            Download PDF Report
+          </button>
+        )}
+      </div>
 
       <div className="card overflow-hidden border-t-4 border-t-primary-600">
         <div className="p-8 md:p-10 flex flex-col md:flex-row gap-10">
