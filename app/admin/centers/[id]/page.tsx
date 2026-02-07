@@ -339,24 +339,54 @@ export default function CenterDetailsPage() {
 
         {/* Sidebar Info */}
         <div className="space-y-8">
+          {/* Attachments Section */}
+          {Object.keys(attachments).length > 0 && (
+            <div className="card p-8 space-y-6 border-none shadow-xl shadow-slate-200/40 bg-gradient-to-br from-blue-50 to-indigo-50 border-l-4 border-blue-600">
+              <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm flex items-center gap-2">
+                <FileIcon className="w-5 h-5 text-blue-600" />
+                Documentos Adjuntos
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(attachments).map(([key, url], idx) => (
+                  <a
+                    key={idx}
+                    href={String(url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all group"
+                  >
+                    <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <FileCheck className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-900 truncate">Criterio {key}</p>
+                      <p className="text-[10px] text-slate-500 truncate">Documento de evidencia</p>
+                    </div>
+                    <Download className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors flex-shrink-0" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="card p-8 space-y-8 border-none shadow-xl shadow-slate-200/40">
-            <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm border-b border-slate-50 pb-4">Audit Summary</h3>
+            <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm border-b border-slate-50 pb-4">Resumen de Auditoría</h3>
             
             <div className="space-y-6">
               <div className="flex justify-between items-center group">
-                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Total Parameters</span>
+                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Parámetros Totales</span>
                 <span className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center font-black text-slate-900 group-hover:bg-primary-50 transition-colors">
                   {criteria.length}
                 </span>
               </div>
               <div className="flex justify-between items-center group">
-                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Critical Criteria</span>
+                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Criterios Críticos</span>
                 <span className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center font-black text-rose-600 group-hover:bg-rose-100 transition-colors">
                   {criteria.filter(c => c.critical).length}
                 </span>
               </div>
               <div className="flex justify-between items-center group">
-                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Documents Verified</span>
+                <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">Documentos Verificados</span>
                 <span className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center font-black text-emerald-600 group-hover:bg-emerald-100 transition-colors">
                   {Object.keys(attachments).length}
                 </span>

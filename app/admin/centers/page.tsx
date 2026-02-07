@@ -16,6 +16,9 @@ import {
   Link as LinkIcon,
   Trash2,
   ChevronRight,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
 } from "lucide-react"
 
 type Center = {
@@ -47,10 +50,8 @@ export default function CentersPage() {
   const [centers, setCenters] = useState<Center[]>([])
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
   const [loading, setLoading] = useState(true)
-
   const [searchQuery, setSearchQuery] = useState("")
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
-
   const [showAddModal, setShowAddModal] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -89,14 +90,14 @@ export default function CentersPage() {
   }
 
   function getStatusInfo(evalRow?: Evaluation) {
-    if (!evalRow) return { label: "Not Evaluated", class: "bg-slate-100 text-slate-500" }
-    if (evalRow.status === "pending") return { label: "Pending Link", class: "bg-slate-100 text-slate-500" }
+    if (!evalRow) return { label: "Not Evaluated", class: "bg-slate-100 text-slate-500", icon: AlertCircle, color: "slate" }
+    if (evalRow.status === "pending") return { label: "Pending Link", class: "bg-slate-100 text-slate-500", icon: AlertCircle, color: "slate" }
 
     switch (evalRow.score_level) {
-      case "green": return { label: "Approved", class: "bg-green-100 text-green-700" }
-      case "yellow": return { label: "Conditional", class: "bg-yellow-100 text-yellow-700" }
-      case "red": return { label: "Not Approved", class: "bg-red-100 text-red-700" }
-      default: return { label: "Completed", class: "bg-slate-100 text-slate-500" }
+      case "green": return { label: "Approved", class: "bg-green-100 text-green-700", icon: CheckCircle, color: "green" }
+      case "yellow": return { label: "Conditional", class: "bg-yellow-100 text-yellow-700", icon: AlertCircle, color: "yellow" }
+      case "red": return { label: "Not Approved", class: "bg-red-100 text-red-700", icon: XCircle, color: "red" }
+      default: return { label: "Completed", class: "bg-slate-100 text-slate-500", icon: AlertCircle, color: "slate" }
     }
   }
 
@@ -107,6 +108,14 @@ export default function CentersPage() {
       c.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.country.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Agrupar centros por estado
+  const groupedCenters = {
+    approved: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "green"),
+    conditional: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "yellow"),
+    notApproved: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "red"),
+    pending: filteredCenters.filter(c => !getLatestEvaluation(c.id) || getLatestEvaluation(c.id)?.status === "pending"),
+  }
 
   async function generateEvaluationLink(center: Center, e: React.MouseEvent) {
     e.stopPropagation()
@@ -123,7 +132,7 @@ export default function CentersPage() {
 
   async function deleteCenter(id: string, name: string, e: React.MouseEvent) {
     e.stopPropagation()
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return
+    if (!confirm(`¿Estás seguro de que deseas eliminar "${name}"?`)) return
     const { error } = await supabase.from("centers").delete().eq("id", id)
     if (!error) loadData()
   }
@@ -148,21 +157,86 @@ export default function CentersPage() {
     setSaving(false)
   }
 
+  const CenterRow = ({ center }: { center: Center }) => {
+    const latestEval = getLatestEvaluation(center.id)
+    const status = getStatusInfo(latestEval)
+    const StatusIcon = status.icon
+
+    return (
+      <tr
+        key={center.id}
+        className="hover:bg-slate-50/80 transition-all cursor-pointer group border-b border-slate-100"
+        onClick={() => router.push(`/admin/centers/${center.id}`)}
+      >
+        <td className="px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-blue-50 transition-colors">
+              <Building2 className="w-5 h-5 text-slate-400 group-hover:text-blue-600" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{center.name}</p>
+              <p className="text-xs text-slate-500 font-medium">{center.code}</p>
+            </div>
+          </div>
+        </td>
+        <td className="px-6 py-5">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <MapPin className="w-4 h-4 text-slate-300" />
+            {center.city}, {center.country}
+          </div>
+        </td>
+        <td className="px-6 py-5">
+          <div className="flex items-center gap-2">
+            <StatusIcon className="w-4 h-4" />
+            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${status.class}`}>
+              {status.label}
+            </span>
+          </div>
+        </td>
+        <td className="px-6 py-5">
+          <span className="text-xl font-black text-slate-900">{latestEval?.total_score ?? "—"}</span>
+        </td>
+        <td className="px-6 py-5">
+          <div className="flex items-center justify-end gap-2">
+            {latestEval?.status === "pending" ? (
+              <div className="flex items-center gap-1">
+                <button onClick={(e) => copyToClipboard(latestEval.token, e)} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-200">
+                  {copiedToken === latestEval.token ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                </button>
+                <a href={`/cliente/${latestEval.token}`} target="_blank" onClick={(e) => e.stopPropagation()} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-200">
+                  <ExternalLink className="w-4 h-4 text-slate-400" />
+                </a>
+              </div>
+            ) : (
+              <button onClick={(e) => generateEvaluationLink(center, e)} className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-all flex items-center gap-1">
+                <LinkIcon className="w-3 h-3" /> Link
+              </button>
+            )}
+            <button onClick={(e) => deleteCenter(center.id, center.name, e)} className="p-2 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-all group-hover:translate-x-1" />
+          </div>
+        </td>
+      </tr>
+    )
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <RefreshCw className="w-8 h-8 text-primary-600 animate-spin" />
+      <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
     </div>
   )
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 font-display">Centers Management</h1>
-          <p className="text-slate-500">Manage research sites and monitor evaluation status</p>
+          <h1 className="text-3xl font-bold text-slate-900">Gestión de Centros</h1>
+          <p className="text-slate-500">Gestiona sitios de investigación y monitorea el estado de evaluación</p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add New Site
+        <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
+          <Plus className="w-4 h-4" /> Agregar Sitio
         </button>
       </header>
 
@@ -170,122 +244,121 @@ export default function CentersPage() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
         <input
           type="text"
-          placeholder="Search sites by name, code or location..."
+          placeholder="Busca sitios por nombre, código o ubicación..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="input pl-12 py-4 shadow-sm"
+          className="w-full pl-12 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/50">
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Site Name</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Location</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Score</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredCenters.map((center) => {
-                const latestEval = getLatestEvaluation(center.id)
-                const status = getStatusInfo(latestEval)
-                return (
-                  <tr 
-                    key={center.id} 
-                    className="hover:bg-slate-50/80 transition-all cursor-pointer group"
-                    onClick={() => router.push(`/admin/centers/${center.id}`)}
-                  >
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-primary-50 transition-colors">
-                          <Building2 className="w-5 h-5 text-slate-400 group-hover:text-primary-600" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 group-hover:text-primary-700 transition-colors">{center.name}</p>
-                          <p className="text-xs text-slate-500 font-medium">{center.code}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <MapPin className="w-4 h-4 text-slate-300" />
-                        {center.city}, {center.country}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${status.class}`}>
-                        {status.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className="text-xl font-black text-slate-900">{latestEval?.total_score ?? "—"}</span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center justify-end gap-2">
-                        {latestEval?.status === "pending" ? (
-                          <div className="flex items-center gap-1">
-                            <button onClick={(e) => copyToClipboard(latestEval.token, e)} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-200">
-                              {copiedToken === latestEval.token ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-slate-400" />}
-                            </button>
-                            <a href={`/cliente/${latestEval.token}`} target="_blank" onClick={(e) => e.stopPropagation()} className="p-2 hover:bg-white rounded-lg transition-all shadow-sm border border-transparent hover:border-slate-200">
-                              <ExternalLink className="w-4 h-4 text-slate-400" />
-                            </a>
-                          </div>
-                        ) : (
-                          <button onClick={(e) => generateEvaluationLink(center, e)} className="btn-sm bg-primary-600 text-white hover:bg-primary-700">
-                            <LinkIcon className="w-3 h-3" /> Link
-                          </button>
-                        )}
-                        <button onClick={(e) => deleteCenter(center.id, center.name, e)} className="p-2 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-lg transition-all opacity-0 group-hover:opacity-100">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary-400 transition-all group-hover:translate-x-1" />
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-scale-in">
-            <div className="flex items-center justify-between border-b px-8 py-6">
-              <h2 className="text-2xl font-bold text-slate-900">Add New Research Site</h2>
-              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="w-6 h-6 text-slate-400" /></button>
-            </div>
-            <form onSubmit={handleAddCenter} className="p-8 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Site Name</label>
-                  <input placeholder="e.g. CINME Hospital" value={newCenter.name} onChange={(e) => setNewCenter(p => ({ ...p, name: e.target.value }))} className="input" required />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Site Code</label>
-                  <input placeholder="e.g. AR-001" value={newCenter.code} onChange={(e) => setNewCenter(p => ({ ...p, code: e.target.value }))} className="input" required />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Country</label>
-                  <input placeholder="Argentina" value={newCenter.country} onChange={(e) => setNewCenter(p => ({ ...p, country: e.target.value }))} className="input" required />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">City</label>
-                  <input placeholder="Buenos Aires" value={newCenter.city} onChange={(e) => setNewCenter(p => ({ ...p, city: e.target.value }))} className="input" required />
-                </div>
-              </div>
-              <div className="flex gap-4 pt-6">
-                <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary flex-1 py-4">Cancel</button>
-                <button type="submit" disabled={saving} className="btn-primary flex-1 py-4">{saving ? "Saving..." : "Create Site"}</button>
-              </div>
-            </form>
+      {/* Approved Section */}
+      {groupedCenters.approved.length > 0 && (
+        <div className="bg-white rounded-2xl border border-green-200 overflow-hidden shadow-sm">
+          <div className="bg-green-50 px-6 py-4 border-b border-green-200 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <h2 className="text-lg font-bold text-green-900">Aprobados ({groupedCenters.approved.length})</h2>
           </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre del Sitio</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Ubicación</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Puntaje</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedCenters.approved.map(center => <CenterRow key={center.id} center={center} />)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Conditional Section */}
+      {groupedCenters.conditional.length > 0 && (
+        <div className="bg-white rounded-2xl border border-yellow-200 overflow-hidden shadow-sm">
+          <div className="bg-yellow-50 px-6 py-4 border-b border-yellow-200 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-yellow-600" />
+            <h2 className="text-lg font-bold text-yellow-900">Condicionales ({groupedCenters.conditional.length})</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre del Sitio</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Ubicación</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Puntaje</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedCenters.conditional.map(center => <CenterRow key={center.id} center={center} />)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Not Approved Section */}
+      {groupedCenters.notApproved.length > 0 && (
+        <div className="bg-white rounded-2xl border border-red-200 overflow-hidden shadow-sm">
+          <div className="bg-red-50 px-6 py-4 border-b border-red-200 flex items-center gap-2">
+            <XCircle className="w-5 h-5 text-red-600" />
+            <h2 className="text-lg font-bold text-red-900">No Aprobados ({groupedCenters.notApproved.length})</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre del Sitio</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Ubicación</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Puntaje</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedCenters.notApproved.map(center => <CenterRow key={center.id} center={center} />)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Section */}
+      {groupedCenters.pending.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-slate-600" />
+            <h2 className="text-lg font-bold text-slate-900">Pendientes ({groupedCenters.pending.length})</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre del Sitio</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Ubicación</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Puntaje</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedCenters.pending.map(center => <CenterRow key={center.id} center={center} />)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {filteredCenters.length === 0 && (
+        <div className="text-center py-20">
+          <Building2 className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+          <p className="text-slate-400 font-semibold">No se encontraron centros</p>
         </div>
       )}
     </div>
