@@ -14,8 +14,7 @@ import {
   Check,
   RefreshCw,
   Trash2,
-  AlertCircle,
-  ChevronRight
+  AlertCircle
 } from "lucide-react"
 
 export default function ExportPage() {
@@ -260,7 +259,8 @@ export default function ExportPage() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
