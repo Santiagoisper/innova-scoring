@@ -12,7 +12,10 @@ import {
   Calendar,
   Building2,
   Check,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  AlertCircle,
+  ChevronRight
 } from "lucide-react"
 
 export default function ExportPage() {
@@ -22,6 +25,8 @@ export default function ExportPage() {
   const [exporting, setExporting] = useState(false)
   const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv')
   const [exported, setExported] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   async function loadData() {
     setLoading(true)
@@ -38,18 +43,33 @@ export default function ExportPage() {
     loadData()
   }, [])
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this evaluation record? This will not delete the center, only this specific result.")) return
+    
+    setDeleting(id)
+    const { error } = await supabase.from("evaluations").delete().eq("id", id)
+    
+    if (error) {
+      alert("Error deleting record: " + error.message)
+    } else {
+      setEvaluations(prev => prev.filter(e => e.id !== id))
+    }
+    setDeleting(null)
+  }
+
   const handleExport = () => {
     setExporting(true)
+    const dataToExport = filtered
     try {
       if (exportFormat === 'csv') {
-        const headers = ["Date", "Center Name", "Country", "Score", "Status", "Evaluator"]
-        const rows = evaluations.map(e => [
+        const headers = ["Date", "Center Name", "Code", "Country", "Score", "Status"]
+        const rows = dataToExport.map(e => [
           new Date(e.created_at).toLocaleDateString(),
           e.centers?.name || 'N/A',
+          e.centers?.code || 'N/A',
           e.centers?.country || 'N/A',
           e.total_score ?? 'N/A',
-          e.score_level || 'Pending',
-          e.evaluator_email || 'N/A'
+          e.score_level || 'Pending'
         ])
 
         const csvContent = [headers, ...rows].map(e => e.map(cell => `"${cell}"`).join(",")).join("\n")
@@ -63,7 +83,7 @@ export default function ExportPage() {
         link.click()
         document.body.removeChild(link)
       } else {
-        const jsonContent = JSON.stringify(evaluations, null, 2)
+        const jsonContent = JSON.stringify(dataToExport, null, 2)
         const blob = new Blob([jsonContent], { type: 'application/json' })
         const link = document.createElement("a")
         const url = URL.createObjectURL(blob)
@@ -78,6 +98,11 @@ export default function ExportPage() {
     }
   }
 
+  const filtered = evaluations.filter(e => 
+    e.centers?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    e.centers?.code?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <RefreshCw className="w-8 h-8 text-primary-600 animate-spin" />
@@ -85,125 +110,157 @@ export default function ExportPage() {
   )
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-20">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 font-display">Export Results</h1>
-          <p className="text-slate-500">Generate and download comprehensive evaluation reports</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Export Results</h1>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-1">Download and manage site evaluation data</p>
         </div>
         <div className="flex gap-3">
           <button 
             onClick={loadData}
-            className="btn-secondary flex items-center gap-2"
+            className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-primary-600 hover:border-primary-100 transition-all shadow-sm"
           >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
-          <div className="card p-6 space-y-6">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
+          <div className="card p-8 space-y-8 border-t-4 border-t-primary-600 shadow-xl shadow-slate-200/50">
+            <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs flex items-center gap-2">
               <Filter className="w-4 h-4 text-primary-600" />
-              Export Configuration
+              Configuration
             </h3>
             
-            <div className="space-y-3">
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Format</label>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-4">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-tighter">File Format</label>
+              <div className="grid grid-cols-2 gap-3">
                 <button 
                   onClick={() => setExportFormat('csv')}
-                  className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${exportFormat === 'csv' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-slate-100 text-slate-400 hover:border-slate-200'}`}
+                  className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${exportFormat === 'csv' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-slate-100 text-slate-400 hover:border-slate-200 bg-slate-50/50'}`}
                 >
                   <FileSpreadsheet className="w-6 h-6" />
-                  <span className="text-xs font-bold">CSV</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">CSV</span>
                 </button>
                 <button 
                   onClick={() => setExportFormat('json')}
-                  className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${exportFormat === 'json' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-slate-100 text-slate-400 hover:border-slate-200'}`}
+                  className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${exportFormat === 'json' ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-slate-100 text-slate-400 hover:border-slate-200 bg-slate-50/50'}`}
                 >
                   <FileJson className="w-6 h-6" />
-                  <span className="text-xs font-bold">JSON</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">JSON</span>
                 </button>
               </div>
             </div>
 
             <button 
               onClick={handleExport}
-              disabled={exporting}
-              className="btn-primary w-full py-4 flex items-center justify-center gap-2 shadow-lg shadow-primary-100"
+              disabled={exporting || filtered.length === 0}
+              className="btn-primary w-full py-5 flex items-center justify-center gap-3 shadow-lg shadow-primary-200 text-sm font-black uppercase tracking-widest disabled:opacity-50"
             >
               {exporting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : exported ? (
                 <>
                   <Check className="w-5 h-5" />
-                  Downloaded
+                  Success
                 </>
               ) : (
                 <>
                   <Download className="w-5 h-5" />
-                  Download Now
+                  Download
                 </>
               )}
             </button>
           </div>
         </div>
 
-        <div className="lg:col-span-3">
-          <div className="card overflow-hidden">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="font-bold text-slate-900">Data Preview ({evaluations.length} records)</h3>
+        <div className="lg:col-span-3 space-y-6">
+          <div className="card p-4 flex items-center gap-4 shadow-sm border-slate-100">
+            <Search className="w-5 h-5 text-slate-300 ml-2" />
+            <input 
+              type="text"
+              placeholder="Search by site name or code..."
+              className="flex-1 bg-transparent border-none focus:ring-0 font-bold text-slate-700 placeholder:text-slate-300 text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              {filtered.length} Results
             </div>
+          </div>
+
+          <div className="card overflow-hidden shadow-xl shadow-slate-200/50 border-none">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Site</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Score</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                  <tr className="bg-slate-50/80 border-b border-slate-100">
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Site Information</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Score</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Date</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {evaluations.map((e) => (
-                    <tr key={e.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-slate-100 rounded-lg">
-                            <Building2 className="w-4 h-4 text-slate-500" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{e.centers?.name || 'Unknown'}</p>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{e.centers?.country}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <Calendar className="w-4 h-4 text-slate-400" />
-                          {new Date(e.created_at).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 font-black text-slate-900 text-lg">
-                        {e.total_score ?? '—'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                          e.score_level === 'green' ? 'bg-green-100 text-green-700' :
-                          e.score_level === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
-                          e.score_level === 'red' ? 'bg-red-100 text-red-700' :
-                          'bg-slate-100 text-slate-500'
-                        }`}>
-                          {e.score_level === 'green' ? 'Approved' :
-                           e.score_level === 'yellow' ? 'Conditional' : 
-                           e.score_level === 'red' ? 'Not Approved' : 'Pending'}
-                        </span>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-20 text-center">
+                        <AlertCircle className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                        <p className="text-slate-400 font-bold">No evaluation records found.</p>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filtered.map((e) => (
+                      <tr key={e.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="p-2 bg-slate-100 rounded-xl text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-all">
+                              <Building2 className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="font-black text-slate-900 text-sm leading-tight">{e.centers?.name || 'Unknown Site'}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{e.centers?.code} • {e.centers?.country}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-center">
+                          <span className="inline-block px-3 py-1 bg-slate-900 text-white rounded-lg font-black text-sm">
+                            {e.total_score ?? '—'}
+                          </span>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex justify-center">
+                            <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border-2 ${
+                              e.score_level === 'green' ? 'border-green-500 text-green-700 bg-green-50' :
+                              e.score_level === 'yellow' ? 'border-amber-500 text-amber-700 bg-amber-50' :
+                              e.score_level === 'red' ? 'border-red-500 text-red-700 bg-red-50' :
+                              'border-slate-200 text-slate-400 bg-slate-50'
+                            }`}>
+                              {e.score_level === 'green' ? 'Approved' :
+                               e.score_level === 'yellow' ? 'Conditional' : 
+                               e.score_level === 'red' ? 'Not Approved' : 'Pending'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-tighter">
+                            <Calendar className="w-3.5 h-3.5 opacity-40" />
+                            {new Date(e.created_at).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <button 
+                            onClick={() => handleDelete(e.id)}
+                            disabled={deleting === e.id}
+                            className="p-3 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+                          >
+                            {deleting === e.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>

@@ -12,6 +12,7 @@ import {
   Download,
   Sparkles,
   Link as LinkIcon,
+  Settings2
 } from "lucide-react"
 
 export default function Sidebar() {
@@ -92,7 +93,7 @@ export default function Sidebar() {
         {/* =========================
             Navigation Links
         ========================= */}
-        <div className="p-6 space-y-3">
+        <div className="p-6 space-y-2">
           {/* Dashboard */}
           <a href="/admin" className={navClass("/admin")}>
             <LayoutDashboard className="w-5 h-5" />
@@ -122,14 +123,20 @@ export default function Sidebar() {
             {ready && (
               <span className="ml-auto flex gap-1 text-xs">
                 <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                  {pendingCount} pending
+                  {pendingCount}
                 </span>
 
                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                  {completedCount} done
+                  {completedCount}
                 </span>
               </span>
             )}
+          </a>
+
+          {/* Criteria Management (NEW) */}
+          <a href="/admin/criteria" className={navClass("/admin/criteria")}>
+            <Settings2 className="w-5 h-5" />
+            Evaluation Setup
           </a>
 
           {/* Rubric */}

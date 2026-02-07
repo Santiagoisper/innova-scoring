@@ -9,12 +9,8 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
-  FileText,
   Mail,
-  MapPin,
-  Phone,
   RefreshCw,
-  ExternalLink,
   Download,
   AlertCircle,
   FileIcon,
@@ -23,7 +19,8 @@ import {
   XCircle,
   AlertTriangle,
   Info,
-  Printer
+  Printer,
+  FileCheck
 } from "lucide-react"
 
 export default function CenterDetailsPage() {
@@ -94,14 +91,16 @@ export default function CenterDetailsPage() {
     }
   }
 
-  const getScoreColor = (level: string) => {
+  const getStatusDisplay = (level: string) => {
     switch (level) {
-      case 'green': return 'text-green-600 bg-green-50 border-green-100'
-      case 'yellow': return 'text-amber-600 bg-amber-50 border-amber-100'
-      case 'red': return 'text-red-600 bg-red-50 border-red-100'
-      default: return 'text-slate-500 bg-slate-50 border-slate-100'
+      case 'green': return { label: 'Approved', color: 'text-green-600 bg-green-50 border-green-100', icon: <CheckCircle2 className="w-5 h-5" /> }
+      case 'yellow': return { label: 'Conditional', color: 'text-amber-600 bg-amber-50 border-amber-100', icon: <AlertTriangle className="w-5 h-5" /> }
+      case 'red': return { label: 'Not Approved', color: 'text-red-600 bg-red-50 border-red-100', icon: <XCircle className="w-5 h-5" /> }
+      default: return { label: 'Pending', color: 'text-slate-500 bg-slate-50 border-slate-100', icon: <Info className="w-5 h-5" /> }
     }
   }
+
+  const status = getStatusDisplay(evaluation?.score_level)
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto pb-20">
@@ -121,7 +120,7 @@ export default function CenterDetailsPage() {
             className="btn-primary flex items-center gap-2 shadow-lg shadow-primary-100"
           >
             {generatingPDF ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-            Download PDF Report
+            Download Report
           </button>
         )}
       </div>
@@ -141,16 +140,14 @@ export default function CenterDetailsPage() {
                 <p className="text-slate-500 font-bold uppercase tracking-widest text-sm mt-1">{center.code} • {center.city}, {center.country}</p>
               </div>
               {evaluation && (
-                <div className={`px-6 py-4 rounded-2xl border flex items-center gap-4 ${getScoreColor(evaluation.score_level)}`}>
+                <div className={`px-6 py-4 rounded-2xl border flex items-center gap-4 ${status.color}`}>
                   <div className="text-center border-r pr-4 border-current/20">
                     <p className="text-[10px] font-black uppercase tracking-tighter opacity-70">Final Score</p>
                     <p className="text-3xl font-black leading-none">{evaluation.total_score ?? '—'}</p>
                   </div>
                   <div className="flex items-center gap-2 font-black uppercase tracking-widest text-sm">
-                    {evaluation.score_level === 'green' ? <CheckCircle2 className="w-5 h-5" /> : 
-                     evaluation.score_level === 'yellow' ? <AlertTriangle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
-                    {evaluation.score_level === 'green' ? 'Approved' : 
-                     evaluation.score_level === 'yellow' ? 'Conditional' : evaluation.score_level === 'red' ? 'Not Approved' : 'Completed'}
+                    {status.icon}
+                    {status.label}
                   </div>
                 </div>
               )}
@@ -160,22 +157,22 @@ export default function CenterDetailsPage() {
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-50 rounded-lg text-slate-400"><User className="w-4 h-4" /></div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Contact Name</p>
-                  <p className="text-sm font-bold text-slate-700">{center.contact_name || 'Not provided'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Contact</p>
+                  <p className="text-sm font-bold text-slate-700">{center.contact_name || '—'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-50 rounded-lg text-slate-400"><Mail className="w-4 h-4" /></div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Email Address</p>
-                  <p className="text-sm font-bold text-slate-700">{center.contact_email || 'Not provided'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Email</p>
+                  <p className="text-sm font-bold text-slate-700">{center.contact_email || '—'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-50 rounded-lg text-slate-400"><Calendar className="w-4 h-4" /></div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Last Submission</p>
-                  <p className="text-sm font-bold text-slate-700">{evaluation ? new Date(evaluation.created_at).toLocaleDateString() : 'Never'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Submission Date</p>
+                  <p className="text-sm font-bold text-slate-700">{evaluation ? new Date(evaluation.created_at).toLocaleDateString() : '—'}</p>
                 </div>
               </div>
             </div>
@@ -189,15 +186,15 @@ export default function CenterDetailsPage() {
             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-primary-600" />
-                Evaluation Responses
+                Evaluation Results
               </h3>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{criteria.length} Questions</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{criteria.length} Items</span>
             </div>
             
             {!evaluation ? (
               <div className="p-20 text-center">
                 <Info className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                <p className="text-slate-400 font-bold">No evaluation data available for this site yet.</p>
+                <p className="text-slate-400 font-bold">No evaluation data available yet.</p>
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
@@ -211,13 +208,18 @@ export default function CenterDetailsPage() {
                           <span className="text-slate-300 font-black text-xl leading-none">{(i + 1).toString().padStart(2, '0')}</span>
                           <h4 className="font-bold text-slate-800 leading-snug">{c.name}</h4>
                         </div>
-                        {c.response_type === 'boolean' && (
-                          <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${
-                            ans === 'yes' ? 'border-green-500 text-green-700 bg-green-50' : 
-                            ans === 'no' ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-200 text-slate-400'
-                          }`}>
-                            {ans || 'No Answer'}
-                          </span>
+                        {c.response_type === 'boolean' ? (
+                          <div className="flex flex-col items-end gap-1">
+                            <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${
+                              ans === 'yes' ? 'border-green-500 text-green-700 bg-green-50' : 
+                              ans === 'no' ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-200 text-slate-400'
+                            }`}>
+                              {ans === 'yes' ? 'YES' : ans === 'no' ? 'NO' : 'N/A'}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">Score: {ans === 'yes' ? c.weight : 0}</span>
+                          </div>
+                        ) : (
+                          <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded text-[9px] font-bold uppercase">Development</span>
                         )}
                       </div>
                       {typeof ans === 'string' && ans !== 'yes' && ans !== 'no' && ans !== 'na' && (
@@ -226,10 +228,13 @@ export default function CenterDetailsPage() {
                         </div>
                       )}
                       {hasAttach && (
-                        <div className="ml-10">
-                          <a href={hasAttach} target="_blank" className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg text-xs font-bold border border-primary-100 hover:bg-primary-100 transition-all">
-                            <Download className="w-3 h-3" />
+                        <div className="ml-10 flex items-center gap-3">
+                          <div className="p-2 bg-primary-50 rounded-lg text-primary-600">
+                            <FileCheck className="w-4 h-4" />
+                          </div>
+                          <a href={hasAttach} target="_blank" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1">
                             View Supporting Document
+                            <Download className="w-3 h-3" />
                           </a>
                         </div>
                       )}
@@ -243,18 +248,18 @@ export default function CenterDetailsPage() {
 
         <div className="space-y-6">
           <div className="card p-6 space-y-6">
-            <h3 className="font-bold text-slate-900 border-b pb-4">Evaluation Summary</h3>
+            <h3 className="font-bold text-slate-900 border-b pb-4">Summary</h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-500 font-medium">Scoring Questions</span>
                 <span className="font-bold text-slate-900">{criteria.filter(c => c.response_type === 'boolean').length}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500 font-medium">Development Questions</span>
+                <span className="text-slate-500 font-medium">Development Items</span>
                 <span className="font-bold text-slate-900">{criteria.filter(c => c.response_type === 'text').length}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500 font-medium">Files Uploaded</span>
+                <span className="text-slate-500 font-medium">Files Attached</span>
                 <span className="font-bold text-primary-600">{Object.keys(attachments).length}</span>
               </div>
             </div>
@@ -262,12 +267,12 @@ export default function CenterDetailsPage() {
 
           <div className="card overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-900">Attachments</h3>
+              <h3 className="font-bold text-slate-900">All Attachments</h3>
               <FileIcon className="w-4 h-4 text-slate-400" />
             </div>
             <div className="p-4 space-y-2">
               {Object.keys(attachments).length === 0 ? (
-                <p className="text-center py-8 text-xs text-slate-400 font-medium italic">No files attached to this evaluation.</p>
+                <p className="text-center py-8 text-xs text-slate-400 font-medium italic">No files attached.</p>
               ) : (
                 Object.entries(attachments).map(([cid, url]: [any, any]) => {
                   const crit = criteria.find(c => c.id === parseInt(cid))
@@ -277,8 +282,8 @@ export default function CenterDetailsPage() {
                         <Download className="w-4 h-4" />
                       </div>
                       <div className="flex-1 overflow-hidden">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter truncate">{crit?.name || 'Attachment'}</p>
-                        <p className="text-xs font-bold text-slate-700 truncate">Download File</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter truncate">{crit?.name || 'Supporting Doc'}</p>
+                        <p className="text-xs font-bold text-slate-700">Download</p>
                       </div>
                     </a>
                   )
