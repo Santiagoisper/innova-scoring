@@ -15,16 +15,25 @@ export default function AdminLayout({
 
   useEffect(() => {
     // Verificar si existe un token válido
-    const token = localStorage.getItem("admin_token")
-    
-    if (!token) {
-      // No hay token, redirigir a login
-      router.push("/login")
-    } else {
+    const checkAuth = () => {
+      const token = localStorage.getItem("admin_token")
+      const username = localStorage.getItem("admin_username")
+      
+      console.log('Verificando autenticación:', { token: !!token, username })
+      
+      if (!token || !username) {
+        console.log('No hay token, redirigiendo a login')
+        router.push("/login")
+        return
+      }
+
       // Token existe, permitir acceso
       setIsAuthenticated(true)
       setLoading(false)
     }
+
+    // Ejecutar verificación después de que el componente esté montado
+    checkAuth()
   }, [router])
 
   if (loading) {

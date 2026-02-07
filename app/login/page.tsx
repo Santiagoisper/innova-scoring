@@ -17,22 +17,36 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      console.log('Intentando login con:', username)
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       })
 
+      console.log('Response status:', response.status)
       const data = await response.json()
+      console.log('Response data:', data)
 
-      if (response.ok) {
+      if (response.ok && data.token) {
+        // Guardar token en localStorage
         localStorage.setItem('admin_token', data.token)
-        router.push('/admin')
+        localStorage.setItem('admin_username', username)
+        
+        console.log('Token guardado, redirigiendo...')
+        
+        // Pequeño delay para asegurar que se guarde
+        setTimeout(() => {
+          router.push('/admin')
+        }, 100)
       } else {
         setError(data.message || 'Usuario o contraseña incorrectos')
+        console.log('Error en respuesta:', data.message)
       }
     } catch (err) {
-      setError('Error al conectar con el servidor')
+      console.error('Error de conexión:', err)
+      setError('Error al conectar con el servidor. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -69,10 +83,11 @@ export default function LoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Ingresa tu usuario"
+                placeholder="innova"
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 disabled={loading}
                 required
+                autoComplete="username"
               />
             </div>
 
@@ -83,10 +98,11 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Ingresa tu contraseña"
+                placeholder="••••••••"
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 disabled={loading}
                 required
+                autoComplete="current-password"
               />
             </div>
 
@@ -109,10 +125,11 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Footer Info */}
-          <div className="mt-8 pt-6 border-t border-white/10 text-center text-xs text-white/50">
-            <p>Sistema de Gestión Innova Trials</p>
-            <p className="mt-1">Acceso Restringido a Administradores</p>
+          {/* Test Credentials Info */}
+          <div className="mt-8 pt-6 border-t border-white/10 text-center text-xs text-white/40 space-y-2">
+            <p>Credenciales de prueba:</p>
+            <p className="text-white/60 font-mono">Usuario: innova</p>
+            <p className="text-white/60 font-mono">Contraseña: trials2026</p>
           </div>
         </div>
 

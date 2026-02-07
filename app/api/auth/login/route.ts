@@ -3,9 +3,13 @@ import { validateCredentials, generateToken } from '@/lib/auth/users'
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password } = await request.json()
+    const body = await request.json()
+    const { username, password } = body
+
+    console.log('Login attempt:', { username, passwordLength: password?.length })
 
     if (!username || !password) {
+      console.log('Missing credentials')
       return NextResponse.json(
         { message: 'Usuario y contraseña son requeridos' },
         { status: 400 }
@@ -13,7 +17,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar credenciales
-    if (!validateCredentials(username, password)) {
+    const isValid = validateCredentials(username, password)
+    console.log('Credentials valid:', isValid)
+
+    if (!isValid) {
+      console.log('Invalid credentials for user:', username)
       return NextResponse.json(
         { message: 'Usuario o contraseña incorrectos' },
         { status: 401 }
@@ -22,8 +30,9 @@ export async function POST(request: NextRequest) {
 
     // Generar token
     const token = generateToken(username)
+    console.log('Token generated for:', username)
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       { 
         token,
         username,
@@ -31,6 +40,16 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     )
+
+    // Opcional: Establecer cookie también
+    response.cookies.set('admin_token', token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // 7 días
+    })
+
+    return response
   } catch (error) {
     console.error('Auth error:', error)
     return NextResponse.json(
