@@ -23,7 +23,8 @@ import {
   FileCheck,
   ChevronRight,
   Globe,
-  Phone
+  Phone,
+  MapPin
 } from "lucide-react"
 
 export default function CenterDetailsPage() {
