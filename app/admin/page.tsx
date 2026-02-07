@@ -15,8 +15,7 @@ import {
   PieChart as PieChartIcon,
   ShieldCheck,
   MapPin,
-  Calculator,
-  Sigma
+  Star
 } from "lucide-react"
 
 import {
@@ -131,30 +130,32 @@ export default function AdminDashboard() {
 
   const pendingActions = evaluations.filter(e => e.status === 'pending' || !e.status).length
 
-  // Advanced Statistics
-  const allScores = finishedEvals.map(e => e.total_score || 0).sort((a, b) => a - b)
+  // Star Ranking System
+  const centerMap = new Map(centers.map(c => [c.id, c.name]))
 
-  const medianScore = allScores.length > 0
-    ? allScores.length % 2 === 0
-      ? Math.round((allScores[allScores.length / 2 - 1] + allScores[allScores.length / 2]) / 2)
-      : allScores[Math.floor(allScores.length / 2)]
-    : 0
+  type RankedSite = { name: string; score: number }
 
-  const stdDeviation = allScores.length > 1
-    ? Math.round(Math.sqrt(allScores.reduce((sum, s) => sum + Math.pow(s - avgScore, 2), 0) / allScores.length) * 10) / 10
-    : 0
+  const starTiers: { stars: number; label: string; min: number; max: number; sites: RankedSite[] }[] = [
+    { stars: 5, label: "Excellence", min: 90, max: 100, sites: [] },
+    { stars: 4, label: "High Performance", min: 70, max: 89, sites: [] },
+    { stars: 3, label: "Developing", min: 50, max: 69, sites: [] },
+    { stars: 2, label: "Needs Improvement", min: 30, max: 49, sites: [] },
+    { stars: 1, label: "Critical", min: 0, max: 29, sites: [] },
+  ]
 
-  const p25 = allScores.length > 0
-    ? allScores[Math.floor(allScores.length * 0.25)]
-    : 0
+  for (const ev of finishedEvals) {
+    const score = ev.total_score || 0
+    const name = centerMap.get(ev.center_id) || 'Unknown'
+    const tier = starTiers.find(t => score >= t.min && score <= t.max)
+    if (tier) {
+      tier.sites.push({ name, score })
+    }
+  }
 
-  const p75 = allScores.length > 0
-    ? allScores[Math.floor(allScores.length * 0.75)]
-    : 0
-
-  const maxScore = allScores.length > 0 ? allScores[allScores.length - 1] : 0
-  const minScore = allScores.length > 0 ? allScores[0] : 0
-  const scoreRange = maxScore - minScore
+  // Sort each tier by score descending
+  for (const tier of starTiers) {
+    tier.sites.sort((a, b) => b.score - a.score)
+  }
 
   // Geographic Distribution
   const countryDistMap = centers.reduce((acc: any, curr) => {
@@ -204,9 +205,9 @@ export default function AdminDashboard() {
       {/* Strategic Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Global Sites", value: totalSites, icon: Globe, color: "bg-blue-50 text-blue-600", sub: "Total network" },
-          { label: "Approval Rate", value: `${approvedRate}%`, icon: TrendingUp, color: "bg-green-50 text-green-600", sub: "Of completed evals" },
-          { label: "Avg. Quality Score", value: avgScore, icon: Activity, color: "bg-indigo-50 text-indigo-600", sub: "Out of 100" },
+          { label: "Global Sites", value: totalSites, icon: Globe, color: "bg-blue-50 text-blue-600", sub: "Total registered sites" },
+          { label: "Approved Sites", value: approvedCount, icon: TrendingUp, color: "bg-green-50 text-green-600", sub: "Green status" },
+          { label: "Avg. Quality Score", value: `${avgScore}%`, icon: Activity, color: "bg-indigo-50 text-indigo-600", sub: "Overall average" },
           { label: "Pending Tasks", value: pendingActions, icon: Clock, color: "bg-amber-50 text-amber-600", sub: "Awaiting client" },
         ].map((stat, i) => (
           <div key={i} className="card p-8 flex flex-col justify-between border-none shadow-xl shadow-slate-200/50 hover:translate-y-[-4px] transition-all duration-300">
@@ -224,38 +225,68 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Advanced Score Analytics */}
+      {/* Star Ranking */}
       <div className="card p-8 border-none shadow-xl shadow-slate-200/50">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-2xl bg-violet-50 text-violet-600">
-            <Sigma className="w-5 h-5" />
+          <div className="p-3 rounded-2xl bg-amber-50 text-amber-500">
+            <Star className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Score Analytics</h3>
-            <p className="text-xs text-slate-500">Statistical distribution of completed evaluations</p>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Site Ranking</h3>
+            <p className="text-xs text-slate-500">Classification by performance tier</p>
           </div>
         </div>
 
-        {allScores.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { label: "Median", value: medianScore, sub: "Middle value" },
-              { label: "Std Dev", value: stdDeviation, sub: "Dispersion" },
-              { label: "P25", value: p25, sub: "25th percentile" },
-              { label: "P75", value: p75, sub: "75th percentile" },
-              { label: "Range", value: scoreRange, sub: `${minScore} — ${maxScore}` },
-              { label: "Sample", value: allScores.length, sub: "Evaluations" },
-            ].map((item, i) => (
-              <div key={i} className="text-center p-4 rounded-2xl bg-slate-50">
-                <p className="text-2xl font-black text-slate-900">{item.value}</p>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{item.label}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">{item.sub}</p>
+        {finishedEvals.length > 0 ? (
+          <div className="space-y-5">
+            {starTiers.map((tier) => (
+              <div key={tier.stars} className="flex items-start gap-4">
+                {/* Stars */}
+                <div className="flex items-center gap-0.5 pt-1 w-28 flex-shrink-0">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${
+                        i < tier.stars
+                          ? 'text-amber-400 fill-amber-400'
+                          : 'text-slate-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {/* Tier info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black text-slate-700 uppercase tracking-wider">{tier.label}</span>
+                    <span className="text-[10px] text-slate-400">({tier.min}–{tier.max})</span>
+                  </div>
+
+                  {tier.sites.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {tier.sites.slice(0, 5).map((site, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-100"
+                        >
+                          {site.name}
+                          <span className="text-slate-400 font-bold">{site.score}</span>
+                        </span>
+                      ))}
+                      {tier.sites.length > 5 && (
+                        <span className="text-xs text-slate-400 self-center">+{tier.sites.length - 5} more</span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-slate-300 font-bold">—</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-8 text-slate-400 text-sm">
-            No scored evaluations yet to compute statistics.
+            No evaluated sites yet.
           </div>
         )}
       </div>

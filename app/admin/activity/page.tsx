@@ -5,17 +5,10 @@ import { supabaseBrowser } from "@/lib/supabase/client"
 import {
   History,
   RefreshCw,
-  ClipboardCheck,
   Building2,
   Calendar,
-  Filter,
-  ChevronDown,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   Search
 } from "lucide-react"
 
@@ -56,7 +49,6 @@ type Evaluation = {
 }
 
 export default function ActivityLogPage() {
-  const supabase = supabaseBrowser()
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'evaluations' | 'centers'>('all')
@@ -64,6 +56,7 @@ export default function ActivityLogPage() {
 
   const loadActivity = useCallback(async () => {
     setLoading(true)
+    const supabase = supabaseBrowser()
 
     const [evalsRes, centersRes] = await Promise.all([
       supabase
@@ -124,7 +117,7 @@ export default function ActivityLogPage() {
 
     setEvents(activityEvents)
     setLoading(false)
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     loadActivity()
