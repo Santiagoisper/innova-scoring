@@ -25,6 +25,7 @@ export async function POST(req: Request) {
       notes,
       generalNotes,
       attachments,
+      disclaimer_accepted
     } = body
 
     /* =========================
@@ -68,13 +69,6 @@ export async function POST(req: Request) {
       )
     }
 
-    if (evaluation.status !== "pending") {
-      return NextResponse.json(
-        { error: "Evaluation already submitted" },
-        { status: 400 }
-      )
-    }
-
     /* =========================
        2) Fetch Criteria for Scoring
     ========================= */
@@ -92,16 +86,19 @@ export async function POST(req: Request) {
     /* =========================
        3) Calculate Score using Centralized Logic
     ========================= */
-    const scoringInput = Object.entries(responses).map(([id, score]) => {
-      const numScore = Number(score)
-      if (isNaN(numScore) || numScore < 0 || numScore > 100) {
-        throw new Error(`Invalid score for criterion ${id}: must be between 0 and 100`)
-      }
-      return {
-        criterion_id: id,
-        score: numScore
-      }
-    })
+    // Only use numeric scores for the weighted calculation
+    const scoringInput = Object.entries(responses)
+      .filter(([id, val]) => typeof val === 'number')
+      .map(([id, score]) => {
+        const numScore = Number(score)
+        if (isNaN(numScore) || numScore < 0 || numScore > 100) {
+          throw new Error(`Invalid score for criterion ${id}: must be between 0 and 100`)
+        }
+        return {
+          criterion_id: id,
+          score: numScore
+        }
+      })
 
     const { totalScore, status: scoreLevel } = calculateWeightedScore(
       scoringInput,
@@ -119,10 +116,12 @@ export async function POST(req: Request) {
         status: "completed",
         score_level: scoreLevel,
         responses: {
-          scores: responses,
+          scores: responses, // Stores both numeric and text responses
           attachments: attachments || {},
           notes: notes || {},
           generalNotes: generalNotes || "",
+          disclaimer_accepted: disclaimer_accepted || false,
+          submitted_at: new Date().toISOString()
         },
         notes: generalNotes || null,
         updated_at: new Date().toISOString()
@@ -137,19 +136,20 @@ export async function POST(req: Request) {
     }
 
     /* =========================
-       5) Save Evaluation Items
+       5) Save Evaluation Items (Only numeric for compatibility)
     ========================= */
-    // Delete existing items for this evaluation to be safe (idempotency)
     await supabase
       .from("evaluation_items")
       .delete()
       .eq("evaluation_id", evaluation.id)
 
-    const items = Object.entries(responses).map(([criteria_id, score]) => ({
-      evaluation_id: evaluation.id,
-      criteria_id: criteria_id, // Keep as string if that's what the DB expects or cast if needed
-      score: Number(score),
-    }))
+    const items = Object.entries(responses)
+      .filter(([_, val]) => typeof val === 'number')
+      .map(([criteria_id, score]) => ({
+        evaluation_id: evaluation.id,
+        criteria_id: criteria_id,
+        score: Number(score),
+      }))
 
     if (items.length > 0) {
       const { error: itemsError } = await supabase
@@ -158,7 +158,6 @@ export async function POST(req: Request) {
       
       if (itemsError) {
         console.error("Error inserting evaluation items:", itemsError)
-        // We don't fail the whole request here as the main evaluation is updated
       }
     }
 
