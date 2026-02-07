@@ -125,12 +125,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Test Credentials Info */}
-          <div className="mt-8 pt-6 border-t border-white/10 text-center text-xs text-white/40 space-y-2">
-            <p>Credenciales de prueba:</p>
-            <p className="text-white/60 font-mono">Usuario: innova</p>
-            <p className="text-white/60 font-mono">Contraseña: trials2026</p>
-          </div>
+
         </div>
 
         {/* Security Badge */}
