@@ -22,35 +22,20 @@ export async function POST(req: Request) {
       token,
       evaluator_email,
       responses,
-      notes,
-      generalNotes,
       attachments,
-      disclaimer_accepted
+      disclaimer_accepted,
+      submitted_at
     } = body
 
     /* =========================
        Validations
     ========================= */
     if (!token) {
-      return NextResponse.json(
-        { error: "Missing evaluation token" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Missing evaluation token" }, { status: 400 })
     }
 
-    if (!responses || typeof responses !== 'object' || Object.keys(responses).length === 0) {
-      return NextResponse.json(
-        { error: "Missing or invalid responses" },
-        { status: 400 }
-      )
-    }
-
-    // Basic email validation if provided
-    if (evaluator_email && !/^\S+@\S+\.\S+$/.test(evaluator_email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      )
+    if (!responses || typeof responses !== 'object') {
+      return NextResponse.json({ error: "Missing or invalid responses" }, { status: 400 })
     }
 
     /* =========================
@@ -63,10 +48,7 @@ export async function POST(req: Request) {
       .single()
 
     if (fetchError || !evaluation) {
-      return NextResponse.json(
-        { error: "Invalid or expired evaluation link" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Invalid or expired evaluation link" }, { status: 404 })
     }
 
     /* =========================
@@ -77,28 +59,18 @@ export async function POST(req: Request) {
       .select("*")
     
     if (criteriaError || !criteria) {
-      return NextResponse.json(
-        { error: "Failed to fetch evaluation criteria" },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "Failed to fetch evaluation criteria" }, { status: 500 })
     }
 
     /* =========================
-       3) Calculate Score using Centralized Logic
+       3) Calculate Score
     ========================= */
-    // Only use numeric scores for the weighted calculation
     const scoringInput = Object.entries(responses)
-      .filter(([id, val]) => typeof val === 'number')
-      .map(([id, score]) => {
-        const numScore = Number(score)
-        if (isNaN(numScore) || numScore < 0 || numScore > 100) {
-          throw new Error(`Invalid score for criterion ${id}: must be between 0 and 100`)
-        }
-        return {
-          criterion_id: id,
-          score: numScore
-        }
-      })
+      .filter(([_, val]) => typeof val === 'number')
+      .map(([id, score]) => ({
+        criterion_id: id,
+        score: Number(score)
+      }))
 
     const { totalScore, status: scoreLevel } = calculateWeightedScore(
       scoringInput,
@@ -108,6 +80,7 @@ export async function POST(req: Request) {
     /* =========================
        4) Update Evaluation
     ========================= */
+    // We store the exact same format that the Center Details page expects
     const { error: updateError } = await supabase
       .from("evaluations")
       .update({
@@ -116,71 +89,43 @@ export async function POST(req: Request) {
         status: "completed",
         score_level: scoreLevel,
         responses: {
-          scores: responses, // Stores both numeric and text responses
+          scores: responses,
           attachments: attachments || {},
-          notes: notes || {},
-          generalNotes: generalNotes || "",
           disclaimer_accepted: disclaimer_accepted || false,
-          submitted_at: new Date().toISOString()
+          submitted_at: submitted_at || new Date().toISOString()
         },
-        notes: generalNotes || null,
         updated_at: new Date().toISOString()
       })
       .eq("id", evaluation.id)
 
     if (updateError) {
-      return NextResponse.json(
-        { error: updateError.message },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
 
     /* =========================
-       5) Save Evaluation Items (Only numeric for compatibility)
+       5) Save Evaluation Items (Optional but good for legacy/db-level analytics)
     ========================= */
-    await supabase
-      .from("evaluation_items")
-      .delete()
-      .eq("evaluation_id", evaluation.id)
+    await supabase.from("evaluation_items").delete().eq("evaluation_id", evaluation.id)
 
-    const items = Object.entries(responses)
-      .filter(([_, val]) => typeof val === 'number')
-      .map(([criteria_id, score]) => ({
-        evaluation_id: evaluation.id,
-        criteria_id: criteria_id,
-        score: Number(score),
-      }))
+    const items = scoringInput.map((item) => ({
+      evaluation_id: evaluation.id,
+      criteria_id: item.criterion_id,
+      score: item.score,
+    }))
 
     if (items.length > 0) {
-      const { error: itemsError } = await supabase
-        .from("evaluation_items")
-        .insert(items)
-      
-      if (itemsError) {
-        console.error("Error inserting evaluation items:", itemsError)
-      }
+      await supabase.from("evaluation_items").insert(items)
     }
 
-    /* =========================
-       Success Response
-    ========================= */
     return NextResponse.json({
       success: true,
       evaluation_id: evaluation.id,
-      token,
       score: totalScore,
       level: scoreLevel,
       status: "completed",
     })
   } catch (err: any) {
     console.error("Submit evaluation error:", err)
-
-    const status = err.message?.includes("Invalid score") ? 400 : 500
-    const message = status === 400 ? err.message : "Internal server error"
-
-    return NextResponse.json(
-      { error: message },
-      { status }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

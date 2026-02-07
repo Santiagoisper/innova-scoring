@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { 
   RefreshCw, 
   CheckCircle2, 
@@ -10,7 +10,8 @@ import {
   FileCheck, 
   ShieldCheck,
   Building2,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 
 type Criterion = {
@@ -29,13 +30,15 @@ export default function ClienteTokenPage() {
   const [loading, setLoading] = useState(true);
   const [submissionId, setSubmissionId] = useState<string>("");
   const [centerName, setCenterName] = useState<string>("");
+  const [evaluatorEmail, setEvaluatorEmail] = useState<string>("");
 
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<number, any>>({});
   const [files, setFiles] = useState<Record<number, File | null>>({});
   const [uploading, setUploading] = useState<Record<number, boolean>>({});
-  const [uploaded, setUploaded] = useState<Record<number, string>>({}); // Stores URLs
+  const [uploaded, setUploaded] = useState<Record<number, any>>({}); // Stores file info objects
 
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Load Submission & Center Info
   useEffect(() => {
@@ -58,10 +61,15 @@ export default function ClienteTokenPage() {
 
         setSubmissionId(data.submission.id);
         
-        // Load center info if needed
+        // Load center info
         const centerRes = await fetch(`/api/admin/centers/${data.submission.center_id}`);
-        const centerData = await centerRes.json();
-        if (centerData) setCenterName(centerData.name);
+        if (centerRes.ok) {
+          const centerData = await centerRes.json();
+          if (centerData) {
+            setCenterName(centerData.name);
+            setEvaluatorEmail(centerData.contact_email || "");
+          }
+        }
 
       } catch (err: any) {
         console.error("Unexpected error:", err.message);
@@ -89,20 +97,8 @@ export default function ClienteTokenPage() {
     loadCriteria();
   }, []);
 
-  const submitAnswer = async (criterionId: number, answer: string) => {
-    setAnswers((prev) => ({ ...prev, [criterionId]: answer }));
-
-    if (!submissionId) return;
-
-    await fetch("/api/client/token/submit-answer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        submission_id: submissionId,
-        criterion_id: criterionId,
-        answer,
-      }),
-    });
+  const handleAnswerChange = (criterionId: number, value: any) => {
+    setAnswers((prev) => ({ ...prev, [criterionId]: value }));
   };
 
   const uploadFile = async (criterionId: number) => {
@@ -125,12 +121,73 @@ export default function ClienteTokenPage() {
       const data = await res.json();
 
       if (res.ok && data.url) {
-        setUploaded((prev) => ({ ...prev, [criterionId]: data.url }));
+        setUploaded((prev) => ({ 
+          ...prev, 
+          [criterionId]: {
+            file_path: data.path || data.url,
+            file_name: file.name,
+            uploaded_at: new Date().toISOString()
+          } 
+        }));
+      } else {
+        alert("Upload failed: " + (data.error || "Unknown error"));
       }
     } catch (err: any) {
       console.error("Upload error:", err.message);
+      alert("Upload error: " + err.message);
     } finally {
       setUploading((prev) => ({ ...prev, [criterionId]: false }));
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    // Basic validation: check if all boolean criteria are answered
+    const unanswered = criteria
+      .filter(c => c.response_type === 'boolean')
+      .filter(c => !answers[c.id]);
+    
+    if (unanswered.length > 0 && !confirm(`You have ${unanswered.length} unanswered questions. Do you want to submit anyway?`)) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Format answers for the API: boolean answers to 100/0, text as is
+      const formattedResponses: Record<string, any> = {};
+      Object.entries(answers).forEach(([id, val]) => {
+        if (val === 'yes') formattedResponses[id] = 100;
+        else if (val === 'no') formattedResponses[id] = 0;
+        else if (val === 'na') formattedResponses[id] = null;
+        else formattedResponses[id] = val; // text
+      });
+
+      const payload = {
+        token,
+        evaluator_email: evaluatorEmail,
+        responses: formattedResponses,
+        attachments: uploaded,
+        disclaimer_accepted: true,
+        submitted_at: new Date().toISOString()
+      };
+
+      const res = await fetch("/api/submit-evaluation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        alert("Evaluation submitted successfully. Thank you for your time.");
+        router.push('/cliente');
+      } else {
+        const errorData = await res.json();
+        alert("Submission failed: " + (errorData.error || "Please try again later."));
+      }
+    } catch (err: any) {
+      console.error("Submission error:", err);
+      alert("An unexpected error occurred during submission.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -237,7 +294,7 @@ export default function ClienteTokenPage() {
                     ['yes', 'no', 'na'].map((opt) => (
                       <button
                         key={opt}
-                        onClick={() => submitAnswer(c.id, opt)}
+                        onClick={() => handleAnswerChange(c.id, opt)}
                         className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
                           answers[c.id] === opt 
                             ? 'bg-slate-900 border-slate-900 text-white shadow-lg' 
@@ -259,7 +316,7 @@ export default function ClienteTokenPage() {
                     placeholder="Provide detailed information here..."
                     className="input min-h-[120px] py-4"
                     value={answers[c.id] || ""}
-                    onChange={(e) => submitAnswer(c.id, e.target.value)}
+                    onChange={(e) => handleAnswerChange(c.id, e.target.value)}
                   />
                 </div>
               )}
@@ -309,13 +366,18 @@ export default function ClienteTokenPage() {
             <p className="text-slate-400 text-sm">Ensure all required documentation is uploaded before finishing.</p>
           </div>
           <button 
-            onClick={() => {
-              alert("Evaluation saved successfully. Our team will review your submission.");
-              router.push('/cliente');
-            }}
-            className="btn-primary bg-white text-slate-900 hover:bg-slate-100 px-12 py-5 text-sm font-black uppercase tracking-widest shadow-2xl shadow-white/10"
+            onClick={handleFinalSubmit}
+            disabled={submitting}
+            className="btn-primary bg-white text-slate-900 hover:bg-slate-100 px-12 py-5 text-sm font-black uppercase tracking-widest shadow-2xl shadow-white/10 disabled:opacity-50 flex items-center gap-2"
           >
-            Finish Evaluation
+            {submitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Finish Evaluation"
+            )}
           </button>
         </footer>
       </div>

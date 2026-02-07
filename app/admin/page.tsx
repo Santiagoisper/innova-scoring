@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import {
   Building2,
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
   const [loading, setLoading] = useState(true)
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true)
     const [centersRes, evalsRes] = await Promise.all([
       supabase.from("centers").select("*"),
@@ -85,16 +85,11 @@ export default function AdminDashboard() {
     if (centersRes.data) setCenters(centersRes.data)
     if (evalsRes.data) setEvaluations(evalsRes.data)
     setLoading(false)
-  }
+  }, [supabase])
 
   useEffect(() => {
     loadData()
-  }, [])
-
-  // In the current database, 'submitted' or 'completed' are used for finished evaluations
-  const completedEvals = evaluations.filter((e) => 
-    e.status === "completed" || e.status === "submitted" || (e.total_score !== null && e.total_score > 0)
-  )
+  }, [loadData])
 
   // Determine score level if not set in DB
   const getLevel = (score: number | null) => {
@@ -104,18 +99,35 @@ export default function AdminDashboard() {
     return 'red'
   }
 
-  // Metrics
-  const stats = {
-    totalSites: centers.length,
-    activeEvaluations: evaluations.length,
-    approvedRate: completedEvals.length > 0 
-      ? Math.round((completedEvals.filter(e => (e.score_level === 'green' || getLevel(e.total_score) === 'green')).length / completedEvals.length) * 100) 
-      : 0,
-    pendingActions: evaluations.filter(e => e.status === 'pending' || !e.status).length,
-    avgScore: completedEvals.length > 0
-      ? Math.round(completedEvals.reduce((acc, curr) => acc + (curr.total_score || 0), 0) / completedEvals.length)
-      : 0
-  }
+  // Filter evaluations that are actually finished
+  const finishedEvals = evaluations.filter((e) => 
+    e.status === "completed" || e.status === "submitted" || (e.total_score !== null && e.total_score > 0)
+  )
+
+  // Metrics Calculation
+  const totalSites = centers.length
+  
+  const approvedCount = finishedEvals.filter(e => 
+    e.score_level === 'green' || (e.score_level === null && getLevel(e.total_score) === 'green')
+  ).length
+
+  const conditionalCount = finishedEvals.filter(e => 
+    e.score_level === 'yellow' || (e.score_level === null && getLevel(e.total_score) === 'yellow')
+  ).length
+
+  const notApprovedCount = finishedEvals.filter(e => 
+    e.score_level === 'red' || (e.score_level === null && getLevel(e.total_score) === 'red')
+  ).length
+
+  const approvedRate = finishedEvals.length > 0 
+    ? Math.round((approvedCount / finishedEvals.length) * 100) 
+    : 0
+
+  const avgScore = finishedEvals.length > 0
+    ? Math.round(finishedEvals.reduce((acc, curr) => acc + (curr.total_score || 0), 0) / finishedEvals.length)
+    : 0
+
+  const pendingActions = evaluations.filter(e => e.status === 'pending' || !e.status).length
 
   // Geographic Distribution
   const countryDistMap = centers.reduce((acc: any, curr) => {
@@ -128,15 +140,15 @@ export default function AdminDashboard() {
     .sort((a, b) => (b.count as number) - (a.count as number))
     .slice(0, 5)
 
-  // Status Distribution
+  // Status Distribution (Matches the counts exactly)
   const statusDist = [
-    { name: "Approved", value: completedEvals.filter((e) => e.score_level === "green" || getLevel(e.total_score) === 'green').length, color: COLORS.success },
-    { name: "Conditional", value: completedEvals.filter((e) => e.score_level === "yellow" || getLevel(e.total_score) === 'yellow').length, color: COLORS.warning },
-    { name: "Not Approved", value: completedEvals.filter((e) => e.score_level === "red" || getLevel(e.total_score) === 'red').length, color: COLORS.danger },
-    { name: "Pending", value: stats.pendingActions, color: COLORS.neutral },
+    { name: "Approved", value: approvedCount, color: COLORS.success },
+    { name: "Conditional", value: conditionalCount, color: COLORS.warning },
+    { name: "Not Approved", value: notApprovedCount, color: COLORS.danger },
+    { name: "Pending", value: pendingActions, color: COLORS.neutral },
   ].filter(d => d.value > 0)
 
-  if (loading) {
+  if (loading && centers.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
         <RefreshCw className="w-8 h-8 text-primary-600 animate-spin" />
@@ -156,7 +168,7 @@ export default function AdminDashboard() {
             <ShieldCheck className="w-4 h-4" />
             System Live
           </div>
-          <button onClick={loadData} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-primary-600 hover:border-primary-100 transition-all shadow-sm">
+          <button onClick={loadData} disabled={loading} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-primary-600 hover:border-primary-100 transition-all shadow-sm disabled:opacity-50">
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
@@ -165,10 +177,10 @@ export default function AdminDashboard() {
       {/* Strategic Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Global Sites", value: stats.totalSites, icon: Globe, color: "bg-blue-50 text-blue-600", sub: "Total network" },
-          { label: "Approval Rate", value: `${stats.approvedRate}%`, icon: TrendingUp, color: "bg-green-50 text-green-600", sub: "Of completed evals" },
-          { label: "Avg. Quality Score", value: stats.avgScore, icon: Activity, color: "bg-indigo-50 text-indigo-600", sub: "Out of 100" },
-          { label: "Pending Tasks", value: stats.pendingActions, icon: Clock, color: "bg-amber-50 text-amber-600", sub: "Awaiting client" },
+          { label: "Global Sites", value: totalSites, icon: Globe, color: "bg-blue-50 text-blue-600", sub: "Total network" },
+          { label: "Approval Rate", value: `${approvedRate}%`, icon: TrendingUp, color: "bg-green-50 text-green-600", sub: "Of completed evals" },
+          { label: "Avg. Quality Score", value: avgScore, icon: Activity, color: "bg-indigo-50 text-indigo-600", sub: "Out of 100" },
+          { label: "Pending Tasks", value: pendingActions, icon: Clock, color: "bg-amber-50 text-amber-600", sub: "Awaiting client" },
         ].map((stat, i) => (
           <div key={i} className="card p-8 flex flex-col justify-between border-none shadow-xl shadow-slate-200/50 hover:translate-y-[-4px] transition-all duration-300">
             <div className={`p-4 rounded-2xl w-fit ${stat.color}`}>

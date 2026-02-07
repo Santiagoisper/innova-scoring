@@ -1,7 +1,53 @@
 import Link from 'next/link'
-import { Building2, ShieldCheck, BarChart3, Users, ArrowRight, Sparkles } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { supabaseBrowser } from '@/lib/supabase/client'
+import { Building2, ShieldCheck, BarChart3, Users, ArrowRight, Sparkles, Phone, Mail, MapPin } from 'lucide-react'
 
 export default function LandingPage() {
+  const [metrics, setMetrics] = useState({
+    criteriaCount: 0,
+    categoriesCount: 0, // Placeholder, will try to fetch if possible
+    maturityLevelsCount: 0, // Placeholder, will try to fetch if possible
+  })
+  const [loadingMetrics, setLoadingMetrics] = useState(true)
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      setLoadingMetrics(true)
+      const supabase = supabaseBrowser()
+      
+      // Fetch criteria count
+      const { count: criteriaCount, error: criteriaError } = await supabase
+        .from('criteria')
+        .select('*', { count: 'exact' })
+
+      // Fetch categories count (assuming categories are defined in criteria table, e.g., unique values in a 'category' column)
+      // If there's no explicit 'category' column, this will need adjustment.
+      const { data: distinctCategories, error: categoriesError } = await supabase
+        .from('criteria')
+        .select('category', { distinct: true })
+
+      // Fetch maturity levels count (assuming maturity levels are defined in criteria table, e.g., unique values in a 'maturity_level' column)
+      // If there's no explicit 'maturity_level' column, this will need adjustment.
+      const { data: distinctMaturityLevels, error: maturityLevelsError } = await supabase
+        .from('criteria')
+        .select('maturity_level', { distinct: true })
+
+      if (criteriaError) console.error("Error fetching criteria count:", criteriaError.message)
+      if (categoriesError) console.error("Error fetching categories count:", categoriesError.message)
+      if (maturityLevelsError) console.error("Error fetching maturity levels count:", maturityLevelsError.message)
+
+      setMetrics({
+        criteriaCount: criteriaCount || 0,
+        categoriesCount: distinctCategories?.length || 0,
+        maturityLevelsCount: distinctMaturityLevels?.length || 0,
+      })
+      setLoadingMetrics(false)
+    }
+
+    fetchMetrics()
+  }, [])
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -20,8 +66,8 @@ export default function LandingPage() {
             <nav className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">Features</a>
               <a href="#how-it-works" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">How it Works</a>
-              <Link href="/login" className="btn-primary btn-sm">
-                Sign In
+              <Link href="/admin" className="btn-primary btn-sm">
+                Admin Access
               </Link>
             </nav>
           </div>
@@ -48,7 +94,7 @@ export default function LandingPage() {
             
             <p className="text-lg text-slate-600 mb-10 max-w-2xl mx-auto animate-slide-up animate-delay-100">
               A comprehensive platform for clinical research organizations to assess, 
-              score, and benchmark investigational sites across 18 key criteria.
+              score, and benchmark investigational sites across key criteria.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up animate-delay-200">
@@ -61,7 +107,7 @@ export default function LandingPage() {
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link 
-                href="/login"
+                href="/admin"
                 className="btn btn-lg btn-outline group"
               >
                 <ShieldCheck className="w-5 h-5" />
@@ -74,9 +120,9 @@ export default function LandingPage() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20 animate-slide-up animate-delay-300">
             {[
-              { label: 'Criteria Evaluated', value: '18' },
-              { label: 'Categories', value: '5' },
-              { label: 'Maturity Levels', value: '5' },
+              { label: 'Criteria Evaluated', value: loadingMetrics ? '...' : metrics.criteriaCount },
+              { label: 'Categories', value: loadingMetrics ? '...' : metrics.categoriesCount },
+              { label: 'Maturity Levels', value: loadingMetrics ? '...' : metrics.maturityLevelsCount },
               { label: 'Weighted Scoring', value: '100%' },
             ].map((stat, i) => (
               <div key={i} className="text-center p-6 rounded-2xl bg-white/60 backdrop-blur border border-white/80 shadow-soft">
@@ -180,7 +226,7 @@ export default function LandingPage() {
               {
                 step: '02',
                 title: 'Complete Assessment',
-                description: 'Sites complete the self-assessment across all 18 criteria with supporting notes.',
+                description: 'Sites complete the self-assessment across all criteria with supporting notes.',
               },
               {
                 step: '03',
@@ -207,7 +253,7 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-20 gradient-primary relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NCAwLTE4IDguMDYtMTggMThzOC4wNiAxOCAxOCAxOCAxOC04LjA2IDE4LTE4LTguMDYtMTgtMTgtMTh6bTAgMzJjLTcuNzMyIDAtMTQtNi4yNjgtMTQtMTRzNi4yNjgtMTQgMTQtMTQgMTQgNi4yNjggMTQgMTQtNi4yNjggMTQtMTQgMTR6IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9Ii4wNSIvPjwvZz48L3N2Zz4=')] opacity-50"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NCAwLTE4IDguMDYtMTggMThzOC4wNiAxOCAxOCAxOCAxOC04LjA2IDE4LTE4LTguMDYtMTgtMTgtMTh6bTAgMzJjLTcuNzMyIDAtMTQtNi4yNjgtMTQtMTRzNi4yNjgtMTQgMTQtMTQgMTQgNi4yNjggMTQgMTQtNi4yNjggMTQtMTQgMTR6IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9Ii4wNSIvPjwvZ24+PC9zdmc+')] opacity-50"></div>
         
         <div className="relative max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white font-display mb-6">
@@ -218,7 +264,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link 
-              href="/login"
+              href="/admin"
               className="btn btn-lg bg-white text-primary-700 hover:bg-primary-50 shadow-xl"
             >
               Get Started
@@ -241,9 +287,23 @@ export default function LandingPage() {
                 <p className="text-slate-400 text-sm">Site Scoring Platform v5.0</p>
               </div>
             </div>
-            <p className="text-slate-400 text-sm">
-              © {new Date().getFullYear()} Innova Trials. All rights reserved.
-            </p>
+            <div className="text-slate-400 text-sm text-center md:text-right space-y-1">
+              <p className="font-bold">Contact</p>
+              <p>104 Crandon Blvd, Suite 312</p>
+              <p>Key Biscayne, FL33149</p>
+              <p className="flex items-center justify-center md:justify-end gap-2">
+                <Phone className="w-4 h-4" /> +1-(786)-351-1786
+              </p>
+              <p className="flex items-center justify-center md:justify-end gap-2">
+                <Mail className="w-4 h-4" /> info@innovatrials.com
+              </p>
+              <p className="flex items-center justify-center md:justify-end gap-2">
+                <MapPin className="w-4 h-4" /> www.innovatrials.com
+              </p>
+            </div>
+          </div>
+          <div className="mt-8 text-center text-slate-500 text-xs">
+            © {new Date().getFullYear()} Innova Trials. All rights reserved.
           </div>
         </div>
       </footer>

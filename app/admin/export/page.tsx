@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import { 
   Download, 
@@ -27,33 +27,45 @@ export default function ExportPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [deleting, setDeleting] = useState<string | null>(null)
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('evaluations')
       .select('*, centers(*)')
       .order('created_at', { ascending: false })
     
-    if (data) setEvaluations(data)
+    if (error) {
+      console.error("Error loading evaluations:", error)
+    } else {
+      setEvaluations(data || [])
+    }
     setLoading(false)
-  }
+  }, [supabase])
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [loadData])
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this evaluation record? This will not delete the center, only this specific result.")) return
+    if (!confirm("Are you sure you want to delete this evaluation record? This will permanently remove the results from the database. The center itself will not be deleted.")) return
     
     setDeleting(id)
-    const { error } = await supabase.from("evaluations").delete().eq("id", id)
-    
-    if (error) {
-      alert("Error deleting record: " + error.message)
-    } else {
+    try {
+      const { error } = await supabase
+        .from("evaluations")
+        .delete()
+        .eq("id", id)
+      
+      if (error) throw error
+
+      // Update local state only after successful DB deletion
       setEvaluations(prev => prev.filter(e => e.id !== id))
+    } catch (error: any) {
+      console.error("Delete failed:", error)
+      alert("Error deleting record: " + error.message)
+    } finally {
+      setDeleting(null)
     }
-    setDeleting(null)
   }
 
   const handleExport = () => {
@@ -102,7 +114,7 @@ export default function ExportPage() {
     e.centers?.code?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  if (loading) return (
+  if (loading && evaluations.length === 0) return (
     <div className="flex items-center justify-center py-20">
       <RefreshCw className="w-8 h-8 text-primary-600 animate-spin" />
     </div>
@@ -118,7 +130,8 @@ export default function ExportPage() {
         <div className="flex gap-3">
           <button 
             onClick={loadData}
-            className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-primary-600 hover:border-primary-100 transition-all shadow-sm"
+            disabled={loading}
+            className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-primary-600 hover:border-primary-100 transition-all shadow-sm disabled:opacity-50"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -190,7 +203,12 @@ export default function ExportPage() {
             </div>
           </div>
 
-          <div className="card overflow-hidden shadow-xl shadow-slate-200/50 border-none">
+          <div className="card overflow-hidden shadow-xl shadow-slate-200/50 border-none relative">
+            {loading && evaluations.length > 0 && (
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                <RefreshCw className="w-6 h-6 text-primary-600 animate-spin" />
+              </div>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
