@@ -9,22 +9,25 @@ async function validateToken(token: string) {
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const { data: submission, error } = await supabase
-    .from("client_submissions")
-    .select(
-      "id, center_id, client_name, client_email, client_organization, submission_status, disclaimer_accepted, disclaimer_accepted_at"
-    )
-    .eq("public_token", token)
+  // Search in 'evaluations' table which is where the tokens are actually stored
+  const { data: evaluation, error } = await supabase
+    .from("evaluations")
+    .select("id, center_id, status, token")
+    .eq("token", token)
     .single();
 
-  if (error || !submission) {
+  if (error || !evaluation) {
     return { error: "Invalid or expired token", status: 404 };
   }
 
   return {
     success: true,
-    submission_id: submission.id,
-    submission,
+    submission_id: evaluation.id,
+    submission: {
+      id: evaluation.id,
+      center_id: evaluation.center_id,
+      status: evaluation.status
+    },
   };
 }
 
