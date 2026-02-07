@@ -142,8 +142,7 @@ export default function CentersPage() {
 
   function copyToClipboard(token: string, e: React.MouseEvent) {
     e.stopPropagation()
-    const link = `${window.location.origin}/cliente/${token}`
-    navigator.clipboard.writeText(link)
+    navigator.clipboard.writeText(token)
     setCopiedToken(token)
     setTimeout(() => setCopiedToken(null), 2000)
   }
