@@ -9,20 +9,19 @@ import {
   AlertCircle, 
   CheckCircle2, 
   Settings2,
-  HelpCircle,
   FileText,
   BarChart4,
-  RefreshCw,
-  Activity
+  RefreshCw
 } from "lucide-react"
 
 interface Criterion {
-  id: number
+  id: number | string
   name: string
-  category: string
+  category?: string
   weight: number
-  critical: boolean
-  response_type: 'boolean' | 'text'
+  critical?: boolean
+  response_type?: 'boolean' | 'text'
+  description?: string
 }
 
 export default function CriteriaManagement() {
@@ -35,13 +34,20 @@ export default function CriteriaManagement() {
   useEffect(() => {
     async function loadCriteria() {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('criteria')
-        .select('*')
-        .order('id', { ascending: true })
-      
-      if (data) setCriteria(data)
-      setLoading(false)
+      try {
+        const { data, error } = await supabase
+          .from('criteria')
+          .select('*')
+          .order('id', { ascending: true })
+        
+        if (error) throw error
+        if (data) setCriteria(data)
+      } catch (err: any) {
+        console.error("Error loading criteria:", err)
+        setMessage({ type: 'error', text: 'Failed to load parameters from database.' })
+      } finally {
+        setLoading(false)
+      }
     }
     loadCriteria()
   }, [supabase])
@@ -50,7 +56,6 @@ export default function CriteriaManagement() {
     setSaving(true)
     setMessage(null)
     try {
-      // Update all criteria
       const { error } = await supabase
         .from('criteria')
         .upsert(criteria)
@@ -64,24 +69,34 @@ export default function CriteriaManagement() {
     }
   }
 
-  const updateCriterion = (id: number, updates: Partial<Criterion>) => {
+  const updateCriterion = (id: number | string, updates: Partial<Criterion>) => {
     setCriteria(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c))
   }
 
   const addNew = () => {
-    const newId = criteria.length > 0 ? Math.max(...criteria.map(c => c.id)) + 1 : 1
+    // Generate a temporary ID for new items
+    const newId = Date.now()
     setCriteria(prev => [...prev, {
       id: newId,
       name: '',
       category: 'Technical',
       weight: 5,
       critical: false,
-      response_type: 'boolean'
+      response_type: 'boolean',
+      description: ''
     }])
   }
 
-  const remove = (id: number) => {
+  const remove = async (id: number | string) => {
     if (confirm("Are you sure you want to remove this parameter?")) {
+      // If it's a number, it's likely already in DB
+      if (typeof id === 'number' && id < 1000000000) {
+        const { error } = await supabase.from('criteria').delete().eq('id', id)
+        if (error) {
+          setMessage({ type: 'error', text: 'Could not delete from database: ' + error.message })
+          return
+        }
+      }
       setCriteria(prev => prev.filter(c => c.id !== id))
     }
   }
@@ -138,7 +153,6 @@ export default function CriteriaManagement() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-900 text-white">
-                <th className="px-8 py-6 font-black uppercase tracking-widest text-[10px]">#</th>
                 <th className="px-8 py-6 font-black uppercase tracking-widest text-[10px]">Parameter / Question</th>
                 <th className="px-8 py-6 font-black uppercase tracking-widest text-[10px]">Type</th>
                 <th className="px-8 py-6 font-black uppercase tracking-widest text-[10px]">Weight</th>
@@ -147,9 +161,8 @@ export default function CriteriaManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {criteria.map((c, i) => (
+              {criteria.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-8 py-6 font-black text-slate-200 text-xl">{i + 1}</td>
                   <td className="px-8 py-6">
                     <input 
                       type="text" 
@@ -161,7 +174,7 @@ export default function CriteriaManagement() {
                   </td>
                   <td className="px-8 py-6">
                     <select 
-                      value={c.response_type}
+                      value={c.response_type || 'boolean'}
                       onChange={(e) => updateCriterion(c.id, { response_type: e.target.value as any })}
                       className="bg-slate-50 border-slate-100 rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 focus:border-primary-300 focus:ring-primary-100 py-2 px-4 cursor-pointer"
                     >
@@ -170,7 +183,7 @@ export default function CriteriaManagement() {
                     </select>
                   </td>
                   <td className="px-8 py-6">
-                    {c.response_type === 'boolean' ? (
+                    {c.response_type !== 'text' ? (
                       <div className="flex items-center gap-3">
                         <input 
                           type="number" 
