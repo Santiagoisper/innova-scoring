@@ -1,336 +1,373 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import {
-  CheckCircle2,
-  FileText,
-  Upload,
-  AlertCircle,
-  Check,
+import { useEffect, useState, useRef } from "react"
+import { supabaseBrowser } from "@/lib/supabase/client"
+import { 
+  CheckCircle2, 
+  FileUp, 
+  Loader2, 
+  AlertCircle, 
+  Info,
   ChevronRight,
   ChevronLeft,
-  Info,
   ShieldCheck,
-  FileIcon,
-  Loader2,
-} from "lucide-react";
+  FileText,
+  UploadCloud,
+  X
+} from "lucide-react"
 
-type Criterion = {
-  id: number;
-  name: string;
-  category: string;
-  weight: number;
-  critical: boolean;
-  type: "scoring" | "development";
-};
+interface Criterion {
+  id: number
+  name: string
+  category: string
+  response_type: 'boolean' | 'text'
+  is_knockout: boolean
+  requires_doc: boolean
+}
 
-type ClientEvaluationProps = {
-  token: string;
-  initialSubmission: any;
-};
+export default function ClientEvaluation({ token }: { token: string }) {
+  const supabase = supabaseBrowser()
+  
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  const [submission, setSubmission] = useState<any>(null)
+  const [criteria, setCriteria] = useState<Criterion[]>([])
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false)
+  
+  const [responses, setResponses] = useState<Record<string, any>>({})
+  const [attachments, setAttachments] = useState<Record<string, string>>({})
+  const [uploading, setUploading] = useState<Record<string, boolean>>({})
 
-export default function ClientEvaluation({
-  token,
-  initialSubmission,
-}: ClientEvaluationProps) {
-  const [step, setStep] = useState<"disclaimer" | "form" | "success">(
-    initialSubmission?.responses?.disclaimer_accepted ? "form" : "disclaimer"
-  );
-  const [criteria, setCriteria] = useState<Criterion[]>([]);
-  const [responses, setResponses] = useState<Record<number, number | string>>({});
-  const [attachments, setAttachments] = useState<Record<number, string>>({});
-  const [uploading, setUploading] = useState<Record<number, boolean>>({});
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  // Load criteria
   useEffect(() => {
-    async function loadCriteria() {
+    async function init() {
+      setLoading(true)
       try {
-        // Corregido: usamos /api/criteria que es el endpoint que acabamos de crear/reparar
-        const res = await fetch("/api/criteria");
-        if (!res.ok) throw new Error("Failed to load criteria");
-        const data = await res.json();
-        setCriteria(data);
+        // 1. Validar Token y obtener Submission
+        const { data: sub, error: subErr } = await supabase
+          .from('client_submissions')
+          .select('*, centers(*)')
+          .eq('public_token', token)
+          .single()
 
-        // Load existing responses if any
-        if (initialSubmission?.responses?.scores) {
-          setResponses(initialSubmission.responses.scores);
+        if (subErr || !sub) {
+          setError("Invalid or expired access token.")
+          setLoading(false)
+          return
         }
-        if (initialSubmission?.responses?.attachments) {
-          setAttachments(initialSubmission.responses.attachments);
-        }
-      } catch (err) {
-        console.error(err);
+        setSubmission(sub)
+        setDisclaimerAccepted(sub.disclaimer_accepted)
+
+        // 2. Cargar Criterios
+        const { data: crit, error: critErr } = await supabase
+          .from('criteria')
+          .select('*')
+          .order('id', { ascending: true })
+
+        if (critErr) throw critErr
+        setCriteria(crit)
+
+      } catch (err: any) {
+        setError(err.message)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
-    loadCriteria();
-  }, [initialSubmission]);
+    init()
+  }, [token, supabase])
 
-  const handleScoreChange = (id: number, score: number) => {
-    setResponses((prev) => ({ ...prev, [id]: score }));
-  };
-
-  const handleTextChange = (id: number, text: string) => {
-    setResponses((prev) => ({ ...prev, [id]: text }));
-  };
-
-  const handleFileUpload = async (id: number, file: File) => {
-    setUploading((prev) => ({ ...prev, [id]: true }));
+  const handleAcceptDisclaimer = async () => {
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("center_id", initialSubmission.center_id);
-      formData.append("criterion_id", id.toString());
-
-      // Note: We need a generic upload API or use the one we have
-      const res = await fetch("/api/client/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
-      setAttachments((prev) => ({ ...prev, [id]: data.url }));
-    } catch (err) {
-      alert("Error uploading file. Please try again.");
-    } finally {
-      setUploading((prev) => ({ ...prev, [id]: false }));
-    }
-  };
-
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/submit-evaluation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          responses,
-          attachments,
+      const { error } = await supabase
+        .from('client_submissions')
+        .update({ 
           disclaimer_accepted: true,
-        }),
-      });
+          disclaimer_accepted_at: new Date().toISOString()
+        })
+        .eq('id', submission.id)
 
-      if (!res.ok) throw new Error("Submission failed");
-      setStep("success");
-    } catch (err) {
-      alert("Error submitting evaluation. Please try again.");
-    } finally {
-      setSubmitting(false);
+      if (error) throw error
+      setDisclaimerAccepted(true)
+    } catch (err: any) {
+      alert("Error accepting disclaimer: " + err.message)
     }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 text-primary-600 animate-spin mb-4" />
-        <p className="text-slate-500 font-medium">Cargando cuestionario...</p>
-      </div>
-    );
   }
 
-  if (step === "disclaimer") {
-    return (
-      <div className="max-w-2xl mx-auto animate-fade-in">
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-          <div className="bg-primary-600 p-8 text-white text-center">
-            <ShieldCheck className="w-16 h-16 mx-auto mb-4 opacity-90" />
-            <h1 className="text-3xl font-bold font-display">Aviso Legal y Privacidad</h1>
-            <p className="mt-2 text-primary-100">Por favor, lee y acepta los términos para comenzar.</p>
+  const handleFileUpload = async (criterionId: number, file: File) => {
+    if (!submission?.id) return
+    
+    setUploading(prev => ({ ...prev, [criterionId]: true }))
+    
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${submission.id}/${criterionId}/${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `submissions/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('site-documents')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('site-documents')
+        .getPublicUrl(filePath)
+
+      setAttachments(prev => ({ ...prev, [criterionId]: publicUrl }))
+    } catch (err: any) {
+      alert("Upload failed: " + err.message)
+    } finally {
+      setUploading(prev => ({ ...prev, [criterionId]: false }))
+    }
+  }
+
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    try {
+      // Calcular score (solo booleanos)
+      let totalPoints = 0
+      let maxPoints = 0
+      
+      criteria.forEach(c => {
+        if (c.response_type === 'boolean') {
+          maxPoints += 100
+          if (responses[c.id] === 'yes') totalPoints += 100
+        }
+      })
+
+      const finalScore = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0
+
+      // Guardar en evaluations
+      const { error: evalErr } = await supabase
+        .from('evaluations')
+        .insert({
+          center_id: submission.center_id,
+          total_score: finalScore,
+          status: 'completed',
+          responses: {
+            scores: responses,
+            attachments: attachments
+          },
+          evaluator_email: submission.client_email,
+          token: token
+        })
+
+      if (evalErr) throw evalErr
+
+      // Actualizar estado de submission
+      await supabase
+        .from('client_submissions')
+        .update({ submission_status: 'completed' })
+        .eq('id', submission.id)
+
+      setSubmission({ ...submission, submission_status: 'completed' })
+    } catch (err: any) {
+      alert("Submission error: " + err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
+      <p className="text-slate-500 font-medium animate-pulse">Loading evaluation...</p>
+    </div>
+  )
+
+  if (error) return (
+    <div className="max-w-md mx-auto mt-20 card p-8 text-center border-red-100 bg-red-50/30">
+      <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+      <h2 className="text-xl font-bold text-slate-900 mb-2">Access Error</h2>
+      <p className="text-slate-600 mb-6">{error}</p>
+      <button onClick={() => window.location.reload()} className="btn-primary w-full">Try Again</button>
+    </div>
+  )
+
+  if (submission?.submission_status === 'completed') return (
+    <div className="max-w-2xl mx-auto mt-20 text-center space-y-6 animate-fade-in">
+      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8">
+        <CheckCircle2 className="w-10 h-10 text-green-600" />
+      </div>
+      <h1 className="text-4xl font-bold text-slate-900">Thank You!</h1>
+      <p className="text-xl text-slate-600">Your site evaluation has been submitted successfully. Our team will review the information and contact you shortly.</p>
+      <div className="pt-8">
+        <button onClick={() => window.close()} className="btn-secondary">Close Window</button>
+      </div>
+    </div>
+  )
+
+  if (!disclaimerAccepted) return (
+    <div className="max-w-3xl mx-auto mt-10 animate-fade-in">
+      <div className="card overflow-hidden border-t-4 border-t-primary-600">
+        <div className="p-8 space-y-6">
+          <div className="flex items-center gap-3 text-primary-600">
+            <ShieldCheck className="w-8 h-8" />
+            <h1 className="text-2xl font-bold">Terms & Conditions</h1>
           </div>
-          <div className="p-8 space-y-6">
-            <div className="prose prose-slate text-slate-600 max-h-[300px] overflow-y-auto p-4 bg-slate-50 rounded-xl border border-slate-100 text-sm">
-              <p>Al acceder a esta plataforma de evaluación, usted acepta que:</p>
-              <ul>
-                <li>La información proporcionada es veraz y representa el estado actual de su centro.</li>
-                <li>Los documentos adjuntos son copias fieles de los originales.</li>
-                <li>Innova Trials tratará sus datos conforme a la ley de protección de datos vigente.</li>
-                <li>Esta evaluación es una herramienta de diagnóstico y no garantiza la selección automática para estudios clínicos.</li>
-              </ul>
-              <p>Su participación es voluntaria y puede interrumpirla en cualquier momento antes del envío final.</p>
-            </div>
-            <button
-              onClick={() => setStep("form")}
-              className="w-full btn-primary py-4 text-lg shadow-lg shadow-primary-200"
-            >
-              Acepto los términos y comenzar
+          
+          <div className="prose prose-slate max-w-none bg-slate-50 p-6 rounded-xl border border-slate-100 max-h-[400px] overflow-y-auto text-sm leading-relaxed">
+            <p className="font-bold mb-4">Site Evaluation Platform Disclaimer</p>
+            <p>By proceeding with this evaluation, you agree that all information provided is accurate and representative of your site's current capabilities.</p>
+            <p>1. <strong>Confidentiality:</strong> All data submitted will be handled according to our privacy policy and used solely for site selection purposes.</p>
+            <p>2. <strong>Documentation:</strong> Uploaded files must be authentic and valid at the time of submission.</p>
+            <p>3. <strong>Accuracy:</strong> Providing false information may result in immediate disqualification from the selection process.</p>
+            <p className="mt-4">Please review the full terms before accepting to start the questionnaire.</p>
+          </div>
+
+          <div className="flex items-center gap-4 pt-4">
+            <button onClick={handleAcceptDisclaimer} className="btn-primary flex-1 py-4 text-lg">
+              I Accept & Start Evaluation
             </button>
           </div>
         </div>
       </div>
-    );
-  }
-
-  if (step === "success") {
-    return (
-      <div className="max-w-xl mx-auto text-center py-20 animate-scale-in">
-        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle2 className="w-12 h-12 text-green-600" />
-        </div>
-        <h1 className="text-4xl font-bold text-slate-900 font-display mb-4">¡Evaluación Enviada!</h1>
-        <p className="text-xl text-slate-600 mb-8">
-          Muchas gracias por completar el cuestionario. Tu información está siendo procesada por nuestro equipo.
-        </p>
-        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-          <p className="text-sm text-slate-500">Recibirás una notificación por correo electrónico con los siguientes pasos una vez que revisemos la documentación.</p>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  )
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in">
+    <div className="max-w-4xl mx-auto py-10 px-4 space-y-10 animate-fade-in">
       {/* Header */}
-      <div className="mb-10 text-center">
-        <h1 className="text-3xl font-bold text-slate-900 font-display">Cuestionario de Evaluación CRO</h1>
-        <p className="text-slate-500 mt-2">Completa todas las secciones para obtener tu puntuación final.</p>
-      </div>
-
-      {/* Progress */}
-      <div className="sticky top-4 z-30 mb-8 px-6 py-4 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="text-sm font-bold text-slate-900">
-            Progreso: {Math.round((Object.keys(responses).length / criteria.length) * 100)}%
-          </div>
-          <div className="w-48 h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary-600 transition-all duration-500" 
-              style={{ width: `${(Object.keys(responses).length / criteria.length) * 100}%` }}
-            />
-          </div>
+      <header className="space-y-2 border-b border-slate-200 pb-8">
+        <div className="flex items-center gap-2 text-primary-600 font-bold text-sm uppercase tracking-widest">
+          <FileText className="w-4 h-4" />
+          Site Scoring Evaluation
         </div>
-        <button
-          onClick={handleSubmit}
-          disabled={submitting || Object.keys(responses).length < criteria.length}
-          className="btn-primary px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitting ? "Enviando..." : "Enviar Evaluación Final"}
-        </button>
-      </div>
+        <h1 className="text-4xl font-black text-slate-900">{submission?.centers?.name || 'Site Evaluation'}</h1>
+        <p className="text-slate-500 text-lg">Please answer all questions accurately. You can upload supporting documents where required.</p>
+      </header>
 
-      {/* Criteria List */}
-      <div className="space-y-6">
-        {criteria.map((c) => (
-          <div key={c.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:border-primary-300 transition-colors">
-            <div className="p-6 sm:p-8">
-              <div className="flex justify-between items-start gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded">Criterio {c.id}</span>
-                    {c.critical && (
-                      <span className="px-2 py-1 bg-red-100 text-red-600 text-[10px] font-bold uppercase tracking-wider rounded flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Crítico
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-xl font-semibold text-slate-900 leading-tight">{c.name}</h3>
-                </div>
+      {/* Questionnaire */}
+      <div className="space-y-12">
+        {criteria.map((c, idx) => (
+          <div key={c.id} className="space-y-6 animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
+            <div className="flex gap-6">
+              <div className="flex-shrink-0 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-400">
+                {idx + 1}
+              </div>
+              <div className="flex-1 space-y-6">
+                <h3 className="text-xl font-bold text-slate-900 leading-snug">
+                  {c.name}
+                  {c.is_knockout && <span className="ml-3 text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase tracking-tighter">Required</span>}
+                </h3>
 
-                <div className="flex flex-col items-end gap-3">
-                  {c.type === "scoring" ? (
-                    <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
-                      <button
-                        onClick={() => handleScoreChange(c.id, 100)}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          responses[c.id] === 100 ? "bg-white text-green-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                {/* Response Options */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {c.response_type === 'boolean' ? (
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => setResponses(prev => ({ ...prev, [c.id]: 'yes' }))}
+                        className={`flex-1 py-3 px-6 rounded-xl border-2 font-bold transition-all ${
+                          responses[c.id] === 'yes' 
+                            ? 'bg-green-50 border-green-500 text-green-700 shadow-sm' 
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                         }`}
                       >
-                        SÍ
+                        YES
                       </button>
-                      <button
-                        onClick={() => handleScoreChange(c.id, 0)}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                          responses[c.id] === 0 ? "bg-white text-red-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                      <button 
+                        onClick={() => setResponses(prev => ({ ...prev, [c.id]: 'no' }))}
+                        className={`flex-1 py-3 px-6 rounded-xl border-2 font-bold transition-all ${
+                          responses[c.id] === 'no' 
+                            ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' 
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                         }`}
                       >
                         NO
                       </button>
                     </div>
                   ) : (
-                    <div className="text-primary-600">
-                      <FileText className="w-6 h-6" />
+                    <div className="sm:col-span-2">
+                      <textarea 
+                        placeholder="Please provide a detailed answer here..."
+                        className="input min-h-[120px] bg-slate-50 focus:bg-white transition-colors text-slate-700"
+                        value={responses[c.id] || ''}
+                        onChange={(e) => setResponses(prev => ({ ...prev, [c.id]: e.target.value }))}
+                      />
                     </div>
                   )}
-                </div>
-              </div>
 
-              {/* Development Area */}
-              {c.type === "development" && (
-                <div className="mt-6">
-                  <textarea
-                    placeholder="Describe detalladamente aquí..."
-                    className="w-full min-h-[120px] p-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
-                    value={(responses[c.id] as string) || ""}
-                    onChange={(e) => handleTextChange(c.id, e.target.value)}
-                  />
-                </div>
-              )}
-
-              {/* File Upload Area */}
-              <div className="mt-6 pt-6 border-t border-slate-100">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${attachments[c.id] ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400"}`}>
-                      {attachments[c.id] ? <Check className="w-5 h-5" /> : <Upload className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">Documentación de respaldo</p>
-                      <p className="text-xs text-slate-500">Formatos: PDF, Word, Excel, JPG</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {attachments[c.id] && (
-                      <a href={attachments[c.id]} target="_blank" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1">
-                        <FileIcon className="w-3 h-3" /> Ver archivo
-                      </a>
-                    )}
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleFileUpload(c.id, file);
-                        }}
-                      />
-                      <div className={`btn-sm ${attachments[c.id] ? "btn-secondary" : "btn-primary"} flex items-center gap-2`}>
-                        {uploading[c.id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                        {attachments[c.id] ? "Cambiar Archivo" : "Subir Archivo"}
+                  {/* Upload Field */}
+                  <div className="sm:col-span-2">
+                    {attachments[c.id] ? (
+                      <div className="flex items-center justify-between p-4 bg-primary-50 border border-primary-100 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-white rounded-lg shadow-sm">
+                            <FileText className="w-5 h-5 text-primary-600" />
+                          </div>
+                          <span className="text-sm font-bold text-primary-700">Document Uploaded</span>
+                        </div>
+                        <button 
+                          onClick={() => setAttachments(prev => {
+                            const n = { ...prev }; delete n[c.id]; return n;
+                          })}
+                          className="p-2 hover:bg-white rounded-full transition-colors text-primary-400 hover:text-red-500"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
-                    </label>
+                    ) : (
+                      <label className="relative flex items-center justify-center p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-primary-400 hover:bg-primary-50/30 transition-all cursor-pointer group">
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                          onChange={(e) => e.target.files?.[0] && handleFileUpload(c.id, e.target.files[0])}
+                          disabled={uploading[c.id]}
+                        />
+                        <div className="flex items-center gap-3">
+                          {uploading[c.id] ? (
+                            <>
+                              <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
+                              <span className="text-sm font-bold text-primary-600">Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <UploadCloud className="w-5 h-5 text-slate-400 group-hover:text-primary-600" />
+                              <span className="text-sm font-bold text-slate-500 group-hover:text-primary-700">Upload Supporting Document</span>
+                            </>
+                          )}
+                        </div>
+                      </label>
+                    )}
+                    {c.requires_doc && !attachments[c.id] && (
+                      <p className="mt-2 text-[10px] text-amber-600 font-bold flex items-center gap-1 uppercase tracking-wider">
+                        <Info className="w-3 h-3" /> Supporting documentation is highly recommended
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
+            <div className="h-px bg-slate-100 w-full" />
           </div>
         ))}
       </div>
 
-      {/* Footer Info */}
-      <div className="mt-12 p-8 bg-slate-900 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-white/10 rounded-2xl">
-            <Info className="w-6 h-6 text-primary-400" />
-          </div>
-          <div>
-            <p className="font-bold">¿Necesitas ayuda?</p>
-            <p className="text-sm text-slate-400">Si tienes dudas con alguna pregunta, contacta a tu sponsor.</p>
-          </div>
+      {/* Footer Actions */}
+      <footer className="pt-10 flex flex-col items-center gap-6">
+        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center max-w-lg">
+          <p className="text-sm text-slate-500 font-medium">By clicking submit, you confirm that all provided information and documents are true and complete.</p>
         </div>
-        <button
+        <button 
           onClick={handleSubmit}
-          disabled={submitting || Object.keys(responses).length < criteria.length}
-          className="btn-primary bg-white text-slate-900 hover:bg-slate-100 border-none px-10 py-4 shadow-xl disabled:opacity-30"
+          disabled={submitting}
+          className="btn-primary w-full max-w-md py-5 text-xl font-black shadow-xl shadow-primary-200 hover:shadow-primary-300 transform hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
         >
-          {submitting ? "Procesando..." : "Finalizar Evaluación"}
+          {submitting ? (
+            <>
+              <Loader2 className="w-6 h-6 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            <>
+              Submit Final Evaluation
+              <ChevronRight className="w-6 h-6" />
+            </>
+          )}
         </button>
-      </div>
+      </footer>
     </div>
-  );
+  )
 }
