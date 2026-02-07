@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// Usuarios autorizados (por defecto)
-const DEFAULT_USERS = [
-  { username: 'innova', password: 'trials2026' }
-]
-
-// Obtener usuarios de localStorage del servidor (simulado)
-// En producción, esto vendría de una base de datos
-let authorizedUsers = [...DEFAULT_USERS]
+import { validateCredentials, generateToken } from '@/lib/auth/users'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,19 +13,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar credenciales
-    const user = authorizedUsers.find(
-      u => u.username === username && u.password === password
-    )
-
-    if (!user) {
+    if (!validateCredentials(username, password)) {
       return NextResponse.json(
         { message: 'Usuario o contraseña incorrectos' },
         { status: 401 }
       )
     }
 
-    // Generar token simple (en producción usar JWT)
-    const token = Buffer.from(`${username}:${Date.now()}`).toString('base64')
+    // Generar token
+    const token = generateToken(username)
 
     return NextResponse.json(
       { 
@@ -44,12 +32,10 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
+    console.error('Auth error:', error)
     return NextResponse.json(
       { message: 'Error en el servidor' },
       { status: 500 }
     )
   }
 }
-
-// Exportar para acceso desde otros módulos
-export { authorizedUsers }
