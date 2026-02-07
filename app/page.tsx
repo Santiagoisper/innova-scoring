@@ -158,8 +158,9 @@ export default function LandingPage() {
             </div>
           </div>
           
-          <div className="mt-16 pt-8 border-t border-slate-800 text-center text-slate-500 text-sm">
-            © {new Date().getFullYear()} Innova Trials. All rights reserved.
+          <div className="mt-16 pt-8 border-t border-slate-800 text-center text-slate-500 text-sm space-y-2">
+            <p>© {new Date().getFullYear()} Innova Trials. All rights reserved.</p>
+            <p className="text-xs text-slate-400">V.1 | By Santiago Isbert Perlender, member of Innova Trials Team</p>
           </div>
         </div>
       </footer>

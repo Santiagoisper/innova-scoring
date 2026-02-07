@@ -12,7 +12,8 @@ import {
   Download,
   Sparkles,
   Link as LinkIcon,
-  Settings2
+  Settings2,
+  Settings
 } from "lucide-react"
 
 export default function Sidebar() {
@@ -151,6 +152,12 @@ export default function Sidebar() {
             Export Reports
           </a>
 
+          {/* Settings */}
+          <a href="/admin/settings" className={navClass("/admin/settings")}>
+            <Settings className="w-5 h-5" />
+            Settings
+          </a>
+
           {/* =========================
               Quick Action Box
           ========================= */}
@@ -178,7 +185,10 @@ export default function Sidebar() {
           Footer (STATIC → No hydration error)
       ========================= */}
       <div className="p-6 border-t border-slate-200 text-xs text-slate-500">
-        © Innova Trials — Sponsor Platform
+        <p>© Innova Trials — Sponsor Platform</p>
+        <p className="mt-2 font-semibold text-slate-700">V.1</p>
+        <p className="text-xs text-slate-500 mt-1">By Santiago Isbert Perlender</p>
+        <p className="text-xs text-slate-500">Member of Innova Trials Team</p>
       </div>
     </aside>
   )
