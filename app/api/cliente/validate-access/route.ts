@@ -32,14 +32,7 @@ export async function POST(req: Request) {
       )
     }
 
-    // Validar el email si está configurado en la evaluación
-    if (evaluation.evaluator_email && evaluation.evaluator_email.toLowerCase() !== email.toLowerCase()) {
-      return NextResponse.json(
-        { error: "El correo no coincide con el token proporcionado" },
-        { status: 401 }
-      )
-    }
-
+    // Token válido - no validamos email
     return NextResponse.json({ 
       success: true, 
       evaluation_id: evaluation.id,
