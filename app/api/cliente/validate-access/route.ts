@@ -17,50 +17,34 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    // Buscamos un centro que coincida con el token público
-    // Nota: Dependiendo de tu esquema, el email podría estar en 'centers' o 'client_submissions'
-    // Según lo analizado, 'centers' tiene 'contact_email' y 'public_token'
-    const { data: center, error: centerError } = await supabase
-      .from("centers")
-      .select("id, contact_email, public_token")
-      .eq("public_token", token)
+    // Buscar el token en la tabla evaluations
+    const { data: evaluation, error: evalError } = await supabase
+      .from("evaluations")
+      .select("id, token, status, center_id, evaluator_email")
+      .eq("token", token)
+      .eq("status", "pending")
       .single()
 
-    if (centerError || !center) {
-      // Si no está en centers, probamos en client_submissions que tiene 'client_email' y 'public_token'
-      const { data: submission, error: subError } = await supabase
-        .from("client_submissions")
-        .select("id, client_email, public_token")
-        .eq("public_token", token)
-        .single()
-
-      if (subError || !submission) {
-        return NextResponse.json(
-          { error: "Token inválido" },
-          { status: 401 }
-        )
-      }
-
-      // Validamos el email en la sumisión
-      if (submission.client_email.toLowerCase() !== email.toLowerCase()) {
-        return NextResponse.json(
-          { error: "El correo no coincide con el token proporcionado" },
-          { status: 401 }
-        )
-      }
-
-      return NextResponse.json({ success: true, type: "submission" })
+    if (evalError || !evaluation) {
+      return NextResponse.json(
+        { error: "Token inválido" },
+        { status: 401 }
+      )
     }
 
-    // Validamos el email en el centro
-    if (center.contact_email && center.contact_email.toLowerCase() !== email.toLowerCase()) {
+    // Validar el email si está configurado en la evaluación
+    if (evaluation.evaluator_email && evaluation.evaluator_email.toLowerCase() !== email.toLowerCase()) {
       return NextResponse.json(
         { error: "El correo no coincide con el token proporcionado" },
         { status: 401 }
       )
     }
 
-    return NextResponse.json({ success: true, type: "center" })
+    return NextResponse.json({ 
+      success: true, 
+      evaluation_id: evaluation.id,
+      center_id: evaluation.center_id 
+    })
   } catch (err) {
     console.error("Validation error:", err)
     return NextResponse.json(
