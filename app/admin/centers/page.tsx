@@ -150,13 +150,23 @@ export default function CentersPage() {
   async function handleAddCenter(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const { error } = await supabase.from("centers").insert([newCenter])
-    if (!error) {
-      setShowAddModal(false)
-      setNewCenter({ name: "", code: "", country: "", city: "", address: "", contact_name: "", contact_email: "", contact_phone: "" })
-      loadData()
+    
+    try {
+      const { error } = await supabase.from("centers").insert([newCenter])
+      if (error) {
+        console.error("Error creating center:", error)
+        alert(`Error al crear el sitio: ${error.message}`)
+      } else {
+        setShowAddModal(false)
+        setNewCenter({ name: "", code: "", country: "", city: "", address: "", contact_name: "", contact_email: "", contact_phone: "" })
+        await loadData()
+      }
+    } catch (err: any) {
+      console.error("Unexpected error:", err)
+      alert(`Error inesperado: ${err.message}`)
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   const CenterRow = ({ center }: { center: Center }) => {
