@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
+import Link from "next/link"
 import {
   Building2,
   Plus,
@@ -13,6 +14,7 @@ import {
   RefreshCw,
   X,
   Link as LinkIcon,
+  Trash2,
 } from "lucide-react"
 
 type Center = {
@@ -133,6 +135,27 @@ export default function CentersPage() {
     await loadData()
   }
 
+  async function deleteCenter(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete the center "${name}"? All associated evaluations will be lost.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/centers/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        loadData();
+      } else {
+        const data = await res.json();
+        alert("Error deleting center: " + (data.error || "Unknown error"));
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  }
+
   function copyToClipboard(token: string) {
     const link = `${window.location.origin}/cliente/${token}`
     navigator.clipboard.writeText(link)
@@ -213,11 +236,11 @@ export default function CentersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="table-header px-6 py-4">Center</th>
-                <th className="table-header px-4 py-4">Location</th>
-                <th className="table-header px-4 py-4">Status</th>
-                <th className="table-header px-4 py-4">Score</th>
-                <th className="table-header px-4 py-4">Evaluation Link</th>
+                <th className="table-header px-6 py-4 text-left">Center</th>
+                <th className="table-header px-4 py-4 text-left">Location</th>
+                <th className="table-header px-4 py-4 text-left">Status</th>
+                <th className="table-header px-4 py-4 text-left">Score</th>
+                <th className="table-header px-4 py-4 text-left">Actions</th>
               </tr>
             </thead>
 
@@ -227,12 +250,14 @@ export default function CentersPage() {
                 const status = getStatusInfo(latestEval)
 
                 return (
-                  <tr key={center.id} className="hover:bg-slate-50">
+                  <tr key={center.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-6 py-4">
-                      <p className="font-semibold text-slate-900">
-                        {center.name}
-                      </p>
-                      <p className="text-xs text-slate-500">{center.code}</p>
+                      <Link href={`/admin/centers/${center.id}`} className="block hover:opacity-70">
+                        <p className="font-semibold text-slate-900">
+                          {center.name}
+                        </p>
+                        <p className="text-xs text-slate-500">{center.code}</p>
+                      </Link>
                     </td>
 
                     <td className="px-4 py-4">
@@ -251,40 +276,56 @@ export default function CentersPage() {
                     </td>
 
                     <td className="px-4 py-4">
-                      {latestEval?.status === "pending" ? (
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs bg-slate-100 px-2 py-1 rounded max-w-[140px] truncate">
-                            {latestEval.token}
-                          </code>
+                      <div className="flex items-center gap-2">
+                        {latestEval?.status === "pending" ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => copyToClipboard(latestEval.token)}
+                              title="Copy evaluation link"
+                              className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                              {copiedToken === latestEval.token ? (
+                                <Check className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Copy className="w-4 h-4 text-slate-500" />
+                              )}
+                            </button>
 
+                            <a
+                              href={`/cliente/${latestEval.token}`}
+                              target="_blank"
+                              title="Open evaluation link"
+                              className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                              <ExternalLink className="w-4 h-4 text-slate-500" />
+                            </a>
+                          </div>
+                        ) : (
                           <button
-                            onClick={() => copyToClipboard(latestEval.token)}
-                            className="p-2 rounded-lg hover:bg-slate-100"
+                            onClick={() => generateEvaluationLink(center)}
+                            className="btn-sm btn-primary flex items-center gap-2"
                           >
-                            {copiedToken === latestEval.token ? (
-                              <Check className="w-4 h-4 text-green-600" />
-                            ) : (
-                              <Copy className="w-4 h-4 text-slate-500" />
-                            )}
+                            <LinkIcon className="w-4 h-4" />
+                            Generate Link
                           </button>
-
-                          <a
-                            href={`/cliente/${latestEval.token}`}
-                            target="_blank"
-                            className="p-2 rounded-lg hover:bg-slate-100"
-                          >
-                            <ExternalLink className="w-4 h-4 text-slate-500" />
-                          </a>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => generateEvaluationLink(center)}
-                          className="btn-sm btn-primary flex items-center gap-2"
+                        )}
+                        
+                        <Link 
+                          href={`/admin/centers/${center.id}`}
+                          title="View Details"
+                          className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
                         >
-                          <LinkIcon className="w-4 h-4" />
-                          Generate Link
+                          <Building2 className="w-4 h-4 text-slate-500" />
+                        </Link>
+
+                        <button
+                          onClick={() => deleteCenter(center.id, center.name)}
+                          title="Delete Center"
+                          className="p-2 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 )
