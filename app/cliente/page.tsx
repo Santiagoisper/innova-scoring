@@ -33,10 +33,10 @@ export default function ClienteLoginPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || "Acceso denegado")
+        throw new Error(data.error || "Access Denied")
       }
 
-      // Si es válido, redirigimos a la página de evaluación con el token
+      // If valid, redirect to the evaluation page with the token
       router.push(`/cliente/${token}`)
     } catch (err: any) {
       setError(err.message)
@@ -53,8 +53,8 @@ export default function ClienteLoginPage() {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-indigo-500/20 mx-auto mb-4">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900">Portal del Cliente</h1>
-          <p className="text-slate-500">Innova Trials - Autoevaluación de Centros</p>
+          <h1 className="text-2xl font-black text-slate-900">Client Portal</h1>
+          <p className="text-slate-500">Innova Trials - Site Self-Assessment</p>
         </div>
 
         {/* Login Card */}
@@ -62,7 +62,7 @@ export default function ClienteLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">
-                Correo Electrónico
+                Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -71,7 +71,7 @@ export default function ClienteLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ejemplo@centro.com"
+                  placeholder="example@site.com"
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
@@ -79,7 +79,7 @@ export default function ClienteLoginPage() {
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">
-                Token de Acceso
+                Access Token
               </label>
               <div className="relative">
                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -88,12 +88,12 @@ export default function ClienteLoginPage() {
                   required
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
-                  placeholder="Ingrese su token único"
+                  placeholder="Enter your unique token"
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
               <p className="text-[10px] text-slate-400 mt-2 uppercase font-bold tracking-wider">
-                El token fue enviado a su correo institucional
+                The token was sent to your institutional email
               </p>
             </div>
 
@@ -113,7 +113,7 @@ export default function ClienteLoginPage() {
                 <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
                 <>
-                  Acceder al Portal
+                  Enter Portal
                   <ChevronRight className="w-5 h-5" />
                 </>
               )}
@@ -123,7 +123,7 @@ export default function ClienteLoginPage() {
 
         {/* Footer Info */}
         <p className="text-center text-sm text-slate-400 mt-8 font-medium">
-          ¿No tiene un token? Contacte con su administrador de Innova Trials.
+          Don't have a token? Contact your Innova Trials administrator.
         </p>
       </div>
     </div>
