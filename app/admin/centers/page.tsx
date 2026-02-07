@@ -115,8 +115,8 @@ export default function CentersPage() {
     conditional: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "yellow"),
     notApproved: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "red"),
     pending: filteredCenters.filter(c => {
-      const eval = getLatestEvaluation(c.id);
-      return !eval || eval.status === "pending" || (eval.status === "completed" && !eval.score_level);
+      const evaluation = getLatestEvaluation(c.id);
+      return !evaluation || evaluation.status === "pending" || (evaluation.status === "completed" && !evaluation.score_level);
     }),
   }
 
