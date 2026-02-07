@@ -67,8 +67,8 @@ export default function LoginPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/50">
-                <Sparkles className="w-8 h-8 text-white" />
+              <div className="h-16 flex items-center justify-center">
+                <img src="/innova-logo.png" alt="Innova Trials" className="h-full w-auto object-contain" />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Innova Trials</h1>

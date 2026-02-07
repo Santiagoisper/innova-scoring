@@ -76,17 +76,8 @@ export default function Sidebar() {
       <div>
         <div className="p-8 border-b border-slate-100">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-lg">
-              <Sparkles className="w-7 h-7 text-white" />
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">
-                Innova Trials
-              </h2>
-              <p className="text-xs text-slate-500">
-                Sponsor Admin Panel
-              </p>
+            <div className="h-14 flex items-center justify-center">
+              <img src="/innova-logo.png" alt="Innova Trials" className="h-full w-auto object-contain" />
             </div>
           </div>
         </div>

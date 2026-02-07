@@ -50,8 +50,8 @@ export default function ClienteLoginPage() {
       <div className="max-w-md w-full">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-xl shadow-indigo-500/20 mx-auto mb-4">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="h-16 flex items-center justify-center mx-auto mb-4">
+            <img src="/innova-logo.png" alt="Innova Trials" className="h-full w-auto object-contain" />
           </div>
           <h1 className="text-2xl font-black text-slate-900">Client Portal</h1>
           <p className="text-slate-500">Innova Trials - Site Self-Assessment</p>

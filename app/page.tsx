@@ -11,19 +11,15 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-slate-900">Innova Trials</h1>
-                <p className="text-xs text-slate-500">Site Scoring Platform</p>
+              <div className="h-12 flex items-center justify-center">
+                <img src="/innova-logo.png" alt="Innova Trials" className="h-full w-auto object-contain" />
               </div>
             </div>
             <nav className="hidden md:flex items-center gap-6">
               <Link href="/cliente" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">
                 Client Portal
               </Link>
-              <Link href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all shadow-md shadow-blue-500/10">
+              <Link href="/login" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all shadow-md shadow-blue-500/10">
                 Admin Access
               </Link>
             </nav>
@@ -60,7 +56,7 @@ export default function LandingPage() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link 
-                href="/admin"
+                href="/login"
                 className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-slate-900 border border-slate-200 px-8 py-4 rounded-xl font-semibold hover:bg-slate-50 transition-all"
               >
                 <ShieldCheck className="w-5 h-5" />
