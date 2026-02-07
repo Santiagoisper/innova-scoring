@@ -47,8 +47,8 @@ type Evaluation = {
   id: string
   center_id: string
   total_score: number | null
-  status: "pending" | "completed"
-  score_level: "green" | "yellow" | "red" | null
+  status: string
+  score_level: string | null
   created_at: string
 }
 
@@ -91,16 +91,27 @@ export default function AdminDashboard() {
     loadData()
   }, [])
 
-  const completedEvals = evaluations.filter((e) => e.status === "completed")
+  // In the current database, 'submitted' or 'completed' are used for finished evaluations
+  const completedEvals = evaluations.filter((e) => 
+    e.status === "completed" || e.status === "submitted" || (e.total_score !== null && e.total_score > 0)
+  )
+
+  // Determine score level if not set in DB
+  const getLevel = (score: number | null) => {
+    if (score === null) return null
+    if (score >= 80) return 'green'
+    if (score >= 60) return 'yellow'
+    return 'red'
+  }
 
   // Metrics
   const stats = {
     totalSites: centers.length,
     activeEvaluations: evaluations.length,
     approvedRate: completedEvals.length > 0 
-      ? Math.round((completedEvals.filter(e => e.score_level === 'green').length / completedEvals.length) * 100) 
+      ? Math.round((completedEvals.filter(e => (e.score_level === 'green' || getLevel(e.total_score) === 'green')).length / completedEvals.length) * 100) 
       : 0,
-    pendingActions: evaluations.filter(e => e.status === 'pending').length,
+    pendingActions: evaluations.filter(e => e.status === 'pending' || !e.status).length,
     avgScore: completedEvals.length > 0
       ? Math.round(completedEvals.reduce((acc, curr) => acc + (curr.total_score || 0), 0) / completedEvals.length)
       : 0
@@ -119,9 +130,9 @@ export default function AdminDashboard() {
 
   // Status Distribution
   const statusDist = [
-    { name: "Approved", value: completedEvals.filter((e) => e.score_level === "green").length, color: COLORS.success },
-    { name: "Conditional", value: completedEvals.filter((e) => e.score_level === "yellow").length, color: COLORS.warning },
-    { name: "Not Approved", value: completedEvals.filter((e) => e.score_level === "red").length, color: COLORS.danger },
+    { name: "Approved", value: completedEvals.filter((e) => e.score_level === "green" || getLevel(e.total_score) === 'green').length, color: COLORS.success },
+    { name: "Conditional", value: completedEvals.filter((e) => e.score_level === "yellow" || getLevel(e.total_score) === 'yellow').length, color: COLORS.warning },
+    { name: "Not Approved", value: completedEvals.filter((e) => e.score_level === "red" || getLevel(e.total_score) === 'red').length, color: COLORS.danger },
     { name: "Pending", value: stats.pendingActions, color: COLORS.neutral },
   ].filter(d => d.value > 0)
 
@@ -134,7 +145,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-10 animate-fade-in max-w-7xl mx-auto pb-20">
+    <div className="space-y-10 animate-fade-in max-w-7xl mx-auto pb-20 px-4">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Innova Trials Intelligence</h1>
