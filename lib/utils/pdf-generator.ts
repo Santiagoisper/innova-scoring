@@ -128,7 +128,7 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
           styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
           alternateRowStyles: { fillColor: [249, 250, 251] },
           margin: { left: 20, right: 20 },
-          didDrawPage: (data) => {
+          didDrawPage: (data: any) => {
             // Footer en cada página
             const pageCount = doc.getNumberOfPages()
             const pageSize = doc.internal.pageSize
