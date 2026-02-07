@@ -13,7 +13,9 @@ import {
   Sparkles,
   Link as LinkIcon,
   Settings2,
-  Settings
+  Settings,
+  Search,
+  History
 } from "lucide-react"
 
 export default function Sidebar() {
@@ -86,6 +88,19 @@ export default function Sidebar() {
             Navigation Links
         ========================= */}
         <div className="p-6 space-y-2">
+          {/* Quick Search - Ctrl+K */}
+          <button
+            onClick={() => {
+              const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
+              document.dispatchEvent(event)
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition-all border border-dashed border-slate-200 mb-3"
+          >
+            <Search className="w-4 h-4" />
+            <span className="flex-1 text-left">Quick Search...</span>
+            <kbd className="px-2 py-0.5 bg-slate-100 text-slate-400 text-[10px] rounded font-mono">Ctrl+K</kbd>
+          </button>
+
           {/* Dashboard */}
           <a href="/admin" className={navClass("/admin")}>
             <LayoutDashboard className="w-5 h-5" />
@@ -141,6 +156,12 @@ export default function Sidebar() {
           <a href="/admin/export" className={navClass("/admin/export")}>
             <Download className="w-5 h-5" />
             Export Reports
+          </a>
+
+          {/* Activity Log */}
+          <a href="/admin/activity" className={navClass("/admin/activity")}>
+            <History className="w-5 h-5" />
+            Activity Log
           </a>
 
           {/* Settings */}

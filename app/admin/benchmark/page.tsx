@@ -17,7 +17,13 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Legend
 } from 'recharts'
 
 type Center = {
@@ -36,6 +42,16 @@ type Evaluation = {
   created_at: string
 }
 
+type EvaluationItem = {
+  id: string
+  evaluation_id: string
+  criterion_id: string
+  score: number
+  criteria?: { name: string; category: string }
+}
+
+const RADAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6']
+
 const BENCHMARK_LEVELS = [
   { label: 'Excellent', minScore: 90, color: '#10b981' },
   { label: 'Good', minScore: 80, color: '#3b82f6' },
@@ -53,19 +69,77 @@ export default function BenchmarkPage() {
   const [centers, setCenters] = useState<Center[]>([])
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
   const [loading, setLoading] = useState(true)
+  const [evalItems, setEvalItems] = useState<EvaluationItem[]>([])
+  const [radarCenters, setRadarCenters] = useState<string[]>([])
 
   async function loadData() {
     setLoading(true)
-    
-    const [centersRes, evalsRes] = await Promise.all([
+
+    const [centersRes, evalsRes, itemsRes] = await Promise.all([
       supabase.from('centers').select('*'),
-      supabase.from('evaluations').select('*').order('created_at', { ascending: false })
+      supabase.from('evaluations').select('*').order('created_at', { ascending: false }),
+      supabase.from('evaluation_items').select('*, criteria(name, category)')
     ])
 
     if (centersRes.data) setCenters(centersRes.data)
     if (evalsRes.data) setEvaluations(evalsRes.data)
-    
+    if (itemsRes.data) setEvalItems(itemsRes.data)
+
     setLoading(false)
+  }
+
+  function toggleRadarCenter(centerId: string) {
+    setRadarCenters(prev => {
+      if (prev.includes(centerId)) return prev.filter(id => id !== centerId)
+      if (prev.length >= 5) return prev // max 5 centers to compare
+      return [...prev, centerId]
+    })
+  }
+
+  // Build radar chart data
+  function getRadarData() {
+    if (radarCenters.length === 0) return []
+
+    // Get criteria from evaluation items (unique by name)
+    const criteriaNames = new Map<string, string>()
+    evalItems.forEach(item => {
+      if (item.criteria?.name) {
+        criteriaNames.set(item.criterion_id, item.criteria.name)
+      }
+    })
+
+    // For each selected center, get their latest evaluation's items
+    const centerEvalItems: Record<string, Record<string, number>> = {}
+
+    for (const centerId of radarCenters) {
+      const latestEval = evaluations.find(e => e.center_id === centerId)
+      if (!latestEval) continue
+
+      const items = evalItems.filter(item => item.evaluation_id === latestEval.id)
+      centerEvalItems[centerId] = {}
+
+      for (const item of items) {
+        const name = criteriaNames.get(item.criterion_id)
+        if (name) {
+          centerEvalItems[centerId][name] = item.score
+        }
+      }
+    }
+
+    // Build radar data: one entry per criterion
+    const allCriteriaNames = Array.from(new Set(criteriaNames.values()))
+    return allCriteriaNames.map(name => {
+      const entry: Record<string, string | number> = {
+        criterion: name.length > 20 ? name.slice(0, 20) + '...' : name
+      }
+      for (const centerId of radarCenters) {
+        const center = centers.find(c => c.id === centerId)
+        if (center) {
+          entry[center.name] = centerEvalItems[centerId]?.[name] || 0
+        }
+      }
+      return entry
+    })
   }
 
   useEffect(() => {
@@ -214,6 +288,75 @@ export default function BenchmarkPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Radar Chart Comparison */}
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">Radar Comparison</h3>
+        <p className="text-sm text-slate-500 mb-4">Select up to 5 centers to compare their per-criterion scores side by side.</p>
+
+        {/* Center selection chips */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {latestEvaluations.map(({ center }) => {
+            const selected = radarCenters.includes(center.id)
+            return (
+              <button
+                key={center.id}
+                onClick={() => toggleRadarCenter(center.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                  selected
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                }`}
+              >
+                {center.name}
+              </button>
+            )
+          })}
+        </div>
+
+        {radarCenters.length === 0 ? (
+          <div className="py-12 text-center text-slate-400">
+            <Target className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+            <p className="text-sm">Select centers above to see the radar comparison</p>
+          </div>
+        ) : (
+          <div className="h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={getRadarData()} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+                <PolarGrid stroke="#e2e8f0" />
+                <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 10, fill: '#64748b' }} />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
+                {radarCenters.map((centerId, i) => {
+                  const center = centers.find(c => c.id === centerId)
+                  if (!center) return null
+                  return (
+                    <Radar
+                      key={centerId}
+                      name={center.name}
+                      dataKey={center.name}
+                      stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                      fill={RADAR_COLORS[i % RADAR_COLORS.length]}
+                      fillOpacity={0.15}
+                      strokeWidth={2}
+                    />
+                  )
+                })}
+                <Legend
+                  iconType="circle"
+                  formatter={(value) => <span className="text-xs font-semibold text-slate-600">{value}</span>}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '12px'
+                  }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* Ranking Chart */}

@@ -1,18 +1,21 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import { calculateWeightedScore } from "@/lib/scoring/calculator"
 import { Criterion, Center } from "@/types"
-import { 
-  ClipboardCheck, 
+import {
+  ClipboardCheck,
   Building2,
   ChevronRight,
   Check,
   AlertCircle,
   Save,
-  RefreshCw
+  RefreshCw,
+  CloudOff,
+  Cloud,
+  Trash2
 } from "lucide-react"
 
 export default function EvaluatePage() {
@@ -30,6 +33,72 @@ export default function EvaluatePage() {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [hasDraft, setHasDraft] = useState(false)
+  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
+
+  const DRAFT_KEY = 'innova_eval_draft'
+
+  // Auto-save draft to localStorage
+  const saveDraft = useCallback(() => {
+    if (Object.keys(scores).length === 0 && !selectedCenter && !generalNotes) return
+
+    setAutoSaveStatus('saving')
+    const draft = {
+      selectedCenter,
+      scores,
+      notes,
+      generalNotes,
+      savedAt: new Date().toISOString()
+    }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+
+    setTimeout(() => setAutoSaveStatus('saved'), 300)
+    setTimeout(() => setAutoSaveStatus('idle'), 2000)
+  }, [scores, notes, generalNotes, selectedCenter])
+
+  // Trigger auto-save when data changes (debounced)
+  useEffect(() => {
+    if (Object.keys(scores).length === 0 && !selectedCenter) return
+
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(saveDraft, 2000)
+
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    }
+  }, [scores, notes, generalNotes, selectedCenter, saveDraft])
+
+  // Restore draft on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const draft = JSON.parse(raw)
+        if (draft.scores && Object.keys(draft.scores).length > 0) {
+          setHasDraft(true)
+        }
+      }
+    } catch {}
+  }, [])
+
+  function restoreDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const draft = JSON.parse(raw)
+      if (draft.selectedCenter) setSelectedCenter(draft.selectedCenter)
+      if (draft.scores) setScores(draft.scores)
+      if (draft.notes) setNotes(draft.notes)
+      if (draft.generalNotes) setGeneralNotes(draft.generalNotes)
+      setHasDraft(false)
+    } catch {}
+  }
+
+  function discardDraft() {
+    localStorage.removeItem(DRAFT_KEY)
+    setHasDraft(false)
+  }
 
   async function loadData() {
     setLoading(true)
@@ -128,6 +197,7 @@ export default function EvaluatePage() {
       setNotes({})
       setGeneralNotes('')
       setSelectedCenter('')
+      localStorage.removeItem(DRAFT_KEY)
       
       // Clear success message after 5 seconds
       setTimeout(() => setSuccess(false), 5000)
@@ -152,10 +222,53 @@ export default function EvaluatePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 font-display">Evaluate Center</h1>
-        <p className="text-slate-600 mt-1">Score a research center across all criteria</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 font-display">Evaluate Center</h1>
+          <p className="text-slate-600 mt-1">Score a research center across all criteria</p>
+        </div>
+        {/* Auto-save indicator */}
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          {autoSaveStatus === 'saving' && (
+            <>
+              <CloudOff className="w-4 h-4 animate-pulse" />
+              <span>Saving draft...</span>
+            </>
+          )}
+          {autoSaveStatus === 'saved' && (
+            <>
+              <Cloud className="w-4 h-4 text-emerald-500" />
+              <span className="text-emerald-600">Draft saved</span>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Draft restoration banner */}
+      {hasDraft && Object.keys(scores).length === 0 && (
+        <div className="flex items-center justify-between p-4 rounded-xl bg-indigo-50 border border-indigo-100">
+          <div>
+            <p className="text-sm font-semibold text-indigo-900">Unsaved draft found</p>
+            <p className="text-xs text-indigo-600 mt-0.5">You have an incomplete evaluation from a previous session.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={discardDraft}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+            >
+              <Trash2 className="w-3 h-3" />
+              Discard
+            </button>
+            <button
+              onClick={restoreDraft}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Restore
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Progress Card */}
       <div className="card p-6">

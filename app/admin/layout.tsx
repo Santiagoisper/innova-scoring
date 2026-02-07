@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Sidebar from "./Sidebar"
+import CommandPalette from "../components/admin/CommandPalette"
 
 export default function AdminLayout({
   children,
@@ -55,6 +56,7 @@ export default function AdminLayout({
     <div className="min-h-screen flex bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar />
       <main className="flex-1 p-10">{children}</main>
+      <CommandPalette />
     </div>
   )
 }
