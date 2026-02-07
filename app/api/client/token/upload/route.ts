@@ -17,41 +17,43 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
 
-    const token = formData.get("token") as string;
+    const submission_id = formData.get("submission_id") as string;
     const criterion_id = formData.get("criterion_id") as string;
     const file = formData.get("file") as File;
 
-    if (!token || !criterion_id || !file) {
+    if (!submission_id || !criterion_id || !file) {
       return NextResponse.json(
-        { error: "Missing token, criterion_id or file" },
+        { error: "Missing submission_id, criterion_id or file" },
         { status: 400 }
       );
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: submission, error: submissionError } = await supabase
-      .from("client_submissions")
-      .select("id, submission_status")
-      .eq("public_token", token)
+    // Validate that the evaluation exists and is pending
+    const { data: evaluation, error: evalError } = await supabase
+      .from("evaluations")
+      .select("id, status")
+      .eq("id", submission_id)
       .single();
 
-    if (submissionError || !submission) {
+    if (evalError || !evaluation) {
       return NextResponse.json(
-        { error: "Invalid or expired token" },
+        { error: "Invalid evaluation ID" },
         { status: 404 }
       );
     }
 
-    if (submission.submission_status === "completed") {
+    if (evaluation.status === "completed") {
       return NextResponse.json(
-        { error: "Submission already completed" },
+        { error: "Evaluation already completed" },
         { status: 403 }
       );
     }
 
+    // Upload file to Supabase Storage
     const safeFilename = file.name.replace(/[^\w.\-]/g, "_");
-    const filePath = `submissions/${submission.id}/${criterion_id}/${safeFilename}`;
+    const filePath = `evaluations/${submission_id}/${criterion_id}/${safeFilename}`;
 
     const { error: uploadError } = await supabase.storage
       .from("evaluation-attachments")
@@ -67,29 +69,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: attachment, error: insertError } = await supabase
-      .from("client_submission_attachments")
-      .insert({
-        submission_id: submission.id,
-        criterion_id: Number(criterion_id),
-        file_path: filePath,
-        file_name: file.name,
-        mime_type: file.type,
-        file_size: file.size,
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      return NextResponse.json(
-        { error: insertError.message },
-        { status: 500 }
-      );
-    }
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from("evaluation-attachments")
+      .getPublicUrl(filePath);
 
     return NextResponse.json({
       success: true,
-      attachment,
+      url: urlData.publicUrl,
+      path: filePath,
+      file_name: file.name,
     });
   } catch (err: any) {
     return NextResponse.json(

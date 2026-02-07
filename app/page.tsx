@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Building2, ShieldCheck, BarChart3, Users, ArrowRight, Sparkles, Phone, Mail, MapPin } from 'lucide-react'
+import ContactForm from './components/ContactForm'
 
 export default function LandingPage() {
   return (
@@ -112,6 +113,24 @@ export default function LandingPage() {
               <p className="text-slate-600 leading-relaxed">A 5-level maturity model that classifies sites from 'Initial' to 'Optimized' for better benchmarking.</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Contact Form Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              Interested in Site Evaluation?
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              If your research site would like to be evaluated for future clinical trials, 
+              please submit your information below. We'll send you a personal access token 
+              to complete the evaluation process.
+            </p>
+          </div>
+
+          <ContactForm />
         </div>
       </section>
 
