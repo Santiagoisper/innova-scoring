@@ -45,7 +45,7 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
   // Scoring Summary Box
   if (evaluation) {
     const score = evaluation.total_score || 0
-    const level = evaluation.score_level || 'pending'
+    const level = evaluation.score_level || (score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red')
     
     doc.setDrawColor(226, 232, 240)
     doc.setFillColor(248, 250, 252)
@@ -84,19 +84,21 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
       ['Evaluator', evaluation?.evaluator_email || 'N/A']
     ],
     theme: 'striped',
-    headStyles: { fillStyle: 'F', fillColor: primaryColor, textColor: 255 },
+    headStyles: { fillColor: primaryColor, textColor: 255 },
     styles: { fontSize: 9 }
   })
 
   // Responses Table
-  const responses = evaluation?.responses?.scores || {}
+  let rawResponses = evaluation?.responses || {}
+  let scores = rawResponses.scores || rawResponses
+
   const tableBody = criteria.map((c, i) => {
-    const ans = responses[c.id] || responses[String(c.id)]
+    const ans = scores[c.id] || scores[String(c.id)]
     let displayAns = 'N/A'
     if (c.response_type === 'boolean') {
-      displayAns = ans === 'yes' ? 'YES' : ans === 'no' ? 'NO' : 'N/A'
+      displayAns = String(ans).toLowerCase() === 'yes' ? 'YES' : String(ans).toLowerCase() === 'no' ? 'NO' : 'N/A'
     } else {
-      displayAns = ans || 'No comment'
+      displayAns = ans || 'No statement provided'
     }
     return [i + 1, c.name, displayAns]
   })
@@ -116,7 +118,7 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
   })
 
   // Footer
-  const pageCount = (doc as any).internal.getNumberOfPages()
+  const pageCount = doc.internal.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
     doc.setFontSize(8)

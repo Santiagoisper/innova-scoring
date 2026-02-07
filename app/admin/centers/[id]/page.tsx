@@ -87,6 +87,7 @@ export default function CenterDetailsPage() {
         att = raw.attachments || {}
       } else {
         res = raw
+        // Legacy support
         Object.entries(raw).forEach(([key, value]) => {
           if (typeof value === 'string' && value.startsWith('http')) {
             att[key] = value
@@ -97,8 +98,11 @@ export default function CenterDetailsPage() {
     return { responses: res, attachments: att }
   }, [evaluation])
 
-  const getStatusDisplay = (level: string) => {
-    switch (level) {
+  const getStatusDisplay = (level: string, score: number) => {
+    // Determine level by score if not set
+    const currentLevel = level || (score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red')
+    
+    switch (currentLevel) {
       case 'green': return { label: 'Approved', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', icon: <CheckCircle2 className="w-5 h-5" /> }
       case 'yellow': return { label: 'Conditional', color: 'text-amber-600 bg-amber-50 border-amber-100', icon: <AlertTriangle className="w-5 h-5" /> }
       case 'red': return { label: 'Not Approved', color: 'text-rose-600 bg-rose-50 border-rose-100', icon: <XCircle className="w-5 h-5" /> }
@@ -106,7 +110,7 @@ export default function CenterDetailsPage() {
     }
   }
 
-  const status = getStatusDisplay(evaluation?.score_level)
+  const status = getStatusDisplay(evaluation?.score_level, evaluation?.total_score || 0)
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 space-y-4">

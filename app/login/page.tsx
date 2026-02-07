@@ -134,25 +134,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Mode */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-500">or</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => window.location.href = '/admin'}
-              className="mt-4 w-full py-3 px-4 border border-slate-300 rounded-xl text-slate-700 font-medium hover:bg-slate-50 transition-colors"
-            >
-              Enter Demo Mode →
-            </button>
-          </div>
-
           {/* Back to home */}
           <div className="mt-6 text-center">
             <Link 
@@ -185,7 +166,7 @@ export default function LoginPage() {
             {/* Feature list */}
             <div className="mt-10 space-y-4 text-left">
               {[
-                '18 comprehensive evaluation criteria',
+                'Comprehensive evaluation criteria',
                 'Weighted scoring system',
                 'Site benchmarking & comparison',
                 'Maturity level assessment',
