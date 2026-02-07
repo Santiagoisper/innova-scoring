@@ -363,6 +363,139 @@ export default function CentersPage() {
           <p className="text-slate-400 font-semibold">No se encontraron centros</p>
         </div>
       )}
+
+      {/* Add Center Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-slate-900 p-6 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+                  <Plus className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Agregar Nuevo Sitio</h3>
+                  <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">Configuración de Centro</p>
+                </div>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddCenter} className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Nombre del Sitio *</label>
+                  <input
+                    required
+                    type="text"
+                    value={newCenter.name}
+                    onChange={(e) => setNewCenter({ ...newCenter, name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="Ej: Hospital Central"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Código del Sitio *</label>
+                  <input
+                    required
+                    type="text"
+                    value={newCenter.code}
+                    onChange={(e) => setNewCenter({ ...newCenter, code: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="Ej: SITE-001"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">País *</label>
+                  <input
+                    required
+                    type="text"
+                    value={newCenter.country}
+                    onChange={(e) => setNewCenter({ ...newCenter, country: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="Ej: España"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ciudad *</label>
+                  <input
+                    required
+                    type="text"
+                    value={newCenter.city}
+                    onChange={(e) => setNewCenter({ ...newCenter, city: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="Ej: Madrid"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Dirección</label>
+                <input
+                  type="text"
+                  value={newCenter.address}
+                  onChange={(e) => setNewCenter({ ...newCenter, address: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="Calle, Número, Oficina..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-100">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Contacto</label>
+                  <input
+                    type="text"
+                    value={newCenter.contact_name}
+                    onChange={(e) => setNewCenter({ ...newCenter, contact_name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="Nombre"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Email</label>
+                  <input
+                    type="email"
+                    value={newCenter.contact_email}
+                    onChange={(e) => setNewCenter({ ...newCenter, contact_email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="email@ejemplo.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Teléfono</label>
+                  <input
+                    type="text"
+                    value={newCenter.contact_phone}
+                    onChange={(e) => setNewCenter({ ...newCenter, contact_phone: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="+00 000 000 000"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-4 pt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {saving ? "Guardando..." : "Crear Sitio"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
