@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import { 
   Save, 
@@ -9,8 +9,6 @@ import {
   AlertCircle, 
   CheckCircle2, 
   Settings2,
-  FileText,
-  BarChart4,
   RefreshCw
 } from "lucide-react"
 
@@ -25,41 +23,43 @@ interface Criterion {
 }
 
 export default function CriteriaManagement() {
-  const supabase = supabaseBrowser()
   const [criteria, setCriteria] = useState<Criterion[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
 
-  useEffect(() => {
-    async function loadCriteria() {
-      setLoading(true)
-      try {
-        const { data, error } = await supabase
-          .from('criteria')
-          .select('*')
-          .order('id', { ascending: true })
-        
-        if (error) throw error
-        if (data) setCriteria(data)
-      } catch (err: any) {
-        console.error("Error loading criteria:", err)
-        setMessage({ type: 'error', text: 'Failed to load parameters from database.' })
-      } finally {
-        setLoading(false)
-      }
+  const loadCriteria = useCallback(async () => {
+    const supabase = supabaseBrowser()
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('criteria')
+        .select('*')
+        .order('id', { ascending: true })
+      
+      if (error) throw error
+      if (data) setCriteria(data)
+    } catch (err: any) {
+      console.error("Error loading criteria:", err)
+      setMessage({ type: 'error', text: 'Failed to load parameters from database.' })
+    } finally {
+      setLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
     loadCriteria()
-  }, [supabase])
+  }, [loadCriteria])
 
   const handleSave = async () => {
+    const supabase = supabaseBrowser()
     setSaving(true)
     setMessage(null)
     try {
       // Split into updates and inserts
       const toUpdate = criteria.filter(c => typeof c.id === 'number' && c.id < 1000000000)
       const toInsert = criteria.filter(c => typeof c.id === 'string' || (typeof c.id === 'number' && c.id >= 1000000000))
-        .map(({ id, ...rest }) => rest) // Remove temporary ID
+        .map(({ id, ...rest }) => rest)
 
       if (toUpdate.length > 0) {
         const { error: updateErr } = await supabase.from('criteria').upsert(toUpdate)
@@ -71,11 +71,7 @@ export default function CriteriaManagement() {
         if (insertErr) throw insertErr
       }
 
-      // Reload to get real IDs
-      const { data, error: reloadErr } = await supabase.from('criteria').select('*').order('id', { ascending: true })
-      if (reloadErr) throw reloadErr
-      if (data) setCriteria(data)
-
+      await loadCriteria()
       setMessage({ type: 'success', text: 'All evaluation parameters updated successfully.' })
     } catch (err: any) {
       console.error("Save error:", err)
@@ -103,6 +99,7 @@ export default function CriteriaManagement() {
   }
 
   const remove = async (id: number | string) => {
+    const supabase = supabaseBrowser()
     if (confirm("Are you sure you want to remove this parameter?")) {
       if (typeof id === 'number' && id < 1000000000) {
         const { error } = await supabase.from('criteria').delete().eq('id', id)
