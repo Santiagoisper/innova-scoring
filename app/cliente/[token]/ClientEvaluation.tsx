@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { createClient } from "@supabase/supabase-js"
+import { calculateWeightedScore } from "@/lib/scoring/calculator"
+import { Criterion as TypeCriterion, Center as TypeCenter } from "@/types"
 import { 
   Sparkles, 
   Building2, 
@@ -28,23 +30,6 @@ const supabase = createClient(
 /* =========================
    Types
 ========================= */
-type Center = {
-  id: string
-  name: string
-  code: string
-  city: string
-  country: string
-}
-
-type Criterion = {
-  id: number | string
-  name: string
-  description: string
-  weight: number
-  category: string
-  order: number
-}
-
 type Attachment = {
   file_name: string
   file_path: string
@@ -58,11 +43,9 @@ type AttachmentState = {
 
 type Props = {
   token: string
-  center: Center
-  criteria: Criterion[]
+  center: TypeCenter
+  criteria: TypeCriterion[]
 }
-
-
 
 export default function ClientEvaluation({ token, center, criteria }: Props) {
   // Wizard steps
@@ -87,7 +70,7 @@ export default function ClientEvaluation({ token, center, criteria }: Props) {
     if (!acc[c.category]) acc[c.category] = []
     acc[c.category].push(c)
     return acc
-  }, {} as Record<string, Criterion[]>)
+  }, {} as Record<string, TypeCriterion[]>)
 
   const categoryList = Object.entries(categories)
 
@@ -100,28 +83,15 @@ export default function ClientEvaluation({ token, center, criteria }: Props) {
 
   function calculateProgress(): number {
     const scored = Object.keys(scores).length
-    return Math.round((scored / criteria.length) * 100)
+    return criteria.length > 0 ? Math.round((scored / criteria.length) * 100) : 0
   }
 
-  function calculateScore(): { total: number; status: string } {
-    const scoredCriteria = Object.entries(scores)
-    if (scoredCriteria.length === 0) return { total: 0, status: 'pending' }
-
-    let weightedSum = 0
-    let totalWeight = 0
-
-    scoredCriteria.forEach(([criterionId, score]) => {
-      const criterion = criteria.find(c => String(c.id) === criterionId)
-      if (criterion) {
-        weightedSum += score * criterion.weight
-        totalWeight += criterion.weight
-      }
-    })
-
-    const total = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0
-    const status = total >= 80 ? 'green' : total >= 60 ? 'yellow' : 'red'
-
-    return { total, status }
+  function getCurrentScoringResult() {
+    const scoringInput = Object.entries(scores).map(([id, score]) => ({
+      criterion_id: id,
+      score
+    }))
+    return calculateWeightedScore(scoringInput, criteria)
   }
 
   /* =========================
@@ -196,8 +166,6 @@ export default function ClientEvaluation({ token, center, criteria }: Props) {
     setError('')
 
     try {
-      const { total, status } = calculateScore()
-
       // Build attachments payload (only successful uploads)
       const attachmentsPayload: Record<string, Attachment> = {}
       Object.entries(attachments).forEach(([id, state]) => {
@@ -210,14 +178,13 @@ export default function ClientEvaluation({ token, center, criteria }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-  token, // ✅ ESTE ES EL CAMBIO IMPORTANTE
-  evaluator_email: email,
-  responses: scores,
-  notes,
-  generalNotes,
-  attachments: attachmentsPayload,
-}),
-
+          token,
+          evaluator_email: email,
+          responses: scores,
+          notes,
+          generalNotes,
+          attachments: attachmentsPayload,
+        }),
       })
 
       if (!res.ok) {
@@ -233,7 +200,7 @@ export default function ClientEvaluation({ token, center, criteria }: Props) {
     setSubmitting(false)
   }
 
-  const { total: currentScore, status: currentStatus } = calculateScore()
+  const { totalScore: currentScore, status: currentStatus } = getCurrentScoringResult()
   const attachmentCount = Object.values(attachments).filter(a => a.data).length
 
   return (
@@ -320,27 +287,28 @@ export default function ClientEvaluation({ token, center, criteria }: Props) {
                 Estimated completion time: 10-15 minutes. You can upload supporting documents for each criterion.
               </p>
             </div>
-            
-            <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
-              <input
-                type="checkbox"
+
+            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl mb-8 border border-slate-100">
+              <input 
+                type="checkbox" 
+                id="terms" 
                 checked={acceptTerms}
                 onChange={(e) => setAcceptTerms(e.target.checked)}
-                className="mt-0.5 w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
-              <span className="text-sm text-slate-700">
-                I have read and agree to the terms and conditions outlined above
-              </span>
-            </label>
+              <label htmlFor="terms" className="text-sm font-medium text-slate-700 cursor-pointer">
+                I agree to the terms and conditions and confirm I am authorized to complete this assessment.
+              </label>
+            </div>
 
-            <div className="mt-8 flex justify-end">
+            <div className="flex justify-end">
               <button
                 onClick={() => setStep('info')}
                 disabled={!acceptTerms}
-                className="btn-primary flex items-center gap-2"
+                className="btn-primary flex items-center gap-2 px-8 py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:translate-x-1"
               >
                 Continue
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -349,55 +317,41 @@ export default function ClientEvaluation({ token, center, criteria }: Props) {
         {/* Step: Info */}
         {step === 'info' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 animate-fade-in">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Your Contact Information</h2>
-            <p className="text-slate-600 mb-6">
-              We'll use this to send you a copy of your assessment results and to coordinate any follow-up questions.
-            </p>
-
-            <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">Evaluator Information</h2>
+            <p className="text-slate-600 mb-8">Please provide your professional contact details.</p>
+            
+            <div className="space-y-6 mb-8">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Work Email *
-                </label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Professional Email</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="email"
+                  <input 
+                    type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="input pl-12"
-                    placeholder="you@yoursite.com"
-                    required
+                    placeholder="evaluator@site.com"
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                   />
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Your email will not be shared with third parties without your consent.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100">
-                <div className="flex items-center gap-3">
-                  <Building2 className="w-5 h-5 text-indigo-600" />
-                  <div>
-                    <p className="font-medium text-indigo-900">{center.name}</p>
-                    <p className="text-sm text-indigo-700">{center.city}, {center.country}</p>
-                  </div>
-                </div>
+                <p className="text-xs text-slate-500 mt-2">A copy of the results will be sent to this address.</p>
               </div>
             </div>
 
-            <div className="mt-8 flex justify-between">
-              <button onClick={() => setStep('terms')} className="btn-secondary flex items-center gap-2">
-                <ChevronLeft className="w-4 h-4" />
+            <div className="flex justify-between">
+              <button
+                onClick={() => setStep('terms')}
+                className="flex items-center gap-2 px-6 py-3 text-slate-600 font-bold hover:text-slate-900 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
                 Back
               </button>
               <button
                 onClick={() => setStep('evaluation')}
-                disabled={!email || !email.includes('@')}
-                className="btn-primary flex items-center gap-2"
+                disabled={!email || !/^\S+@\S+\.\S+$/.test(email)}
+                className="btn-primary flex items-center gap-2 px-8 py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:translate-x-1"
               >
-                Start Evaluation
-                <ChevronRight className="w-4 h-4" />
+                Start Assessment
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -405,345 +359,265 @@ export default function ClientEvaluation({ token, center, criteria }: Props) {
 
         {/* Step: Evaluation */}
         {step === 'evaluation' && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Progress Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-sm text-slate-500">Progress</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {Object.keys(scores).length} / {criteria.length} criteria
-                  </p>
+          <div className="space-y-8 animate-fade-in">
+            {/* Progress Summary */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-24 z-10 flex items-center justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-bold text-slate-900">Completion Progress</span>
+                  <span className="text-sm font-bold text-indigo-600">{calculateProgress()}%</span>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-slate-500">Current Score</p>
-                  <p className={`text-2xl font-bold ${
-                    currentStatus === 'green' ? 'text-emerald-600' :
-                    currentStatus === 'yellow' ? 'text-amber-600' : 'text-red-600'
-                  }`}>
-                    {currentScore}
-                  </p>
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-600 transition-all duration-500"
+                    style={{ width: `${calculateProgress()}%` }}
+                  />
                 </div>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-600 transition-all duration-300"
-                  style={{ width: `${calculateProgress()}%` }}
-                />
-              </div>
-              {attachmentCount > 0 && (
-                <p className="text-xs text-slate-500 mt-2">
-                  <Paperclip className="w-3 h-3 inline mr-1" />
-                  {attachmentCount} document{attachmentCount !== 1 ? 's' : ''} attached
+              <div className="text-right border-l border-slate-100 pl-6">
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Current Score</p>
+                <p className={`text-2xl font-black ${
+                  currentStatus === 'green' ? 'text-emerald-600' : 
+                  currentStatus === 'yellow' ? 'text-amber-600' : 'text-red-600'
+                }`}>
+                  {currentScore}
                 </p>
-              )}
+              </div>
             </div>
 
-            {/* Categories */}
-            {categoryList.map(([category, categoryCriteria]) => (
-              <div key={category} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-6 py-4 border-b border-slate-100">
-                  <h3 className="font-semibold text-slate-900">{category}</h3>
-                  <p className="text-sm text-slate-500">
-                    {categoryCriteria.filter(c => scores[String(c.id)] !== undefined).length} / {categoryCriteria.length} completed
-                  </p>
-                </div>
-                <div className="divide-y divide-slate-100">
-                  {categoryCriteria.map((criterion) => {
-                    const criterionId = String(criterion.id)
-                    const attachmentState = attachments[criterionId]
-                    
-                    return (
-                      <div key={criterionId} className="p-6">
-                        <div className="flex items-start justify-between gap-4 mb-3">
+            {/* Criteria Categories */}
+            {categoryList.map(([category, catCriteria]) => (
+              <div key={category} className="space-y-4">
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-indigo-600 rounded-full" />
+                  {category}
+                </h3>
+                <div className="grid gap-4">
+                  {catCriteria.map((criterion) => (
+                    <div key={criterion.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:border-indigo-200 transition-colors">
+                      <div className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                           <div className="flex-1">
-                            <h4 className="font-medium text-slate-900">{criterion.name}</h4>
-                            <p className="text-sm text-slate-500 mt-1">{criterion.description}</p>
+                            <h4 className="font-bold text-slate-900 mb-1">{criterion.name}</h4>
+                            <p className="text-sm text-slate-500 mb-4">{criterion.description}</p>
+                            
+                            {/* Score Options */}
+                            <div className="flex flex-wrap gap-2">
+                              {[0, 25, 50, 75, 100].map((val) => (
+                                <button
+                                  key={val}
+                                  onClick={() => handleScoreChange(String(criterion.id), val)}
+                                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                    scores[String(criterion.id)] === val
+                                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-105'
+                                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  {val}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={scores[criterionId] ?? ''}
-                              onChange={(e) => handleScoreChange(criterionId, Number(e.target.value))}
-                              className="w-20 input text-center font-bold"
-                              placeholder="0-100"
-                            />
-                            {scores[criterionId] !== undefined && (
-                              <Check className="w-5 h-5 text-emerald-600" />
-                            )}
+
+                          {/* Attachments Section */}
+                          <div className="w-full md:w-64 flex-shrink-0">
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <Paperclip className="w-3 h-3" />
+                                Supporting Evidence
+                              </p>
+                              
+                              {attachments[String(criterion.id)]?.data ? (
+                                <div className="flex items-center justify-between gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                                  <span className="text-xs font-medium text-slate-700 truncate flex-1">
+                                    {attachments[String(criterion.id)].data?.file_name}
+                                  </span>
+                                  <button 
+                                    onClick={() => handleAttachmentRemove(String(criterion.id))}
+                                    className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded transition-colors"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="flex flex-col items-center justify-center gap-2 py-4 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group">
+                                  {attachments[String(criterion.id)]?.uploading ? (
+                                    <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Upload className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                      <span className="text-xs font-bold text-slate-500 group-hover:text-indigo-600">Upload PDF/Image</span>
+                                    </>
+                                  )}
+                                  <input 
+                                    type="file" 
+                                    className="hidden" 
+                                    accept=".pdf,image/*"
+                                    onChange={(e) => handleAttachmentUpload(String(criterion.id), e.target.files?.[0])}
+                                    disabled={attachments[String(criterion.id)]?.uploading}
+                                  />
+                                </label>
+                              )}
+                              {attachments[String(criterion.id)]?.error && (
+                                <p className="text-[10px] text-red-500 mt-2 font-medium">
+                                  {attachments[String(criterion.id)].error}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        {/* Attachment section */}
-                        <div className="flex items-center gap-3 mb-2">
-                          {/* Upload button */}
-                          {!attachmentState?.data && !attachmentState?.uploading && (
-                            <label className="flex items-center gap-1.5 text-xs text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors">
-                              <Upload className="w-4 h-4" />
-                              <span className="font-medium">Attach document</span>
-                              <input
-                                type="file"
-                                className="hidden"
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                                onChange={(e) => handleAttachmentUpload(criterionId, e.target.files?.[0])}
-                              />
-                            </label>
-                          )}
-
-                          {/* Uploading state */}
-                          {attachmentState?.uploading && (
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Uploading...</span>
-                            </div>
-                          )}
-
-                          {/* Uploaded file */}
-                          {attachmentState?.data && (
-                            <div className="flex items-center gap-2 text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg px-3 py-1.5">
-                              <Paperclip className="w-3.5 h-3.5" />
-                              <span className="font-medium max-w-[200px] truncate">
-                                {attachmentState.data.file_name}
-                              </span>
-                              <button
-                                onClick={() => handleAttachmentRemove(criterionId)}
-                                className="text-emerald-600 hover:text-red-600 transition-colors"
-                                title="Remove attachment"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Upload error */}
-                          {attachmentState?.error && (
-                            <div className="flex items-center gap-2 text-xs text-red-600">
-                              <AlertCircle className="w-4 h-4" />
-                              <span>{attachmentState.error}</span>
-                              <button
-                                onClick={() => setAttachments(prev => {
-                                  const next = { ...prev }
-                                  delete next[criterionId]
-                                  return next
-                                })}
-                                className="underline hover:no-underline"
-                              >
-                                Retry
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Notes input */}
-                        <input
-                          type="text"
-                          value={notes[criterionId] || ''}
-                          onChange={(e) => setNotes(prev => ({ ...prev, [criterionId]: e.target.value }))}
-                          className="input text-sm"
-                          placeholder="Add notes (optional)..."
-                        />
                       </div>
-                    )
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
 
-            {/* General Notes */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <label className="block text-sm font-semibold text-slate-900 mb-3">
-                General Notes & Comments
-              </label>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+              <h3 className="text-lg font-black text-slate-900 mb-4">Additional Comments</h3>
               <textarea
                 value={generalNotes}
                 onChange={(e) => setGeneralNotes(e.target.value)}
-                className="input"
-                rows={4}
-                placeholder="Additional observations about your site capabilities..."
+                placeholder="Any additional information you would like to share..."
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all min-h-[120px]"
               />
             </div>
 
-            <div className="flex justify-between">
-              <button onClick={() => setStep('info')} className="btn-secondary flex items-center gap-2">
-                <ChevronLeft className="w-4 h-4" />
+            <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <button
+                onClick={() => setStep('info')}
+                className="flex items-center gap-2 px-6 py-3 text-slate-600 font-bold hover:text-slate-900 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
                 Back
               </button>
-              <button
-                onClick={() => setStep('review')}
-                disabled={Object.keys(scores).length === 0}
-                className="btn-primary flex items-center gap-2"
-              >
-                Review & Submit
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-6">
+                <div className="hidden md:block text-right">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Progress</p>
+                  <p className="text-sm font-black text-slate-900">{Object.keys(scores).length} of {criteria.length} scored</p>
+                </div>
+                <button
+                  onClick={() => setStep('review')}
+                  disabled={Object.keys(scores).length < criteria.length}
+                  className="btn-primary flex items-center gap-2 px-10 py-4 rounded-xl font-black disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:translate-x-1 shadow-lg shadow-indigo-200"
+                >
+                  Review Submission
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Step: Review */}
         {step === 'review' && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">Review Your Evaluation</h2>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 animate-fade-in">
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Final Review</h2>
+            <p className="text-slate-600 mb-8">Please review your assessment before final submission.</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="p-4 rounded-xl bg-slate-50">
-                  <p className="text-sm text-slate-500">Center</p>
-                  <p className="font-semibold text-slate-900">{center.name}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-50">
-                  <p className="text-sm text-slate-500">Criteria Scored</p>
-                  <p className="font-semibold text-slate-900">{Object.keys(scores).length} / {criteria.length}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-50">
-                  <p className="text-sm text-slate-500">Documents</p>
-                  <p className="font-semibold text-slate-900">{attachmentCount} attached</p>
-                </div>
-                <div className={`p-4 rounded-xl ${
-                  currentStatus === 'green' ? 'bg-emerald-50' :
-                  currentStatus === 'yellow' ? 'bg-amber-50' : 'bg-red-50'
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Final Score</p>
+                <p className={`text-4xl font-black ${
+                  currentStatus === 'green' ? 'text-emerald-600' : 
+                  currentStatus === 'yellow' ? 'text-amber-600' : 'text-red-600'
                 }`}>
-                  <p className="text-sm text-slate-500">Total Score</p>
-                  <p className={`text-2xl font-bold ${
-                    currentStatus === 'green' ? 'text-emerald-600' :
-                    currentStatus === 'yellow' ? 'text-amber-600' : 'text-red-600'
-                  }`}>
-                    {currentScore}
-                  </p>
-                </div>
+                  {currentScore}
+                </p>
+                <p className="text-xs font-bold mt-1 opacity-70">
+                  {currentStatus === 'green' ? '✓ Approved' : 
+                   currentStatus === 'yellow' ? '⚠ Conditional' : '✕ Not Approved'}
+                </p>
               </div>
-
-              <div className="border border-slate-200 rounded-xl overflow-hidden mb-8">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Criterion</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Score</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Document</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {criteria.filter(c => scores[String(c.id)] !== undefined).map((criterion) => {
-                      const criterionId = String(criterion.id)
-                      const attachment = attachments[criterionId]?.data
-                      
-                      return (
-                        <tr key={criterionId}>
-                          <td className="py-3 px-4 text-sm text-slate-700">{criterion.name}</td>
-                          <td className="py-3 px-4">
-                            <span className={`font-semibold ${
-                              scores[criterionId] >= 80 ? 'text-emerald-600' :
-                              scores[criterionId] >= 60 ? 'text-amber-600' : 'text-red-600'
-                            }`}>
-                              {scores[criterionId]}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {attachment ? (
-                              <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
-                                <Paperclip className="w-3 h-3" />
-                                {attachment.file_name}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-400">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Evaluator</p>
+                <p className="text-sm font-bold text-slate-900 truncate">{email}</p>
+                <p className="text-xs text-slate-500 mt-1">{center.name}</p>
               </div>
-
-              {error && (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 border border-red-100 text-red-700 mb-6">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <p>{error}</p>
-                </div>
-              )}
-
-              <div className="flex justify-between">
-                <button onClick={() => setStep('evaluation')} className="btn-secondary flex items-center gap-2">
-                  <ChevronLeft className="w-4 h-4" />
-                  Edit Responses
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="btn-primary flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Submit Evaluation
-                    </>
-                  )}
-                </button>
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Attachments</p>
+                <p className="text-4xl font-black text-slate-900">{attachmentCount}</p>
+                <p className="text-xs font-bold text-slate-500 mt-1">Files uploaded</p>
               </div>
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-50 text-red-700 rounded-xl mb-8 border border-red-100">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <p className="text-sm font-bold">{error}</p>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => setStep('evaluation')}
+                disabled={submitting}
+                className="flex items-center gap-2 px-6 py-3 text-slate-600 font-bold hover:text-slate-900 transition-colors disabled:opacity-50"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                Back to Edit
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="btn-primary flex items-center gap-3 px-12 py-4 rounded-xl font-black disabled:opacity-50 transition-all hover:scale-105 shadow-xl shadow-indigo-200"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    Submit Assessment
+                    <Send className="w-5 h-5" />
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
 
         {/* Step: Success */}
         {step === 'success' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center animate-fade-in">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-6">
-              <Check className="w-8 h-8 text-emerald-600" />
+          <div className="max-w-2xl mx-auto text-center py-12 animate-scale-in">
+            <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-100">
+              <Check className="w-12 h-12" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Assessment Complete</h2>
-            <p className="text-slate-600 mb-6 max-w-md mx-auto">
-              Your site profile has been updated. We'll notify you when sponsors are evaluating 
-              sites for studies that match your capabilities.
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Assessment Submitted!</h2>
+            <p className="text-lg text-slate-600 mb-12">
+              Thank you for completing the site capability assessment for {center.name}. 
+              The results have been sent to your email and shared with the selection committee.
             </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto mb-6">
-              <div className="p-4 rounded-xl bg-slate-50">
-                <p className="text-sm text-slate-500">Your Score</p>
-                <p className={`text-2xl font-bold ${
-                  currentStatus === 'green' ? 'text-emerald-600' :
-                  currentStatus === 'yellow' ? 'text-amber-600' : 'text-red-600'
-                }`}>
-                  {currentScore}/100
-                </p>
-              </div>
-              <div className="p-4 rounded-xl bg-slate-50">
-                <p className="text-sm text-slate-500">Status</p>
-                <p className={`text-lg font-semibold ${
-                  currentStatus === 'green' ? 'text-emerald-600' :
-                  currentStatus === 'yellow' ? 'text-amber-600' : 'text-red-600'
-                }`}>
-                  {currentStatus === 'green' ? 'Qualified' :
-                   currentStatus === 'yellow' ? 'Conditional' : 'Needs Improvement'}
-                </p>
+            <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Your Final Rating</p>
+              <div className="flex items-center justify-center gap-8">
+                <div>
+                  <p className="text-xs font-bold text-slate-400 mb-1 uppercase">Score</p>
+                  <p className="text-5xl font-black text-slate-900">{currentScore}</p>
+                </div>
+                <div className="w-px h-16 bg-slate-100" />
+                <div className="text-left">
+                  <p className="text-xs font-bold text-slate-400 mb-1 uppercase">Status</p>
+                  <div className={`px-4 py-1.5 rounded-full text-sm font-black inline-block ${
+                    currentStatus === 'green' ? 'bg-emerald-100 text-emerald-700' : 
+                    currentStatus === 'yellow' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {currentStatus === 'green' ? 'APPROVED' : 
+                     currentStatus === 'yellow' ? 'CONDITIONAL' : 'NOT APPROVED'}
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div className="text-left p-4 rounded-xl bg-indigo-50 border border-indigo-100 max-w-md mx-auto mb-6">
-              <p className="font-medium text-indigo-900 mb-2">What happens next?</p>
-              <ul className="text-sm text-indigo-800 space-y-1">
-                <li>• You'll receive a detailed report at {email}</li>
-                <li>• Your profile is now visible to sponsors seeking sites</li>
-                <li>• Update your assessment anytime to reflect changes</li>
-              </ul>
-            </div>
-
-            <p className="text-sm text-slate-500">
-              Questions? Contact us at <a href="mailto:sites@innovatrials.com" className="text-indigo-600 hover:underline">sites@innovatrials.com</a>
-            </p>
           </div>
         )}
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center text-sm text-slate-500">
-        © {new Date().getFullYear()} Innova Trials. All rights reserved.
+      <footer className="max-w-4xl mx-auto px-6 py-12 text-center">
+        <p className="text-sm text-slate-400 font-medium">
+          © {new Date().getFullYear()} Innova Trials. All rights reserved.
+        </p>
       </footer>
     </div>
   )

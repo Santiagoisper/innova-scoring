@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { supabaseBrowser } from "@/lib/supabase/client"
+import { calculateWeightedScore } from "@/lib/scoring/calculator"
+import { Criterion, Center } from "@/types"
 import { 
   ClipboardCheck, 
   Building2,
@@ -12,21 +14,6 @@ import {
   Save,
   RefreshCw
 } from "lucide-react"
-
-type Center = {
-  id: string
-  name: string
-  code: string
-}
-
-type Criterion = {
-  id: string
-  name: string
-  description: string
-  weight: number
-  category: string
-  order: number
-}
 
 export default function EvaluatePage() {
   const searchParams = useSearchParams()
@@ -48,12 +35,12 @@ export default function EvaluatePage() {
     setLoading(true)
 
     const [centersRes, criteriaRes] = await Promise.all([
-      supabase.from('centers').select('id, name, code'),
+      supabase.from('centers').select('*'),
       supabase.from('criteria').select('*').order('order', { ascending: true })
     ])
 
-    if (centersRes.data) setCenters(centersRes.data)
-    if (criteriaRes.data) setCriteria(criteriaRes.data)
+    if (centersRes.data) setCenters(centersRes.data as Center[])
+    if (criteriaRes.data) setCriteria(criteriaRes.data as Criterion[])
 
     setLoading(false)
   }
@@ -77,26 +64,13 @@ export default function EvaluatePage() {
     setNotes(prev => ({ ...prev, [criterionId]: value }))
   }
 
-  // Calculate current total score
-  function calculateScore(): { total: number; status: string } {
-    const scoredCriteria = Object.entries(scores)
-    if (scoredCriteria.length === 0) return { total: 0, status: 'pending' }
-
-    let weightedSum = 0
-    let totalWeight = 0
-
-    scoredCriteria.forEach(([criterionId, score]) => {
-      const criterion = criteria.find(c => c.id === criterionId)
-      if (criterion) {
-        weightedSum += score * criterion.weight
-        totalWeight += criterion.weight
-      }
-    })
-
-    const total = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0
-    const status = total >= 80 ? 'green' : total >= 60 ? 'yellow' : 'red'
-
-    return { total, status }
+  // Calculate current total score using centralized logic
+  function getCurrentScoringResult() {
+    const scoringInput = Object.entries(scores).map(([id, score]) => ({
+      criterion_id: id,
+      score
+    }))
+    return calculateWeightedScore(scoringInput, criteria)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -109,8 +83,8 @@ export default function EvaluatePage() {
       return
     }
 
-    const scoredItems = Object.entries(scores)
-    if (scoredItems.length === 0) {
+    const scoredItemsCount = Object.keys(scores).length
+    if (scoredItemsCount === 0) {
       setError('Please score at least one criterion')
       return
     }
@@ -118,15 +92,16 @@ export default function EvaluatePage() {
     setSaving(true)
 
     try {
-      const { total, status } = calculateScore()
+      const { totalScore, status } = getCurrentScoringResult()
 
       // Insert evaluation
       const { data: evaluation, error: evalError } = await supabase
         .from('evaluations')
         .insert([{
           center_id: selectedCenter,
-          total_score: total,
-          status,
+          total_score: totalScore,
+          status: 'completed', // Admin evaluations are completed by default
+          score_level: status,
           notes: generalNotes
         }])
         .select()
@@ -153,6 +128,9 @@ export default function EvaluatePage() {
       setNotes({})
       setGeneralNotes('')
       setSelectedCenter('')
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccess(false), 5000)
     } catch (err: any) {
       setError(err.message || 'Error saving evaluation')
     }
@@ -160,8 +138,8 @@ export default function EvaluatePage() {
     setSaving(false)
   }
 
-  const { total: currentScore, status: currentStatus } = calculateScore()
-  const progress = (Object.keys(scores).length / criteria.length) * 100
+  const { totalScore: currentScore, status: currentStatus } = getCurrentScoringResult()
+  const progress = criteria.length > 0 ? (Object.keys(scores).length / criteria.length) * 100 : 0
 
   if (loading) {
     return (
@@ -191,7 +169,7 @@ export default function EvaluatePage() {
           <div className="text-right">
             <p className="text-sm text-slate-500">Current Score</p>
             <p className={`text-3xl font-bold ${
-              currentStatus === 'green' ? 'text-accent-600' :
+              currentStatus === 'green' ? 'text-emerald-600' :
               currentStatus === 'yellow' ? 'text-amber-600' : 'text-red-600'
             }`}>
               {currentScore}
@@ -200,7 +178,7 @@ export default function EvaluatePage() {
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-primary-600 transition-all duration-300"
+            className="h-full bg-indigo-600 transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -243,7 +221,7 @@ export default function EvaluatePage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium text-slate-900">{criterion.name}</h4>
-                        <span className="badge-blue text-xs">Weight: {criterion.weight}</span>
+                        <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs font-semibold">Weight: {criterion.weight}</span>
                       </div>
                       <p className="text-sm text-slate-500 mt-1">{criterion.description}</p>
                     </div>
@@ -258,7 +236,7 @@ export default function EvaluatePage() {
                         placeholder="0-100"
                       />
                       {scores[criterion.id] !== undefined && (
-                        <Check className="w-5 h-5 text-accent-600" />
+                        <Check className="w-5 h-5 text-emerald-600" />
                       )}
                     </div>
                   </div>
@@ -298,7 +276,7 @@ export default function EvaluatePage() {
         )}
 
         {success && (
-          <div className="flex items-center gap-3 p-4 rounded-lg bg-accent-50 border border-accent-100 text-accent-700">
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700">
             <Check className="w-5 h-5 flex-shrink-0" />
             <p>Evaluation saved successfully!</p>
           </div>

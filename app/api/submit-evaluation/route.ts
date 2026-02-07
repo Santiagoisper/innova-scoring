@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { calculateWeightedScore } from "@/lib/scoring/calculator"
+import { Criterion } from "@/types"
 
 /* =========================
    Supabase Client
@@ -28,9 +30,24 @@ export async function POST(req: Request) {
     /* =========================
        Validations
     ========================= */
-    if (!token || !responses) {
+    if (!token) {
       return NextResponse.json(
-        { error: "Missing token or responses" },
+        { error: "Missing evaluation token" },
+        { status: 400 }
+      )
+    }
+
+    if (!responses || typeof responses !== 'object' || Object.keys(responses).length === 0) {
+      return NextResponse.json(
+        { error: "Missing or invalid responses" },
+        { status: 400 }
+      )
+    }
+
+    // Basic email validation if provided
+    if (evaluator_email && !/^\S+@\S+\.\S+$/.test(evaluator_email)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
         { status: 400 }
       )
     }
@@ -59,44 +76,56 @@ export async function POST(req: Request) {
     }
 
     /* =========================
-       2) Calculate Score
+       2) Fetch Criteria for Scoring
     ========================= */
-    const scoreValues = Object.values(responses) as number[]
-
-    const finalScore =
-      scoreValues.length > 0
-        ? Math.round(
-            scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length
-          )
-        : 0
-
-    const scoreLevel =
-      finalScore >= 80 ? "green" : finalScore >= 60 ? "yellow" : "red"
+    const { data: criteria, error: criteriaError } = await supabase
+      .from("criteria")
+      .select("*")
+    
+    if (criteriaError || !criteria) {
+      return NextResponse.json(
+        { error: "Failed to fetch evaluation criteria" },
+        { status: 500 }
+      )
+    }
 
     /* =========================
-       3) Update Evaluation (NO INSERT)
+       3) Calculate Score using Centralized Logic
+    ========================= */
+    const scoringInput = Object.entries(responses).map(([id, score]) => {
+      const numScore = Number(score)
+      if (isNaN(numScore) || numScore < 0 || numScore > 100) {
+        throw new Error(`Invalid score for criterion ${id}: must be between 0 and 100`)
+      }
+      return {
+        criterion_id: id,
+        score: numScore
+      }
+    })
+
+    const { totalScore, status: scoreLevel } = calculateWeightedScore(
+      scoringInput,
+      criteria as Criterion[]
+    )
+
+    /* =========================
+       4) Update Evaluation
     ========================= */
     const { error: updateError } = await supabase
       .from("evaluations")
       .update({
         evaluator_email: evaluator_email || evaluation.evaluator_email,
-        total_score: finalScore,
-
-        // Link expires here
+        total_score: totalScore,
         status: "completed",
-
-        // Traffic light score
         score_level: scoreLevel,
-
-        // Store everything in responses JSON
         responses: {
           scores: responses,
           attachments: attachments || {},
           notes: notes || {},
           generalNotes: generalNotes || "",
         },
-
         notes: generalNotes || null,
+        updated_at: new Date().toISOString()
       })
       .eq("id", evaluation.id)
 
@@ -108,9 +137,9 @@ export async function POST(req: Request) {
     }
 
     /* =========================
-       4) Save Evaluation Items
-       (Delete first to avoid duplicates)
+       5) Save Evaluation Items
     ========================= */
+    // Delete existing items for this evaluation to be safe (idempotency)
     await supabase
       .from("evaluation_items")
       .delete()
@@ -118,12 +147,19 @@ export async function POST(req: Request) {
 
     const items = Object.entries(responses).map(([criteria_id, score]) => ({
       evaluation_id: evaluation.id,
-      criteria_id: parseInt(criteria_id),
-      score: score as number,
+      criteria_id: criteria_id, // Keep as string if that's what the DB expects or cast if needed
+      score: Number(score),
     }))
 
     if (items.length > 0) {
-      await supabase.from("evaluation_items").insert(items)
+      const { error: itemsError } = await supabase
+        .from("evaluation_items")
+        .insert(items)
+      
+      if (itemsError) {
+        console.error("Error inserting evaluation items:", itemsError)
+        // We don't fail the whole request here as the main evaluation is updated
+      }
     }
 
     /* =========================
@@ -133,16 +169,19 @@ export async function POST(req: Request) {
       success: true,
       evaluation_id: evaluation.id,
       token,
-      score: finalScore,
+      score: totalScore,
       level: scoreLevel,
       status: "completed",
     })
-  } catch (err) {
+  } catch (err: any) {
     console.error("Submit evaluation error:", err)
 
+    const status = err.message?.includes("Invalid score") ? 400 : 500
+    const message = status === 400 ? err.message : "Internal server error"
+
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: message },
+      { status }
     )
   }
 }
