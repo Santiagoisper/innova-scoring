@@ -15,6 +15,7 @@ import {
   X,
   Link as LinkIcon,
   Trash2,
+  ChevronRight,
 } from "lucide-react"
 
 type Center = {
@@ -135,28 +136,28 @@ export default function CentersPage() {
     await loadData()
   }
 
-  async function deleteCenter(id: string, name: string) {
+  async function deleteCenter(id: string, name: string, e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
     if (!confirm(`Are you sure you want to delete the center "${name}"? All associated evaluations will be lost.`)) {
       return;
     }
 
     try {
-      const res = await fetch(`/api/admin/centers/${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
+      const { error } = await supabase.from("centers").delete().eq("id", id)
+      if (!error) {
         loadData();
       } else {
-        const data = await res.json();
-        alert("Error deleting center: " + (data.error || "Unknown error"));
+        alert("Error deleting center: " + error.message);
       }
     } catch (err: any) {
       alert("Error: " + err.message);
     }
   }
 
-  function copyToClipboard(token: string) {
+  function copyToClipboard(token: string, e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
     const link = `${window.location.origin}/cliente/${token}`
     navigator.clipboard.writeText(link)
 
@@ -205,7 +206,7 @@ export default function CentersPage() {
             Centers
           </h1>
           <p className="text-slate-600 mt-1">
-            Manage research centers and generate sponsor evaluation links
+            Manage research centers and monitor evaluation progress
           </p>
         </div>
 
@@ -250,14 +251,18 @@ export default function CentersPage() {
                 const status = getStatusInfo(latestEval)
 
                 return (
-                  <tr key={center.id} className="hover:bg-slate-50 transition-colors group">
+                  <tr 
+                    key={center.id} 
+                    className="hover:bg-slate-50 transition-colors group cursor-pointer"
+                    onClick={() => window.location.href = `/admin/centers/${center.id}`}
+                  >
                     <td className="px-6 py-4">
-                      <Link href={`/admin/centers/${center.id}`} className="block hover:opacity-70">
-                        <p className="font-semibold text-slate-900">
+                      <div className="block">
+                        <p className="font-semibold text-slate-900 group-hover:text-primary-600 transition-colors">
                           {center.name}
                         </p>
                         <p className="text-xs text-slate-500">{center.code}</p>
-                      </Link>
+                      </div>
                     </td>
 
                     <td className="px-4 py-4">
@@ -278,9 +283,9 @@ export default function CentersPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         {latestEval?.status === "pending" ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <button
-                              onClick={() => copyToClipboard(latestEval.token)}
+                              onClick={(e) => copyToClipboard(latestEval.token, e)}
                               title="Copy evaluation link"
                               className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
                             >
@@ -294,6 +299,7 @@ export default function CentersPage() {
                             <a
                               href={`/cliente/${latestEval.token}`}
                               target="_blank"
+                              onClick={(e) => e.stopPropagation()}
                               title="Open evaluation link"
                               className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
                             >
@@ -302,7 +308,10 @@ export default function CentersPage() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => generateEvaluationLink(center)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateEvaluationLink(center);
+                            }}
                             className="btn-sm btn-primary flex items-center gap-2"
                           >
                             <LinkIcon className="w-4 h-4" />
@@ -310,21 +319,17 @@ export default function CentersPage() {
                           </button>
                         )}
                         
-                        <Link 
-                          href={`/admin/centers/${center.id}`}
-                          title="View Details"
-                          className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
-                        >
-                          <Building2 className="w-4 h-4 text-slate-500" />
-                        </Link>
+                        <div className="w-px h-4 bg-slate-200 mx-1" />
 
                         <button
-                          onClick={() => deleteCenter(center.id, center.name)}
+                          onClick={(e) => deleteCenter(center.id, center.name, e)}
                           title="Delete Center"
                           className="p-2 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </button>
+
+                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary-400 transition-all group-hover:translate-x-1" />
                       </div>
                     </td>
                   </tr>

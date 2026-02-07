@@ -68,14 +68,28 @@ export default function CenterDetailsPage() {
     )
   }
 
-  const responses = evaluation?.responses?.scores || {}
-  const attachments = evaluation?.responses?.attachments || {}
+  // Lógica robusta para extraer respuestas y adjuntos de diferentes formatos de JSONB
+  let responses: Record<string, any> = {}
+  let attachments: Record<string, any> = {}
+
+  if (evaluation?.responses) {
+    const rawResponses = evaluation.responses
+    // Caso 1: Estructura nueva { scores: {...}, attachments: {...} }
+    if (rawResponses.scores) {
+      responses = rawResponses.scores
+      attachments = rawResponses.attachments || {}
+    } 
+    // Caso 2: Estructura antigua { "1": 100, "2": "texto", ... }
+    else {
+      responses = rawResponses
+    }
+  }
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
       {/* Navigation */}
       <button 
-        onClick={() => router.back()}
+        onClick={() => router.push('/admin/centers')}
         className="flex items-center gap-2 text-slate-600 hover:text-primary-600 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -107,7 +121,7 @@ export default function CenterDetailsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-slate-400" />
-                {center.contact_phone || "No phone provided"}
+                {center.contact_phone || center.phone || "No phone provided"}
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-slate-400" />
@@ -121,7 +135,7 @@ export default function CenterDetailsPage() {
             <div className="text-5xl font-black text-slate-900 mb-2">
               {evaluation?.total_score ?? "—"}
             </div>
-            {evaluation?.score_level && (
+            {evaluation?.status && evaluation.status !== 'pending' && (
               <span className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${
                 evaluation.score_level === 'green' ? 'bg-green-100 text-green-700' :
                 evaluation.score_level === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
@@ -137,23 +151,25 @@ export default function CenterDetailsPage() {
 
       {/* Evaluation Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content: Questionnaire Responses */}
         <div className="lg:col-span-2 space-y-6">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary-600" />
             Evaluation Responses
           </h2>
 
-          {!evaluation ? (
+          {!evaluation || (evaluation.status === 'pending' && Object.keys(responses).length === 0) ? (
             <div className="card p-12 text-center text-slate-500">
               <p>No evaluation data available for this center yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {criteria.map((c) => {
-                const answer = responses[c.id]
-                const attachment = attachments[c.id]
+                const answer = responses[c.id] || responses[String(c.id)]
+                const attachment = attachments[c.id] || attachments[String(c.id)]
                 
+                // Si no hay respuesta para este criterio, no lo mostramos o mostramos como pendiente
+                if (answer === undefined && !attachment) return null;
+
                 return (
                   <div key={c.id} className="card p-5 hover:border-primary-200 transition-colors">
                     <div className="flex justify-between items-start gap-4">
@@ -163,24 +179,28 @@ export default function CenterDetailsPage() {
                       </div>
                       
                       <div className="flex flex-col items-end gap-2">
-                        {typeof answer === 'number' ? (
+                        {typeof answer === 'number' || answer === 'yes' || answer === 'no' || answer === 'na' ? (
                           <span className={`px-3 py-1 rounded-lg text-sm font-bold ${
-                            answer === 100 ? 'bg-green-100 text-green-700' :
-                            answer === 0 ? 'bg-red-100 text-red-700' :
+                            (answer === 100 || answer === 'yes') ? 'bg-green-100 text-green-700' :
+                            (answer === 0 || answer === 'no') ? 'bg-red-100 text-red-700' :
                             'bg-slate-100 text-slate-700'
                           }`}>
-                            {answer === 100 ? 'YES' : answer === 0 ? 'NO' : 'N/A'}
+                            {(answer === 100 || answer === 'yes') ? 'YES' : (answer === 0 || answer === 'no') ? 'NO' : 'N/A'}
                           </span>
-                        ) : (
+                        ) : answer ? (
                           <span className="px-3 py-1 rounded-lg text-sm font-medium bg-blue-50 text-blue-700">
                             Development
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-lg text-sm font-medium bg-slate-50 text-slate-400">
+                            No Answer
                           </span>
                         )}
                       </div>
                     </div>
 
                     {/* Development Text */}
-                    {typeof answer === 'string' && (
+                    {typeof answer === 'string' && answer !== 'yes' && answer !== 'no' && answer !== 'na' && (
                       <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-700 text-sm italic">
                         "{answer}"
                       </div>
@@ -202,11 +222,16 @@ export default function CenterDetailsPage() {
                   </div>
                 )
               })}
+              {/* Si no se mostraron criterios (todos null), mostrar mensaje */}
+              {criteria.every(c => responses[c.id] === undefined && !attachments[c.id]) && (
+                <div className="card p-12 text-center text-slate-500">
+                  <p>Evaluation started but no specific answers recorded yet.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Sidebar: Files & Meta */}
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-primary-600" />
@@ -249,15 +274,15 @@ export default function CenterDetailsPage() {
                   <span className="font-bold text-slate-900 uppercase">{evaluation?.status || 'Pending'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Submitted at</span>
+                  <span className="text-slate-500">Date</span>
                   <span className="font-bold text-slate-900">
-                    {evaluation?.updated_at ? new Date(evaluation.updated_at).toLocaleDateString() : 'N/A'}
+                    {evaluation?.created_at ? new Date(evaluation.created_at).toLocaleDateString() : 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Evaluator</span>
                   <span className="font-bold text-slate-900 truncate max-w-[120px]">
-                    {evaluation?.evaluator_email || 'System'}
+                    {evaluation?.evaluator_email || 'N/A'}
                   </span>
                 </div>
               </div>
