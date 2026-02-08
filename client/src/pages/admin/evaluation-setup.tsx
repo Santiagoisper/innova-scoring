@@ -27,8 +27,11 @@ export default function EvaluationSetup() {
     category: "Infraestructura",
     weight: 1,
     isKnockOut: false,
-    enabled: true
+    enabled: true,
+    keywords: []
   });
+  
+  const [keywordsInput, setKeywordsInput] = useState("");
 
   if (user?.role !== "admin") {
     return <div className="p-4">Access Denied</div>;
@@ -46,7 +49,11 @@ export default function EvaluationSetup() {
       return;
     }
 
-    addQuestion(newQuestion as Omit<Question, "id">);
+    addQuestion({
+      ...newQuestion,
+      keywords: newQuestion.type === "Text" && keywordsInput ? keywordsInput.split(',').map(s => s.trim()).filter(Boolean) : undefined
+    } as Omit<Question, "id">);
+    
     setIsAddOpen(false);
     setNewQuestion({
       text: "",
@@ -54,8 +61,10 @@ export default function EvaluationSetup() {
       category: "Infraestructura",
       weight: 1,
       isKnockOut: false,
-      enabled: true
+      enabled: true,
+      keywords: []
     });
+    setKeywordsInput("");
     
     toast({
       title: "Question Added",
@@ -160,6 +169,21 @@ export default function EvaluationSetup() {
                     </div>
                   </div>
 
+                  {newQuestion.type === "Text" && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="keywords">Scoring Keywords (comma separated)</Label>
+                      <Input 
+                        id="keywords" 
+                        placeholder="e.g. Epic, Cerner, Medidata (Matches increase score)"
+                        value={keywordsInput}
+                        onChange={(e) => setKeywordsInput(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        If provided, answers containing these words get higher scores. Answers with "No" get 0.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="knockout" 
@@ -213,6 +237,13 @@ export default function EvaluationSetup() {
                         <span>{q.text}</span>
                         {q.isKnockOut && (
                           <Badge variant="destructive" className="w-fit text-[10px] px-1 py-0 h-5">Knock Out</Badge>
+                        )}
+                        {q.keywords && q.keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {q.keywords.map((k, i) => (
+                              <span key={i} className="text-[10px] bg-blue-50 text-blue-700 px-1 rounded border border-blue-100">{k}</span>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </TableCell>

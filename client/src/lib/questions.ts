@@ -443,9 +443,62 @@ export function calculateScore(answers: Record<string, any>, questions: Question
       categoryData[q.category].totalWeight += q.weight;
       totalWeight += q.weight;
 
-      if (answer === "Yes" || (q.type === "Text" && answer && answer.length > 5)) {
+      // Logic for Yes/No
+      if (answer === "Yes") {
         earnedScore += q.weight;
         categoryData[q.category].earnedWeight += q.weight;
+      }
+      
+      // Logic for Text
+      else if (q.type === "Text" && typeof answer === "string" && answer.trim().length > 0) {
+        const normalizedAnswer = answer.toLowerCase().trim();
+        
+        // 1. Negative Check: If explicitly "No", "None", "N/A", "No tengo", "Ninguno" -> 0 points
+        const negativeTerms = ["no", "none", "n/a", "na", "ninguno", "ninguna", "nil", "don't have", "no tengo", "no poseo"];
+        const isNegative = negativeTerms.some(term => normalizedAnswer === term || normalizedAnswer === `${term}.`);
+        
+        if (!isNegative) {
+          // 2. Keyword Scoring (if keywords defined)
+          if (q.keywords && q.keywords.length > 0) {
+            // Count how many keywords are present in the answer
+            let matchCount = 0;
+            q.keywords.forEach(keyword => {
+              if (normalizedAnswer.includes(keyword.toLowerCase())) {
+                matchCount++;
+              }
+            });
+            
+            // Scoring Strategy:
+            // If matches found: Proportional score? Or tiered?
+            // Let's say if they have at least 1 keyword, they get 50%. 
+            // If they have >= 3 keywords (or all if < 3), they get 100%.
+            
+            if (matchCount > 0) {
+              const threshold = Math.min(3, q.keywords.length); // Max score at 3 matches or all keywords
+              const ratio = Math.min(matchCount / threshold, 1);
+              const points = q.weight * ratio;
+              
+              earnedScore += points;
+              categoryData[q.category].earnedWeight += points;
+            } else {
+               // If keywords exist but none matched, check length fallback? 
+               // Maybe they listed something else valid. 
+               // Give minimal points (25%) for effort if decent length?
+               if (normalizedAnswer.length > 10) {
+                 const points = q.weight * 0.25;
+                 earnedScore += points;
+                 categoryData[q.category].earnedWeight += points;
+               }
+            }
+          } else {
+            // 3. Heuristic Scoring (No keywords defined)
+            // Just length based, but careful with short junk
+            if (normalizedAnswer.length > 5) {
+               earnedScore += q.weight;
+               categoryData[q.category].earnedWeight += q.weight;
+            }
+          }
+        }
       }
     }
   });
