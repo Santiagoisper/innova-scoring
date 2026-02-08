@@ -14,6 +14,7 @@ interface AppState {
   generateToken: (siteId: string) => string;
   submitEvaluation: (siteId: string, answers: Record<string, any>) => void;
   updateSiteStatus: (siteId: string, status: SiteStatus) => void;
+  deleteSite: (siteId: string) => void;
   
   // Question Management
   addQuestion: (question: Omit<Question, "id">) => void;
@@ -200,6 +201,10 @@ export const useStore = create<AppState>()(
           if (s.id === siteId) return { ...s, status };
           return s;
         })
+      })),
+
+      deleteSite: (siteId) => set((state) => ({
+        sites: state.sites.filter(s => s.id !== siteId)
       })),
 
       addQuestion: (question) => set((state) => ({

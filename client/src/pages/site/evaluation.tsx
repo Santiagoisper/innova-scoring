@@ -259,7 +259,7 @@ export default function SiteEvaluation() {
                     <Controller
                       name={q.id}
                       control={form.control}
-                      rules={{ required: "This question is required" }}
+                      rules={{ required: false }}
                       render={({ field }) => (
                         <div className="space-y-3">
                           {q.type === "YesNo" ? (

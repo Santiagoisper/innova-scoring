@@ -10,11 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Filter, Eye, Send, Plus, Loader2 } from "lucide-react";
+import { Search, Filter, Eye, Send, Plus, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCenters() {
-  const { sites, generateToken, registerSite } = useStore();
+  const { sites, generateToken, registerSite, deleteSite } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +46,17 @@ export default function AdminCenters() {
       title: "Token Sent",
       description: `Access token sent to ${email}`,
     });
+  };
+
+  const handleDeleteSite = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      deleteSite(id);
+      toast({
+        title: "Site Deleted",
+        description: `${name} has been removed from the registry.`,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAddSite = async (e: React.FormEvent) => {
@@ -312,8 +323,18 @@ export default function AdminCenters() {
                           variant="ghost" 
                           className="h-8 w-8 p-0"
                           onClick={() => setLocation(`/admin/centers/${site.id}`)}
+                          title="View Details"
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDeleteSite(site.id, site.contactName)}
+                          title="Delete Site"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

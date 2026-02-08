@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
-import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown } from "lucide-react";
 import { QUESTIONS } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,44 @@ export default function CenterDetail() {
 
   // Use dynamic questions list if available, otherwise fallback to default
   const questionsList = questions || QUESTIONS;
+
+  const handleDownloadReport = () => {
+    // Generate a mock report
+    const reportContent = `
+INNOVA TRIALS - SITE REPORT
+================================================
+Site: ${site.contactName}
+Status: ${site.status}
+Score: ${site.score}%
+Location: ${site.location}
+Registered: ${new Date(site.registeredAt).toLocaleDateString()}
+
+EVALUATION SUMMARY
+------------------------------------------------
+${questionsList.map(q => {
+  const ans = site.answers?.[q.id];
+  let val = "Not Answered";
+  if (typeof ans === 'object' && ans?.value) val = ans.value;
+  else if (ans) val = ans;
+  return `[${q.category}] ${q.text}\nAnswer: ${val}\n`;
+}).join("\n")}
+    `.trim();
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Report_${site.contactName.replace(/\s+/g, '_')}.txt`; // Using .txt for simplicity in mock, could be .pdf if we had a generator
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report Downloaded",
+      description: "Detailed site report has been generated.",
+    });
+  };
 
   const handleStatusChange = (newStatus: "Approved" | "Rejected" | "ToConsider") => {
     updateSiteStatus(site.id, newStatus);
@@ -109,27 +147,33 @@ export default function CenterDetail() {
               </div>
             )}
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-[200px] justify-between">
-                  {site.status === "Approved" ? "Approved" : 
-                   site.status === "Rejected" ? "Rejected" : 
-                   site.status === "ToConsider" ? "In Observation" : "Change Status"}
-                  <ArrowLeft className="h-4 w-4 rotate-270" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[200px]">
-                <DropdownMenuItem onClick={() => handleStatusChange("Approved")} className="text-emerald-600 font-medium">
-                  <CheckCircle2 className="mr-2 h-4 w-4" /> Approve (SI)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleStatusChange("ToConsider")} className="text-amber-600 font-medium">
-                  <Clock className="mr-2 h-4 w-4" /> In Observation
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleStatusChange("Rejected")} className="text-red-600 font-medium">
-                  <XCircle className="mr-2 h-4 w-4" /> Reject (NO)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleDownloadReport}>
+                <FileDown className="mr-2 h-4 w-4" /> Download Report
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-[200px] justify-between">
+                    {site.status === "Approved" ? "Approved" : 
+                     site.status === "Rejected" ? "Rejected" : 
+                     site.status === "ToConsider" ? "In Observation" : "Change Status"}
+                    <ArrowLeft className="h-4 w-4 rotate-270" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[200px]">
+                  <DropdownMenuItem onClick={() => handleStatusChange("Approved")} className="text-emerald-600 font-medium">
+                    <CheckCircle2 className="mr-2 h-4 w-4" /> Approve (SI)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleStatusChange("ToConsider")} className="text-amber-600 font-medium">
+                    <Clock className="mr-2 h-4 w-4" /> In Observation
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleStatusChange("Rejected")} className="text-red-600 font-medium">
+                    <XCircle className="mr-2 h-4 w-4" /> Reject (NO)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 

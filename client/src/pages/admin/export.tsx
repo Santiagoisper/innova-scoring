@@ -44,6 +44,9 @@ export default function ExportResults() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Fallback for mock environment if download is blocked
+    console.log("Downloading CSV:", csvContent);
   };
 
   const handleExportJSON = () => {
@@ -54,6 +57,8 @@ export default function ExportResults() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    console.log("Downloading JSON");
   };
 
   const getStatusBadge = (status: string) => {

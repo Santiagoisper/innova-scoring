@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
@@ -17,10 +18,16 @@ const registerSchema = z.object({
   contactName: z.string().min(2, "Contact name is required"),
   email: z.string().email("Invalid email address"),
   description: z.string().min(20, "Please provide a brief description of at least 20 characters"),
-  location: z.string().min(2, "Location is required"),
+  location: z.string().min(2, "City is required"),
+  country: z.string().min(2, "Country is required"),
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
+
+// Mock Country List
+const COUNTRIES = [
+  "Argentina", "Brazil", "Canada", "Chile", "Colombia", "France", "Germany", "Mexico", "Peru", "Spain", "UK", "USA", "Uruguay"
+];
 
 export default function Register() {
   const [isSuccess, setIsSuccess] = useState(false);
@@ -38,6 +45,9 @@ export default function Register() {
     
     registerSite({
       ...data,
+      location: `${data.location}, ${data.country}`,
+      city: data.location,
+      country: data.country,
       score: 0,
       token: undefined
     });
@@ -105,12 +115,31 @@ export default function Register() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Site Location (City, Country)</Label>
-                <Input id="location" placeholder="New York, USA" {...form.register("location")} />
-                {form.formState.errors.location && (
-                  <p className="text-xs text-destructive">{form.formState.errors.location.message}</p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Select onValueChange={(val) => form.setValue("country", val)} defaultValue={form.getValues("country")}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COUNTRIES.map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.country && (
+                    <p className="text-xs text-destructive">{form.formState.errors.country.message}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="location">City</Label>
+                  <Input id="location" placeholder="e.g. New York" {...form.register("location")} />
+                  {form.formState.errors.location && (
+                    <p className="text-xs text-destructive">{form.formState.errors.location.message}</p>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
