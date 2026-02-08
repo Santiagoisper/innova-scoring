@@ -126,15 +126,15 @@ export default function Sidebar() {
           </a>
 
           {/* Criteria Management (NEW) */}
-          <a href="/admin/criteria" className={navClass("/admin/criteria")}>
+          <a href="/admin/Criteria" className={navClass("/admin/Criteria")}>
             <Settings2 className="w-5 h-5" />
             Evaluation Setup
           </a>
 
-          {/* Rubric */}
-          <a href="/admin/rubric" className={navClass("/admin/rubric")}>
+          {/* Criteria */}
+          <a href="/admin/Criteria" className={navClass("/admin/Criteria")}>
             <FileText className="w-5 h-5" />
-            Rubric
+            Criteria
           </a>
 
           {/* Export */}
