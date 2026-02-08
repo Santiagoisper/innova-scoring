@@ -10,10 +10,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2 } from "lucide-react";
-import { QUESTIONS } from "@/lib/questions";
 
 export default function SiteEvaluation() {
-  const { user, submitEvaluation } = useStore();
+  const { user, submitEvaluation, questions } = useStore();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -23,6 +22,9 @@ export default function SiteEvaluation() {
   if (!user || user.role !== "site") {
     return <div>Unauthorized</div>;
   }
+
+  // Filter only enabled questions
+  const activeQuestions = questions.filter(q => q.enabled !== false);
 
   const onSubmit = async (data: any) => {
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -66,7 +68,7 @@ export default function SiteEvaluation() {
   }
 
   // Group questions by category
-  const categories = Array.from(new Set(QUESTIONS.map(q => q.category)));
+  const categories = Array.from(new Set(activeQuestions.map(q => q.category)));
 
   return (
     <Layout>
@@ -83,7 +85,7 @@ export default function SiteEvaluation() {
                 <CardTitle className="text-xl">{category}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                {QUESTIONS.filter(q => q.category === category).map((q, idx) => (
+                {activeQuestions.filter(q => q.category === category).map((q, idx) => (
                   <div key={q.id} className="space-y-3">
                     <Label className="text-base font-medium">
                       {idx + 1}. {q.text} {q.isKnockOut && <span className="text-destructive">*</span>}

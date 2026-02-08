@@ -1,17 +1,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Site, User, SiteStatus } from './types';
+import { Question } from './types';
 import { QUESTIONS, calculateScore } from './questions';
 
 interface AppState {
   user: User | null;
   sites: Site[];
+  questions: Question[];
   login: (user: User) => void;
   logout: () => void;
   registerSite: (site: Omit<Site, "id" | "status" | "registeredAt" | "answers">) => void;
   generateToken: (siteId: string) => string;
   submitEvaluation: (siteId: string, answers: Record<string, any>) => void;
   updateSiteStatus: (siteId: string, status: SiteStatus) => void;
+  
+  // Question Management
+  addQuestion: (question: Omit<Question, "id">) => void;
+  updateQuestion: (id: string, updates: Partial<Question>) => void;
+  deleteQuestion: (id: string) => void;
+  toggleQuestion: (id: string, enabled: boolean) => void;
 }
 
 // Initial Mock Data
@@ -135,6 +143,7 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       user: null,
       sites: MOCK_SITES,
+      questions: QUESTIONS.map(q => ({ ...q, enabled: q.enabled !== undefined ? q.enabled : true })),
 
       login: (user) => set({ user }),
       logout: () => set({ user: null }),
@@ -162,7 +171,7 @@ export const useStore = create<AppState>()(
       })),
 
       submitEvaluation: (siteId, answers) => set((state) => {
-        const result = calculateScore(answers);
+        const result = calculateScore(answers, state.questions);
         
         let status: SiteStatus = "ToConsider"; // Default fallback
         
@@ -191,6 +200,25 @@ export const useStore = create<AppState>()(
           if (s.id === siteId) return { ...s, status };
           return s;
         })
+      })),
+
+      addQuestion: (question) => set((state) => ({
+        questions: [
+          ...state.questions,
+          { ...question, id: Math.random().toString(36).substr(2, 9), enabled: true }
+        ]
+      })),
+
+      updateQuestion: (id, updates) => set((state) => ({
+        questions: state.questions.map(q => q.id === id ? { ...q, ...updates } : q)
+      })),
+
+      deleteQuestion: (id) => set((state) => ({
+        questions: state.questions.filter(q => q.id !== id)
+      })),
+
+      toggleQuestion: (id, enabled) => set((state) => ({
+        questions: state.questions.map(q => q.id === id ? { ...q, enabled } : q)
       })),
     }),
     {

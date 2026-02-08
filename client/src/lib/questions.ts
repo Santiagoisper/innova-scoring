@@ -5,14 +5,16 @@ export const QUESTIONS: Question[] = [
     text: "Does the site have access to local laboratories?",
     type: "YesNo",
     category: "Infraestructura",
-    weight: 3
+    weight: 3,
+    enabled: true
   },
   {
     id: "inf2",
     text: "Do you have a functioning generator?",
     type: "YesNo",
     category: "Infraestructura",
-    weight: 3
+    weight: 3,
+    enabled: true
   },
   {
     id: "inf3",
@@ -406,20 +408,23 @@ export interface ScoringResult {
   status: "Approved" | "Conditional" | "Rejected";
 }
 
-export function calculateScore(answers: Record<string, any>): ScoringResult {
+export function calculateScore(answers: Record<string, any>, questions: Question[] = QUESTIONS): ScoringResult {
   const categoryData: Record<string, { totalWeight: number; earnedWeight: number }> = {};
   let totalWeight = 0;
   let earnedScore = 0;
   let isKnockOut = false;
+  
+  // Filter only enabled questions
+  const activeQuestions = questions.filter(q => q.enabled !== false);
 
   // Initialize Category Data
-  QUESTIONS.forEach(q => {
+  activeQuestions.forEach(q => {
     if (!categoryData[q.category]) {
       categoryData[q.category] = { totalWeight: 0, earnedWeight: 0 };
     }
   });
 
-  QUESTIONS.forEach(q => {
+  activeQuestions.forEach(q => {
     const answer = answers[q.id];
     
     // Strict Knock Out Logic (Explicit Critical Questions)

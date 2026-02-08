@@ -35,6 +35,7 @@ export interface Question {
   category: string;
   weight: number; // For weighted scoring
   isKnockOut?: boolean; // If failed, auto-reject
+  enabled?: boolean;
 }
 
 export interface User {

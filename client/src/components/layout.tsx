@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogOut, Building2, ClipboardCheck, MessageSquare, Activity } from "lucide-react";
+import { LayoutDashboard, LogOut, Building2, ClipboardCheck, MessageSquare, Activity, Settings } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -43,6 +43,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
               }`}>
                 <Building2 className="h-5 w-5" />
                 <span className="font-medium">Centers</span>
+              </a>
+            </Link>
+            <Link href="/admin/evaluation-setup">
+              <a className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+                location.startsWith("/admin/evaluation-setup") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+              }`}>
+                <Settings className="h-5 w-5" />
+                <span className="font-medium">Evaluation Setup</span>
               </a>
             </Link>
             <Link href="/admin/export">
@@ -93,6 +101,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-semibold text-gray-800">
               {location === "/admin" ? "Dashboard" : 
                location.startsWith("/admin/centers") ? "Centers Management" :
+               location.startsWith("/admin/evaluation-setup") ? "Evaluation Setup" :
                location.startsWith("/admin/export") ? "Export Data" :
                location.startsWith("/admin/contact-requests") ? "Contact Requests" :
                location.startsWith("/admin/activity-log") ? "Activity Log" : "Admin Portal"}
