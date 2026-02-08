@@ -29,53 +29,41 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="flex-1 py-6 px-3 space-y-1">
-            <Link href="/admin">
-              <a className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-                location === "/admin" ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
-              }`}>
-                <LayoutDashboard className="h-5 w-5" />
-                <span className="font-medium">Dashboard</span>
-              </a>
+            <Link href="/admin" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              location === "/admin" ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+            }`}>
+              <LayoutDashboard className="h-5 w-5" />
+              <span className="font-medium">Dashboard</span>
             </Link>
-            <Link href="/admin/centers">
-              <a className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-                location.startsWith("/admin/centers") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
-              }`}>
-                <Building2 className="h-5 w-5" />
-                <span className="font-medium">Centers</span>
-              </a>
+            <Link href="/admin/centers" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              location.startsWith("/admin/centers") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+            }`}>
+              <Building2 className="h-5 w-5" />
+              <span className="font-medium">Centers</span>
             </Link>
-            <Link href="/admin/evaluation-setup">
-              <a className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-                location.startsWith("/admin/evaluation-setup") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
-              }`}>
-                <Settings className="h-5 w-5" />
-                <span className="font-medium">Evaluation Setup</span>
-              </a>
+            <Link href="/admin/evaluation-setup" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              location.startsWith("/admin/evaluation-setup") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+            }`}>
+              <Settings className="h-5 w-5" />
+              <span className="font-medium">Evaluation Setup</span>
             </Link>
-            <Link href="/admin/export">
-              <a className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-                location.startsWith("/admin/export") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
-              }`}>
-                <ClipboardCheck className="h-5 w-5" />
-                <span className="font-medium">Export Results</span>
-              </a>
+            <Link href="/admin/export" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              location.startsWith("/admin/export") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+            }`}>
+              <ClipboardCheck className="h-5 w-5" />
+              <span className="font-medium">Export Results</span>
             </Link>
-            <Link href="/admin/contact-requests">
-              <a className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-                location.startsWith("/admin/contact-requests") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
-              }`}>
-                <MessageSquare className="h-5 w-5" />
-                <span className="font-medium">Contact Requests</span>
-              </a>
+            <Link href="/admin/contact-requests" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              location.startsWith("/admin/contact-requests") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+            }`}>
+              <MessageSquare className="h-5 w-5" />
+              <span className="font-medium">Contact Requests</span>
             </Link>
-            <Link href="/admin/activity-log">
-              <a className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-                location.startsWith("/admin/activity-log") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
-              }`}>
-                <Activity className="h-5 w-5" />
-                <span className="font-medium">Activity Log</span>
-              </a>
+            <Link href="/admin/activity-log" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              location.startsWith("/admin/activity-log") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+            }`}>
+              <Activity className="h-5 w-5" />
+              <span className="font-medium">Activity Log</span>
             </Link>
           </nav>
 
@@ -140,11 +128,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <Link href="/">
-                  <a className="text-white/80 hover:text-white">Home</a>
+                <Link href="/" className="text-white/80 hover:text-white">
+                  Home
                 </Link>
-                <Link href="/register">
-                  <a className="text-white/80 hover:text-white">Register Site</a>
+                <Link href="/register" className="text-white/80 hover:text-white">
+                  Register Site
                 </Link>
               </div>
             )}
