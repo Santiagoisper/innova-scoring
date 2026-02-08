@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import { 
   CheckCircle2, 
@@ -23,6 +23,7 @@ interface Criterion {
   response_type: 'boolean' | 'text'
   is_knockout: boolean
   requires_doc: boolean
+  weight: number
 }
 
 export default function ClientEvaluation({ token }: { token: string }) {
@@ -56,6 +57,7 @@ export default function ClientEvaluation({ token }: { token: string }) {
           setLoading(false)
           return
         }
+
         setSubmission(sub)
         setDisclaimerAccepted(sub.disclaimer_accepted)
 
@@ -67,13 +69,13 @@ export default function ClientEvaluation({ token }: { token: string }) {
 
         if (critErr) throw critErr
         setCriteria(crit)
-
       } catch (err: any) {
         setError(err.message)
       } finally {
         setLoading(false)
       }
     }
+
     init()
   }, [token, supabase])
 
@@ -125,29 +127,48 @@ export default function ClientEvaluation({ token }: { token: string }) {
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      // Calcular score (solo booleanos)
-      let totalPoints = 0
-      let maxPoints = 0
-      
-      criteria.forEach(c => {
+      // Preparar inputs con documentación y usar el motor de scoring correcto
+      const scoringInputs = criteria.map(c => {
+        let score = 0;
+        
         if (c.response_type === 'boolean') {
-          maxPoints += 100
-          if (responses[c.id] === 'yes') totalPoints += 100
+          // Convertir yes/no a score
+          if (responses[c.id] === 'yes') score = 100;
+          else if (responses[c.id] === 'no') score = 0;
+        } else {
+          // Para text, asumimos que si respondió es 100, si no 0
+          score = responses[c.id] ? 100 : 0;
         }
-      })
 
-      const finalScore = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0
+        return {
+          criterion_id: c.id.toString(),
+          score,
+          response: responses[c.id],
+          has_documentation: !!attachments[c.id]
+        };
+      });
 
-      // Guardar en evaluations
+      // Importar calculator con lógica de knockout
+      const { calculateWeightedScore } = await import('@/lib/scoring/calculator');
+      
+      // Calcular con nueva lógica que respeta knockouts
+      const result = calculateWeightedScore(scoringInputs, criteria);
+      
+      // Guardar en evaluations con todos los campos necesarios
       const { error: evalErr } = await supabase
         .from('evaluations')
         .insert({
           center_id: submission.center_id,
-          total_score: finalScore,
+          total_score: result.totalScore,
           status: 'completed',
+          score_level: result.status,
+          knockout_failed: result.knockoutFailed,
+          knockout_reason: result.knockoutReason,
+          missing_docs_penalty: result.missingDocsPenalty,
           responses: {
             scores: responses,
-            attachments: attachments
+            attachments: attachments,
+            breakdown: result.weightedScores
           },
           evaluator_email: submission.client_email,
           token: token
@@ -213,6 +234,7 @@ export default function ClientEvaluation({ token }: { token: string }) {
             <p>1. <strong>Confidentiality:</strong> All data submitted will be handled according to our privacy policy and used solely for site selection purposes.</p>
             <p>2. <strong>Documentation:</strong> Uploaded files must be authentic and valid at the time of submission.</p>
             <p>3. <strong>Accuracy:</strong> Providing false information may result in immediate disqualification from the selection process.</p>
+            <p>4. <strong>Critical Requirements:</strong> Questions marked as "Required" are knockout criteria. Failing these will result in automatic disqualification regardless of other scores.</p>
             <p className="mt-4">Please review the full terms before accepting to start the questionnaire.</p>
           </div>
 
@@ -236,6 +258,12 @@ export default function ClientEvaluation({ token }: { token: string }) {
         </div>
         <h1 className="text-4xl font-black text-slate-900">{submission?.centers?.name || 'Site Evaluation'}</h1>
         <p className="text-slate-500 text-lg">Please answer all questions accurately. You can upload supporting documents where required.</p>
+        <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <p className="text-sm text-amber-800 font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            Questions marked as "Required" are critical. Failing these will result in automatic disqualification.
+          </p>
+        </div>
       </header>
 
       {/* Questionnaire */}
@@ -246,6 +274,7 @@ export default function ClientEvaluation({ token }: { token: string }) {
               <div className="flex-shrink-0 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-400">
                 {idx + 1}
               </div>
+              
               <div className="flex-1 space-y-6">
                 <h3 className="text-xl font-bold text-slate-900 leading-snug">
                   {c.name}
@@ -300,74 +329,4 @@ export default function ClientEvaluation({ token }: { token: string }) {
                         </div>
                         <button 
                           onClick={() => setAttachments(prev => {
-                            const n = { ...prev }; delete n[c.id]; return n;
-                          })}
-                          className="p-2 hover:bg-white rounded-full transition-colors text-primary-400 hover:text-red-500"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="relative flex items-center justify-center p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-primary-400 hover:bg-primary-50/30 transition-all cursor-pointer group">
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                          onChange={(e) => e.target.files?.[0] && handleFileUpload(c.id, e.target.files[0])}
-                          disabled={uploading[c.id]}
-                        />
-                        <div className="flex items-center gap-3">
-                          {uploading[c.id] ? (
-                            <>
-                              <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
-                              <span className="text-sm font-bold text-primary-600">Uploading...</span>
-                            </>
-                          ) : (
-                            <>
-                              <UploadCloud className="w-5 h-5 text-slate-400 group-hover:text-primary-600" />
-                              <span className="text-sm font-bold text-slate-500 group-hover:text-primary-700">Upload Supporting Document</span>
-                            </>
-                          )}
-                        </div>
-                      </label>
-                    )}
-                    {c.requires_doc && !attachments[c.id] && (
-                      <p className="mt-2 text-[10px] text-amber-600 font-bold flex items-center gap-1 uppercase tracking-wider">
-                        <Info className="w-3 h-3" /> Supporting documentation is highly recommended
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="h-px bg-slate-100 w-full" />
-          </div>
-        ))}
-      </div>
-
-      {/* Footer Actions */}
-      <footer className="pt-10 flex flex-col items-center gap-6">
-        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center max-w-lg">
-          <p className="text-sm text-slate-500 font-medium">By clicking submit, you confirm that all provided information and documents are true and complete.</p>
-        </div>
-        <button 
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="btn-primary w-full max-w-md py-5 text-xl font-black shadow-xl shadow-primary-200 hover:shadow-primary-300 transform hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
-        >
-          {submitting ? (
-            <>
-              <Loader2 className="w-6 h-6 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            <>
-              Submit Final Evaluation
-              <ChevronRight className="w-6 h-6" />
-            </>
-          )}
-        </button>
-      </footer>
-    </div>
-  )
-}
+                            const n =

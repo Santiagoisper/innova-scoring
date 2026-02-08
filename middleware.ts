@@ -1,26 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { createServerClient } from "@supabase/ssr"
 
-export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
 
-  // Rutas protegidas
-  const protectedRoutes = ['/admin']
+  if (!req.nextUrl.pathname.startsWith("/admin")) return res
 
-  // Verificar si la ruta es protegida
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
-    // Obtener token del header o cookie
-    const token = request.cookies.get('admin_token')?.value || 
-                  request.headers.get('authorization')?.replace('Bearer ', '')
-
-    // Si no hay token, redirigir a login
-    if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url))
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll()
+        },
+        setAll(cookies) {
+          cookies.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options)
+          })
+        },
+      },
     }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    const url = req.nextUrl.clone()
+    url.pathname = "/login"
+    url.searchParams.set("next", req.nextUrl.pathname)
+    return NextResponse.redirect(url)
   }
 
-  return NextResponse.next()
+  // Solo validamos sesión. El rol lo validamos dentro del panel.
+  return res
 }
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: ["/admin/:path*"],
 }

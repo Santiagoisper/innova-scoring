@@ -5,6 +5,7 @@ declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF
     lastAutoTable: { finalY: number }
+    putTotalPages: (pageExpression: string) => jsPDF
   }
 }
 
@@ -12,8 +13,10 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
   try {
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.getWidth()
-    const pageHeight = doc.internal.pageSize.getHeight()
-    
+
+    // Placeholder para total de páginas (jsPDF)
+    const totalPagesExp = "{total_pages_count_string}"
+
     // Colors (Novo Nordisk Style)
     const primaryColor = [0, 74, 153] // Deep Blue
     const secondaryColor = [100, 116, 139] // Slate
@@ -24,12 +27,12 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     // Header
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2])
     doc.rect(0, 0, pageWidth, 40, 'F')
-    
+
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(22)
     doc.setFont('helvetica', 'bold')
     doc.text('REPORTE DE EVALUACIÓN DE SITIO', 20, 25)
-    
+
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.text(`Generado: ${new Date().toLocaleDateString('es-ES')}`, pageWidth - 70, 25)
@@ -39,7 +42,7 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
     doc.text((center?.name || 'NOMBRE DEL SITIO').toUpperCase(), 20, 55)
-    
+
     doc.setFontSize(10)
     doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2])
     doc.text(`Código: ${center?.code || 'N/A'}`, 20, 62)
@@ -48,22 +51,22 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     // Scoring Summary Box
     if (evaluation && evaluation.total_score !== null && evaluation.total_score !== undefined) {
       const score = Number(evaluation.total_score) || 0
-      
+
       doc.setDrawColor(226, 232, 240)
       doc.setFillColor(248, 250, 252)
       doc.roundedRect(pageWidth - 80, 50, 60, 30, 3, 3, 'FD')
-      
+
       doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2])
       doc.setFontSize(8)
       doc.text('PUNTAJE FINAL', pageWidth - 50, 58, { align: 'center' })
-      
+
       doc.setFontSize(24)
       doc.setTextColor(0, 0, 0)
       doc.text(`${score.toFixed(1)}`, pageWidth - 50, 70, { align: 'center' })
-      
-      let statusText = score >= 80 ? 'APROBADO' : score >= 60 ? 'CONDICIONAL' : 'NO APROBADO'
-      let statusColor = score >= 80 ? greenColor : score >= 60 ? yellowColor : redColor
-      
+
+      const statusText = score >= 80 ? 'APROBADO' : score >= 60 ? 'CONDICIONAL' : 'NO APROBADO'
+      const statusColor = score >= 80 ? greenColor : score >= 60 ? yellowColor : redColor
+
       doc.setFillColor(statusColor[0], statusColor[1], statusColor[2])
       doc.roundedRect(pageWidth - 75, 73, 50, 5, 1, 1, 'F')
       doc.setTextColor(255, 255, 255)
@@ -101,19 +104,25 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
       const tableBody = criteria.map((c, i) => {
         const ans = scores[c.id] || scores[String(c.id)]
         let displayAns = 'N/A'
-        
+
         if (c.response_type === 'boolean') {
-          displayAns = String(ans).toLowerCase() === 'yes' ? 'SÍ' : String(ans).toLowerCase() === 'no' ? 'NO' : 'N/A'
+          displayAns =
+            String(ans).toLowerCase() === 'yes'
+              ? 'SÍ'
+              : String(ans).toLowerCase() === 'no'
+                ? 'NO'
+                : 'N/A'
         } else {
           displayAns = ans ? String(ans).substring(0, 50) : 'Sin respuesta'
         }
-        
+
         const hasDoc = attachments[c.id] || attachments[String(c.id)] ? 'SÍ' : 'NO'
         return [i + 1, c.name || 'Criterio', displayAns, hasDoc]
       })
 
       try {
         const lastY = (doc as any).lastAutoTable?.finalY || 130
+
         doc.autoTable({
           startY: lastY + 10,
           head: [['#', 'Parámetro de Evaluación', 'Respuesta', 'Doc']],
@@ -128,27 +137,24 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
           styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
           alternateRowStyles: { fillColor: [249, 250, 251] },
           margin: { left: 20, right: 20 },
+
           didDrawPage: (data: any) => {
-            // Footer en cada página
-            const pageCount = doc.getNumberOfPages()
-            const pageSize = doc.internal.pageSize
-            const pageHeight = pageSize.getHeight()
-            
-            for (let i = 1; i <= pageCount; i++) {
-              doc.setPage(i)
-              doc.setFontSize(8)
-              doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2])
-              doc.text(
-                `Confidencial - Reporte de Evaluación de Sitio - ${center?.name || 'Innova Trials'}`,
-                20,
-                pageHeight - 10
-              )
-              doc.text(
-                `Página ${i} de ${pageCount}`,
-                pageWidth - 40,
-                pageHeight - 10
-              )
-            }
+            const pageHeight = doc.internal.pageSize.getHeight()
+
+            doc.setFontSize(8)
+            doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2])
+
+            doc.text(
+              `Confidencial - Reporte de Evaluación de Sitio - ${center?.name || 'Innova Trials'}`,
+              20,
+              pageHeight - 10
+            )
+
+            doc.text(
+              `Página ${data.pageNumber} de ${totalPagesExp}`,
+              pageWidth - 40,
+              pageHeight - 10
+            )
           }
         })
       } catch (err) {
@@ -156,10 +162,15 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
       }
     }
 
+    // Completar total pages al final
+    if ((doc as any).putTotalPages) {
+      (doc as any).putTotalPages(totalPagesExp)
+    }
+
     // Save PDF
     const fileName = `Reporte_${(center?.name || 'Sitio').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
     doc.save(fileName)
-    
+
     return { success: true, fileName }
   } catch (error) {
     console.error('Error generando PDF:', error)
