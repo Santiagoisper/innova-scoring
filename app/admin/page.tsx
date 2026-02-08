@@ -41,6 +41,7 @@ type Center = {
   code: string
   country: string
   city: string
+    public_token?: string | null
 }
 
 type Evaluation = {
