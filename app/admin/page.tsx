@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   MapPin
 } from "lucide-react"
-
+import ActivityLog from "@/components/admin/ActivityLog"  // 👈 LÍNEA NUEVA
 import {
   BarChart,
   Bar,
@@ -34,13 +34,13 @@ import {
 /* =========================
    Types
 ========================= */
-
 type Center = {
   id: string
   name: string
   code: string
   country: string
   city: string
+  public_token?: string | null
 }
 
 type Evaluation = {
@@ -55,14 +55,13 @@ type Evaluation = {
 /* =========================
    Colors (Innova Trials / Novo Nordisk Style)
 ========================= */
-
 const COLORS = {
   primary: "#004a99", // Deep Blue
   success: "#10b981", // Green
   warning: "#f59e0b", // Amber
-  danger: "#ef4444",  // Red
+  danger: "#ef4444", // Red
   neutral: "#94a3b8", // Slate
-  accent: "#6366f1",  // Indigo
+  accent: "#6366f1", // Indigo
 }
 
 export default function AdminDashboard() {
@@ -105,7 +104,12 @@ export default function AdminDashboard() {
   )
 
   // Metrics Calculation
-  const totalSites = centers.length
+  // Global Sites: Centers with completed evaluations AND token sent
+  const centersWithEval = centers.filter(c => 
+    finishedEvals.some(e => e.center_id === c.id) && c.public_token
+  )
+  
+  const totalSites = centersWithEval.length 
   
   const approvedCount = finishedEvals.filter(e => 
     e.score_level === 'green' || (e.score_level === null && getLevel(e.total_score) === 'green')
@@ -206,6 +210,7 @@ export default function AdminDashboard() {
               Quality Status
             </h3>
           </div>
+
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -245,6 +250,7 @@ export default function AdminDashboard() {
             </h3>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Top 5 Countries</span>
           </div>
+
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={countryDist} layout="vertical" margin={{ left: 40, right: 40 }}>
@@ -269,24 +275,33 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity Alert */}
-      <div className="card p-6 bg-slate-900 text-white border-none shadow-2xl shadow-slate-400/20 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-white/10 rounded-2xl">
-            <AlertTriangle className="w-6 h-6 text-amber-400" />
-          </div>
-          <div>
-            <h4 className="font-black text-lg">System Audit Ready</h4>
-            <p className="text-slate-400 text-sm font-medium">All evaluation data is synchronized with Supabase Global Cloud.</p>
-          </div>
+      {/* 👇 ACTIVITY LOG - SECCIÓN NUEVA */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <ActivityLog />
         </div>
-        <button 
-          onClick={() => window.location.href = '/admin/centers'}
-          className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-primary-50 transition-all shadow-xl shadow-white/10"
-        >
-          Manage Sites Now
-        </button>
+
+        {/* Recent Activity Alert */}
+        <div className="card p-6 bg-slate-900 text-white border-none shadow-2xl shadow-slate-400/20 flex flex-col items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/10 rounded-2xl">
+              <AlertTriangle className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <h4 className="font-black text-lg">System Audit Ready</h4>
+              <p className="text-slate-400 text-sm font-medium">All evaluation data is synchronized with Supabase Global Cloud.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => window.location.href = '/admin/centers'}
+            className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-primary-50 transition-all shadow-xl shadow-white/10 w-full"
+          >
+            Manage Sites Now
+          </button>
+        </div>
       </div>
+      {/* 👆 FIN ACTIVITY LOG */}
+
     </div>
   )
 }
