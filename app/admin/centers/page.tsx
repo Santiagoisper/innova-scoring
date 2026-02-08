@@ -93,7 +93,11 @@ export default function CentersPage() {
     if (!evalRow) return { label: "Not Evaluated", class: "bg-slate-100 text-slate-500", icon: AlertCircle, color: "slate" }
     if (evalRow.status === "pending") return { label: "Pending Link", class: "bg-slate-100 text-slate-500", icon: AlertCircle, color: "slate" }
 
-    switch (evalRow.score_level) {
+    // Use total_score to determine real status (fix for corrupted score_level in DB)
+    const score = evalRow.total_score ?? 0
+    const realLevel = score >= 80 ? "green" : score >= 60 ? "yellow" : "red"
+
+    switch (realLevel) {
       case "green": return { label: "Approved", class: "bg-green-100 text-green-700", icon: CheckCircle, color: "green" }
       case "yellow": return { label: "Conditional", class: "bg-yellow-100 text-yellow-700", icon: AlertCircle, color: "yellow" }
       case "red": return { label: "Not Approved", class: "bg-red-100 text-red-700", icon: XCircle, color: "red" }
@@ -109,14 +113,29 @@ export default function CentersPage() {
       c.country.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Agrupar centros por estado
+  // Agrupar centros por estado (usando score real, no score_level guardado)
   const groupedCenters = {
-    approved: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "green"),
-    conditional: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "yellow"),
-    notApproved: filteredCenters.filter(c => getLatestEvaluation(c.id)?.score_level === "red"),
+    approved: filteredCenters.filter(c => {
+      const evaluation = getLatestEvaluation(c.id)
+      if (!evaluation || evaluation.status !== "completed") return false
+      const score = evaluation.total_score ?? 0
+      return score >= 80
+    }),
+    conditional: filteredCenters.filter(c => {
+      const evaluation = getLatestEvaluation(c.id)
+      if (!evaluation || evaluation.status !== "completed") return false
+      const score = evaluation.total_score ?? 0
+      return score >= 60 && score < 80
+    }),
+    notApproved: filteredCenters.filter(c => {
+      const evaluation = getLatestEvaluation(c.id)
+      if (!evaluation || evaluation.status !== "completed") return false
+      const score = evaluation.total_score ?? 0
+      return score < 60
+    }),
     pending: filteredCenters.filter(c => {
       const evaluation = getLatestEvaluation(c.id);
-      return !evaluation || evaluation.status === "pending" || (evaluation.status === "completed" && !evaluation.score_level);
+      return !evaluation || evaluation.status === "pending";
     }),
   }
 
