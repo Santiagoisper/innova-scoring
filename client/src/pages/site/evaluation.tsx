@@ -252,7 +252,7 @@ export default function SiteEvaluation() {
               <CardContent className="space-y-6 pt-6">
                 {activeQuestions.filter(q => q.category === category).map((q, idx) => (
                   <div key={q.id} className="space-y-3">
-                    <Label className="text-base font-medium">
+                    <Label className="text-sm font-medium text-justify block leading-relaxed pr-4">
                       {idx + 1}. {q.text} {q.isKnockOut && <span className="text-destructive">*</span>}
                     </Label>
                     

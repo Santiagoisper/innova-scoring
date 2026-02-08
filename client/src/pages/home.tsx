@@ -48,7 +48,7 @@ export default function Home() {
         {/* Administrator Section */}
         <div className="relative group overflow-hidden">
           <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" 
-               style={{ backgroundImage: 'url("/images/admin-hero.jpg")' }} />
+               style={{ backgroundImage: 'url("/images/admin-hero-new.jpg")' }} />
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900/90 to-slate-800/70" />
           
           <div className="relative h-full flex flex-col justify-center items-end p-12 text-white z-10 text-right">

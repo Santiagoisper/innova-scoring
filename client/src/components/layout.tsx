@@ -25,7 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="h-8 w-8 bg-white/10 rounded-sm flex items-center justify-center border border-white/20">
                 <span className="font-heading font-bold text-white text-lg">I</span>
               </div>
-              <span className="font-heading font-semibold text-xl tracking-tight">Innova Trials</span>
+              <span className="font-heading font-semibold text-xl tracking-tight">Innova Trials LLC</span>
             </div>
           </div>
 
@@ -114,7 +114,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="h-8 w-8 bg-white/10 rounded-sm flex items-center justify-center border border-white/20">
               <span className="font-heading font-bold text-white text-lg">I</span>
             </div>
-            <span className="font-heading font-semibold text-xl tracking-tight">Innova Trials</span>
+            <span className="font-heading font-semibold text-xl tracking-tight">Innova Trials LLC</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
@@ -147,9 +147,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-white py-6 text-center text-sm text-muted-foreground">
-        <div className="container mx-auto">
-          <p>© {new Date().getFullYear()} Innova Trials. Clinical Research Organization.</p>
+      <footer className="border-t bg-white py-8 text-center text-sm text-muted-foreground">
+        <div className="container mx-auto space-y-4">
+          <div className="space-y-1">
+            <p className="font-semibold text-gray-900">Contact Information</p>
+            <p>104 Crandon Blvd, Suite 312</p>
+            <p>Key Biscayne, FL 33149</p>
+            <p className="mt-2">+1-(786)-351-1786</p>
+            <p className="text-primary hover:underline"><a href="mailto:info@innovatrials.com">info@innovatrials.com</a></p>
+            <p className="text-primary hover:underline"><a href="https://www.innovatrials.com" target="_blank" rel="noopener noreferrer">www.innovatrials.com</a></p>
+          </div>
+          <div className="pt-4 border-t w-full max-w-md mx-auto">
+            <p>© 2026 Innova Trials. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground/60 mt-2">
+              V.1 | By Santiago Isbert Perlender, member of Innova Trials LLC Team powered by Ichtys Technology
+            </p>
+          </div>
         </div>
       </footer>
     </div>
