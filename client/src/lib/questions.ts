@@ -399,30 +399,77 @@ export const QUESTIONS: Question[] = [
 
 import { Question } from "./types";
 
-export function calculateScore(answers: Record<string, any>): { score: number, isKnockOut: boolean } {
+export interface ScoringResult {
+  score: number;
+  isKnockOut: boolean;
+  categoryScores: Record<string, number>;
+  status: "Approved" | "Conditional" | "Rejected";
+}
+
+export function calculateScore(answers: Record<string, any>): ScoringResult {
+  const categoryData: Record<string, { totalWeight: number; earnedWeight: number }> = {};
   let totalWeight = 0;
   let earnedScore = 0;
   let isKnockOut = false;
 
+  // Initialize Category Data
+  QUESTIONS.forEach(q => {
+    if (!categoryData[q.category]) {
+      categoryData[q.category] = { totalWeight: 0, earnedWeight: 0 };
+    }
+  });
+
   QUESTIONS.forEach(q => {
     const answer = answers[q.id];
     
-    // Check Knock Out (None explicitly defined in this set, but keeping logic)
+    // Strict Knock Out Logic (Explicit Critical Questions)
     if (q.isKnockOut) {
-       // logic if needed
+       if (answer === "No") isKnockOut = true;
     }
 
-    // Calculate Score
-    // Assuming "Yes" grants full weight, "No" grants 0
-    // For Text questions, we might need manual scoring or assume full points if filled (simplification for MVP)
+    // Weight Calculation
     if (q.weight > 0) {
+      categoryData[q.category].totalWeight += q.weight;
       totalWeight += q.weight;
+
       if (answer === "Yes" || (q.type === "Text" && answer && answer.length > 5)) {
         earnedScore += q.weight;
+        categoryData[q.category].earnedWeight += q.weight;
       }
     }
   });
 
+  // Calculate Category Scores
+  const categoryScores: Record<string, number> = {};
+  Object.keys(categoryData).forEach(cat => {
+    const { totalWeight, earnedWeight } = categoryData[cat];
+    categoryScores[cat] = totalWeight > 0 ? (earnedWeight / totalWeight) * 100 : 0;
+    
+    // Risk Asymmetry: Critical Categories Threshold
+    // If Quality Management or Patient Safety is below 60%, fail the site
+    if ((cat === "Gestión de Calidad" || cat === "Seguridad del paciente") && categoryScores[cat] < 60) {
+      isKnockOut = true;
+    }
+  });
+
   const finalScore = totalWeight > 0 ? (earnedScore / totalWeight) * 100 : 0;
-  return { score: Math.round(finalScore), isKnockOut };
+  
+  let status: "Approved" | "Conditional" | "Rejected" = "Rejected";
+  
+  if (isKnockOut) {
+    status = "Rejected";
+  } else if (finalScore >= 80) {
+    status = "Approved";
+  } else if (finalScore >= 60) {
+    status = "Conditional";
+  } else {
+    status = "Rejected";
+  }
+
+  return { 
+    score: Math.round(finalScore), 
+    isKnockOut,
+    categoryScores,
+    status
+  };
 }

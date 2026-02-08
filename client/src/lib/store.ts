@@ -88,11 +88,13 @@ export const useStore = create<AppState>()(
       })),
 
       submitEvaluation: (siteId, answers) => set((state) => {
-        const { score, isKnockOut } = calculateScore(answers);
-        let status: SiteStatus = "ToConsider";
+        const result = calculateScore(answers);
         
-        if (isKnockOut) status = "Rejected";
-        else if (score >= 50) status = "Approved";
+        let status: SiteStatus = "ToConsider"; // Default fallback
+        
+        if (result.status === "Approved") status = "Approved";
+        else if (result.status === "Conditional") status = "ToConsider"; // Mapping Conditional -> ToConsider for backward compatibility
+        else status = "Rejected";
         
         return {
           sites: state.sites.map(s => {
@@ -100,7 +102,7 @@ export const useStore = create<AppState>()(
               return { 
                 ...s, 
                 answers: answers as any, 
-                score, 
+                score: result.score, 
                 status, 
                 evaluatedAt: new Date().toISOString() 
               };

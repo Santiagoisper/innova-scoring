@@ -40,7 +40,7 @@ export default function AdminDashboard() {
   // Status Distribution Data
   const statusData = [
     { name: 'Approved', value: approvedSites, color: 'hsl(var(--chart-3))' }, // Green
-    { name: 'To Consider', value: toConsiderSites, color: 'hsl(var(--chart-4))' }, // Orange
+    { name: 'Conditional', value: toConsiderSites, color: 'hsl(var(--chart-4))' }, // Orange
     { name: 'Rejected', value: rejectedSites, color: 'hsl(var(--chart-5))' }, // Red
   ];
 

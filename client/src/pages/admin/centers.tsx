@@ -73,7 +73,7 @@ export default function AdminCenters() {
     switch(status) {
       case "Approved": return <Badge className="bg-emerald-600 hover:bg-emerald-700">Approved</Badge>;
       case "Rejected": return <Badge variant="destructive">Rejected</Badge>;
-      case "ToConsider": return <Badge className="bg-amber-500 hover:bg-amber-600">To Consider</Badge>;
+      case "ToConsider": return <Badge className="bg-amber-500 hover:bg-amber-600">Condicional</Badge>;
       case "Pending": return <Badge variant="secondary">Pending</Badge>;
       case "TokenSent": return <Badge variant="outline" className="border-blue-500 text-blue-600">Token Sent</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
