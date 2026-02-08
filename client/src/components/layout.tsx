@@ -41,6 +41,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <Building2 className="h-4 w-4" /> Centers
                   </a>
                 </Link>
+                <Link href="/admin/export">
+                  <a className={`flex items-center gap-2 hover:text-white/80 transition-colors ${location.startsWith("/admin/export") ? "text-white" : "text-white/60"}`}>
+                    <ClipboardCheck className="h-4 w-4" /> Export
+                  </a>
+                </Link>
               </>
             )}
             

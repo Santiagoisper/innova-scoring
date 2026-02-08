@@ -1,95 +1,403 @@
-import { Question } from "./types";
-
 export const QUESTIONS: Question[] = [
-  // Knock Out Questions
+  // Infraestructura (34)
   {
-    id: "ko1",
-    text: "Does the site have a dedicated secure storage area for investigational products (IP) with restricted access?",
+    id: "inf1",
+    text: "Does the site have access to local laboratories?",
     type: "YesNo",
-    category: "Facilities",
-    weight: 0,
-    isKnockOut: true
+    category: "Infraestructura",
+    weight: 3
   },
   {
-    id: "ko2",
-    text: "Has the Principal Investigator ever been debarred by a regulatory authority (e.g., FDA, EMA)?",
+    id: "inf2",
+    text: "Do you have a functioning generator?",
     type: "YesNo",
-    category: "Personnel",
-    weight: 0,
-    isKnockOut: true
-  },
-  
-  // Scored Questions - Facilities (30%)
-  {
-    id: "f1",
-    text: "Does the site have temperature-controlled storage (2-8°C) with continuous monitoring and alarm systems?",
-    type: "YesNo",
-    category: "Facilities",
-    weight: 10
+    category: "Infraestructura",
+    weight: 3
   },
   {
-    id: "f2",
-    text: "Is there a backup power generator for critical equipment?",
+    id: "inf3",
+    text: "Do you have strict control over medical equipment calibrations (thermometers, scales, blood pressure monitors, others)?",
     type: "YesNo",
-    category: "Facilities",
-    weight: 10
+    category: "Infraestructura",
+    weight: 5
   },
   {
-    id: "f3",
-    text: "Does the site have a dedicated area for monitoring visits with internet access?",
+    id: "inf4",
+    text: "Do you have documented management for the disposal of pathogenic waste (waste from procedures, laboratory, among others)?",
     type: "YesNo",
-    category: "Facilities",
+    category: "Infraestructura",
+    weight: 4
+  },
+  {
+    id: "inf5",
+    text: "Does the site have a pharmacy dedicated exclusively to clinical research for the preparation and dispensing of the Investigational Product (IP)? Will the IP storage be carried out in the pharmacy?",
+    type: "YesNo",
+    category: "Infraestructura",
+    weight: 2
+  },
+  {
+    id: "inf6",
+    text: "What equipment do you have for IP refrigeration? (e.g., Freezer -20°C to -30°C, -70°C to -80°C, -135°C)",
+    type: "Text",
+    category: "Infraestructura",
+    weight: 2
+  },
+  {
+    id: "inf7",
+    text: "Describe what resources, equipment, and/or facilities the site has available for use in the study.",
+    type: "Text",
+    category: "Infraestructura",
+    weight: 1
+  },
+  {
+    id: "inf8",
+    text: "Does the site have the capacity to send digital images for centralized review? Does the site have sufficient high-speed internet connectivity to operate electronic data capture (EDC) systems?",
+    type: "YesNo",
+    category: "Infraestructura",
+    weight: 1
+  },
+  {
+    id: "inf9",
+    text: "Does the site have 24-hour observation and/or overnight stay capacity available for clinical research?",
+    type: "YesNo",
+    category: "Infraestructura",
+    weight: 1
+  },
+  {
+    id: "inf10",
+    text: "Can the site offer afternoon, weekend, and/or holiday service hours for study visits, if required? Does the site have the capacity to administer medication during weekends for continuous dosing schedules?",
+    type: "YesNo",
+    category: "Infraestructura",
+    weight: 2
+  },
+  {
+    id: "inf11",
+    text: "Does the site have an automated and documented temperature monitoring system for the storage of biological samples?",
+    type: "YesNo",
+    category: "Infraestructura",
+    weight: 2
+  },
+  {
+    id: "inf12",
+    text: "How are source documents corresponding to clinical research archived and protected?",
+    type: "Text",
+    category: "Infraestructura",
+    weight: 2
+  },
+  {
+    id: "inf13",
+    text: "Do you have a documented circuit for temperature control of each thermometer at the site? What type of thermometers do you use for recording?",
+    type: "Text",
+    category: "Infraestructura",
+    weight: 2
+  },
+  {
+    id: "inf14",
+    text: "Do you have a laboratory for sample processing? In the case of being a provider, do you have an evaluation system?",
+    type: "YesNo",
+    category: "Infraestructura",
+    weight: 2
+  },
+  {
+    id: "inf15",
+    text: "Do you have a circuit designed for double-blind studies?",
+    type: "YesNo",
+    category: "Infraestructura",
+    weight: 2
+  },
+
+  // Staff (12)
+  {
+    id: "stf1",
+    text: "Does the site have enough properly trained staff to guarantee eCRF loading within 5 business days after the patient's visit?",
+    type: "YesNo",
+    category: "Staff",
+    weight: 4
+  },
+  {
+    id: "stf2",
+    text: "Do you have specific staff for the following roles: PI, SI, SC, research nursing, data manager, contract manager, recruiters, others?",
+    type: "Text",
+    category: "Staff",
+    weight: 2
+  },
+  {
+    id: "stf3",
+    text: "Is there any member of your team designated as responsible for the processing and shipment of biological samples?",
+    type: "YesNo",
+    category: "Staff",
+    weight: 1
+  },
+  {
+    id: "stf4",
+    text: "Do you have a system for updating staff documentation? (CV, GCP, training)?",
+    type: "YesNo",
+    category: "Staff",
+    weight: 1
+  },
+  {
+    id: "stf5",
+    text: "Do you have documented traceable initial and continuous training processes in clinical research?",
+    type: "YesNo",
+    category: "Staff",
+    weight: 2
+  },
+  {
+    id: "stf6",
+    text: "Is there a clearly defined person responsible for on-site and remote monitoring?",
+    type: "YesNo",
+    category: "Staff",
+    weight: 2
+  },
+
+  // Gestión de Calidad (20)
+  {
+    id: "qms1",
+    text: "Are there written, current, versioned, and accessible SOPs for staff?",
+    type: "YesNo",
+    category: "Gestión de Calidad",
+    weight: 5
+  },
+  {
+    id: "qms2",
+    text: "Does it have formal internal audit systems or a quality management system? Is there a documented and in-use CAPA system?",
+    type: "YesNo",
+    category: "Gestión de Calidad",
+    weight: 4
+  },
+  {
+    id: "qms3",
+    text: "Does the center have ISO or other certifications?",
+    type: "YesNo",
+    category: "Gestión de Calidad",
+    weight: 4
+  },
+  {
+    id: "qms4",
+    text: "Is there a formal record of errors in taking informed consent from the patient?",
+    type: "YesNo",
+    category: "Gestión de Calidad",
+    weight: 2
+  },
+  {
+    id: "qms5",
+    text: "Does the center have ISO or other certifications?",
+    type: "YesNo",
+    category: "Gestión de Calidad",
+    weight: 2
+  },
+  {
+    id: "qms6",
+    text: "Are screen failures and dropouts systematically recorded? And SF rate?",
+    type: "Text",
+    category: "Gestión de Calidad",
+    weight: 2
+  },
+  {
+    id: "qms7",
+    text: "Do you have documentation of the major deviation rate of the center in the last year?",
+    type: "YesNo",
+    category: "Gestión de Calidad",
+    weight: 1
+  },
+
+  // Tecnologia (7)
+  {
+    id: "tech1",
+    text: "Do you have an electronic medical record (EMR)?",
+    type: "YesNo",
+    category: "Tecnologia",
+    weight: 5
+  },
+  {
+    id: "tech2",
+    text: "In which technological systems do you have experience? (e.g., eConsent, eCOA, eISF, Medidata Rave, Oracle RDC, Veeva Vault)",
+    type: "Text",
+    category: "Tecnologia",
+    weight: 2
+  },
+
+  // Data Management (10)
+  {
+    id: "dm1",
+    text: "Do you measure the average query resolution time (Queries Average TAT)?",
+    type: "YesNo",
+    category: "Data Management",
+    weight: 4
+  },
+  {
+    id: "dm2",
+    text: "Is there a data transmission tracking/control system to the CRF?",
+    type: "YesNo",
+    category: "Data Management",
+    weight: 5
+  },
+  {
+    id: "dm3",
+    text: "Is there documented follow-up of actions derived from monitoring (Follow up letter)?",
+    type: "YesNo",
+    category: "Data Management",
+    weight: 1
+  },
+
+  // Seguridad del paciente (12)
+  {
+    id: "safe1",
+    text: "Is there an international safety system for medication-related SAEs?",
+    type: "YesNo",
+    category: "Seguridad del paciente",
+    weight: 4
+  },
+  {
+    id: "safe2",
+    text: "Does the site have a fully equipped and available emergency service (ER)?",
+    type: "YesNo",
+    category: "Seguridad del paciente",
+    weight: 3
+  },
+  {
+    id: "safe3",
+    text: "Do you have a system that ensures AEs and SAEs are reported in a timely manner?",
+    type: "YesNo",
+    category: "Seguridad del paciente",
     weight: 5
   },
 
-  // Scored Questions - Experience (40%)
+  // Reputación científica y trayectoria (11)
   {
-    id: "e1",
-    text: "Has the site conducted more than 5 clinical trials in the last 3 years?",
+    id: "rep1",
+    text: "Do you have a history of external audits/inspections without critical findings in any of them?",
     type: "YesNo",
-    category: "Experience",
-    weight: 15
+    category: "Reputación científica",
+    weight: 5
   },
   {
-    id: "e2",
-    text: "Does the site have experience with EDC (Electronic Data Capture) systems?",
-    type: "YesNo",
-    category: "Experience",
-    weight: 10
-  },
-  {
-    id: "e3",
-    text: "Is the staff certified in GCP (Good Clinical Practice) within the last 2 years?",
-    type: "YesNo",
-    category: "Experience",
-    weight: 15
-  },
-
-  // Scored Questions - Recruitment (30%)
-  {
-    id: "r1",
-    text: "Does the site have a database of potential patients for this therapeutic area?",
-    type: "YesNo",
-    category: "Recruitment",
-    weight: 15
-  },
-  {
-    id: "r2",
-    text: "Can the site guarantee a recruitment rate of at least 2 patients per month?",
-    type: "YesNo",
-    category: "Recruitment",
-    weight: 10
-  },
-
-  // Open Ended
-  {
-    id: "o1",
-    text: "Please describe your site's standard operating procedure (SOP) for informed consent.",
+    id: "rep2",
+    text: "In which therapeutic specialties do you have experience with clinical trials?",
     type: "Text",
-    category: "Qualitative",
-    weight: 0
+    category: "Reputación científica",
+    weight: 2
+  },
+  {
+    id: "rep3",
+    text: "Does the center have verifiable experience in Phase I studies?",
+    type: "YesNo",
+    category: "Reputación científica",
+    weight: 2
+  },
+  {
+    id: "rep4",
+    text: "Does the center have verifiable experience in Phase II–IV studies?",
+    type: "YesNo",
+    category: "Reputación científica",
+    weight: 2
+  },
+
+  // Cuidado de IMP (4)
+  {
+    id: "imp1",
+    text: "Does the site have a complete and traceable circuit for IMP handling?",
+    type: "YesNo",
+    category: "Cuidado de IMP",
+    weight: 4
+  },
+
+  // Relación con sponsors (10)
+  {
+    id: "rel1",
+    text: "Does the site allow remote monitoring visits?",
+    type: "YesNo",
+    category: "Relación con sponsors",
+    weight: 4
+  },
+  {
+    id: "rel2",
+    text: "Does the site allow on-site monitoring visits?",
+    type: "YesNo",
+    category: "Relación con sponsors",
+    weight: 4
+  },
+  {
+    id: "rel3",
+    text: "Does the site grant study monitors direct and controlled access to the electronic medical record (EMR) for source data verification?",
+    type: "YesNo",
+    category: "Relación con sponsors",
+    weight: 2
+  },
+
+  // Experiencia del paciente (3)
+  {
+    id: "pat1",
+    text: "Does the center have systems for measuring customer satisfaction? (patient, sponsor)",
+    type: "YesNo",
+    category: "Experiencia del paciente",
+    weight: 1
+  },
+  {
+    id: "pat2",
+    text: "Is there a formal transfer management system that guarantees that the patient does not incur any economic expense?",
+    type: "YesNo",
+    category: "Experiencia del paciente",
+    weight: 2
+  },
+
+  // Start Up (10)
+  {
+    id: "start1",
+    text: "What is the average total time from the first submission of documentation to final approval by the IEC/IRB? Do you use a local, central, or both IEC? Does your IEC have any extra requirements for the submission/approval of documents?",
+    type: "Text",
+    category: "Start Up",
+    weight: 2
+  },
+  {
+    id: "start2",
+    text: "Does the site have the capacity to submit documentation to its Ethics Committee (IEC/IRB) prior to the signature/execution of the contract?",
+    type: "YesNo",
+    category: "Start Up",
+    weight: 2
+  },
+  {
+    id: "start3",
+    text: "Does the composition of the IEC/IRB members comply with ICH-GCP requirements?",
+    type: "YesNo",
+    category: "Start Up",
+    weight: 2
+  },
+  {
+    id: "start4",
+    text: "Is there a clearly defined person responsible for start-up management?",
+    type: "YesNo",
+    category: "Start Up",
+    weight: 2
+  },
+  {
+    id: "start5",
+    text: "How is the comprehensive review of the protocol performed before the start (operational feasibility, vendors, required resources)?",
+    type: "Text",
+    category: "Start Up",
+    weight: 2
+  },
+
+  // Reclutamiento (2)
+  {
+    id: "rec1",
+    text: "What methods has the site used for recruiting patients for clinical research? Is the site willing to carry out active dissemination and promotion actions of the study towards other local sites and/or referral networks?",
+    type: "Text",
+    category: "Reclutamiento",
+    weight: 2
+  },
+
+  // Post Estudio (2)
+  {
+    id: "post1",
+    text: "Is the management of physical and digital archives post-study closure clearly defined? Is there a follow-up of SAEs once the study is concluded?",
+    type: "YesNo",
+    category: "Post Estudio",
+    weight: 2
   }
 ];
+
+import { Question } from "./types";
 
 export function calculateScore(answers: Record<string, any>): { score: number, isKnockOut: boolean } {
   let totalWeight = 0;
@@ -99,19 +407,19 @@ export function calculateScore(answers: Record<string, any>): { score: number, i
   QUESTIONS.forEach(q => {
     const answer = answers[q.id];
     
-    // Check Knock Out
+    // Check Knock Out (None explicitly defined in this set, but keeping logic)
     if (q.isKnockOut) {
-      if (q.id === "ko1" && answer === "No") isKnockOut = true;
-      if (q.id === "ko2" && answer === "Yes") isKnockOut = true;
+       // logic if needed
     }
 
     // Calculate Score
-    if (q.weight > 0 && answer === "Yes") {
-      earnedScore += q.weight;
-    }
-    
+    // Assuming "Yes" grants full weight, "No" grants 0
+    // For Text questions, we might need manual scoring or assume full points if filled (simplification for MVP)
     if (q.weight > 0) {
       totalWeight += q.weight;
+      if (answer === "Yes" || (q.type === "Text" && answer && answer.length > 5)) {
+        earnedScore += q.weight;
+      }
     }
   });
 

@@ -1,0 +1,196 @@
+Infraestructura
+15 criteria · Combined weight: 34
+
+Does the site have access to local laboratories?
+Weight: 3
+
+Do you have a functioning generator?
+Weight: 3
+
+Do you have strict control over medical equipment calibrations (thermometers, scales, blood pressure monitors, others)?
+Weight: 5
+
+Do you have documented management for the disposal of pathogenic waste (waste from procedures, laboratory, among others)?
+Weight: 4
+
+Does the site have a pharmacy dedicated exclusively to clinical research for the preparation and dispensing of the Investigational Product (IP)? Will the IP storage be carried out in the pharmacy?
+Weight: 2
+
+What equipment do you have for IP refrigeration? (e.g., Freezer -20°C to -30°C, -70°C to -80°C, -135°C)
+Weight: 2
+
+Describe what resources, equipment, and/or facilities the site has available for use in the study. (e.g., ECG, EEG, MRI, PET, MRS, X-Ray, Mammogram, others (specify))
+Weight: 1
+
+Does the site have the capacity to send digital images for centralized review? Does the site have sufficient high-speed internet connectivity to operate electronic data capture (EDC) systems?
+Weight: 1
+
+Does the site have 24-hour observation and/or overnight stay capacity available for clinical research?
+Weight: 1
+
+Can the site offer afternoon, weekend, and/or holiday service hours for study visits, if required? Does the site have the capacity to administer medication during weekends for continuous dosing schedules?
+Weight: 2
+
+Does the site have an automated and documented temperature monitoring system for the storage of biological samples?
+Weight: 2
+
+How are source documents corresponding to clinical research archived and protected?
+Weight: 2
+
+Do you have a documented circuit for temperature control of each thermometer at the site? What type of thermometers do you use for recording? (e.g., Datalogger, daily measurement)
+Weight: 2
+
+Do you have a laboratory for sample processing? In the case of being a provider, do you have an evaluation system?
+Weight: 2
+
+Do you have a circuit designed for double-blind studies?
+Weight: 2
+
+Staff
+6 criteria · Combined weight: 12
+
+Does the site have enough properly trained staff to guarantee eCRF loading within 5 business days after the patient's visit?
+Weight: 4
+
+Do you have specific staff for the following roles: PI, SI, SC, research nursing, data manager, contract manager, recruiters, others (specify)?
+Weight: 2
+
+Is there any member of your team designated as responsible for the processing and shipment of biological samples?
+Weight: 1
+
+Do you have a system for updating staff documentation? (CV, GCP, training)?
+Weight: 1
+
+Do you have documented traceable initial and continuous training processes in clinical research?
+Weight: 2
+
+Is there a clearly defined person responsible for on-site and remote monitoring?
+Weight: 2
+
+Gestión de Calidad
+7 criteria · Combined weight: 20
+
+Are there written, current, versioned, and accessible SOPs for staff?
+Weight: 5
+
+Does it have formal internal audit systems or a quality management system? Is there a documented and in-use CAPA (corrective and preventive actions) system?
+Weight: 4
+
+Does the center have ISO or other certifications?
+Weight: 4
+
+Is there a formal record of errors in taking informed consent from the patient?
+Weight: 2
+
+Does the center have ISO or other certifications?
+Weight: 2
+
+Are screen failures and dropouts systematically recorded? (request drop out?) and SF rate
+Weight: 2
+
+Do you have documentation of the major deviation rate of the center in the last year?
+Weight: 1
+
+Tecnologia
+2 criteria · Combined weight: 7
+
+Do you have an electronic medical record (EMR)?
+Weight: 5
+
+In which technological systems do you have experience? (e.g., eConsent, eCOA, eISF, Medidata Rave, Oracle RDC, Veeva Vault)
+Weight: 2
+
+Data Management
+3 criteria · Combined weight: 10
+
+Do you measure the average query resolution time (Queries Average TAT)?
+Weight: 4
+
+Is there a data transmission tracking/control system to the CRF?
+Weight: 5
+
+Is there documented follow-up of actions derived from monitoring (Follow up letter)?
+Weight: 1
+
+Seguridad del paciente
+3 criteria · Combined weight: 12
+
+Is there an international safety system for medication-related SAEs?
+Weight: 4
+
+Does the site have a fully equipped and available emergency service (ER)?
+Weight: 3
+
+Do you have a system that ensures AEs and SAEs are reported in a timely manner?
+Weight: 5
+
+Reputación científica y trayectoria
+4 criteria · Combined weight: 11
+
+Do you have a history of external audits/inspections without critical findings in any of them?
+Weight: 5
+
+In which therapeutic specialties do you have experience with clinical trials? (e.g., Cardiology, Diabetes, Rheumatology, Oncology, Psychiatry, etc.)
+Weight: 2
+
+Does the center have verifiable experience in Phase I studies?
+Weight: 2
+
+Does the center have verifiable experience in Phase II–IV studies?
+Weight: 2
+
+Cuidado de IMP
+1 criteria · Combined weight: 4
+
+Does the site have a complete and traceable circuit for IMP handling?
+Weight: 4
+
+Relación con sponsors
+3 criteria · Combined weight: 10
+
+Does the site allow remote monitoring visits?
+Weight: 4
+
+Does the site allow on-site monitoring visits?
+Weight: 4
+
+Does the site grant study monitors direct and controlled access to the electronic medical record (EMR) for source data verification?
+Weight: 2
+
+Experiencia del paciente
+2 criteria · Combined weight: 3
+
+Does the center have systems for measuring customer satisfaction? (patient, sponsor)
+Weight: 1
+
+Is there a formal transfer management system that guarantees that the patient does not incur any economic expense?
+Weight: 2
+
+Start Up
+5 criteria · Combined weight: 10
+
+What is the average total time from the first submission of documentation to final approval by the IEC/IRB? Do you use a local, central, or both IEC? Does your IEC have any extra requirements for the submission/approval of documents?
+Weight: 2
+
+Does the site have the capacity to submit documentation to its Ethics Committee (IEC/IRB) prior to the signature/execution of the contract? What is the usual period (in weeks) necessary for the approval of the clinical trial agreement and the corresponding budget?
+Weight: 2
+
+Does the composition of the IEC/IRB members comply with ICH-GCP requirements?
+Weight: 2
+
+Is there a clearly defined person responsible for start-up management?
+Weight: 2
+
+How is the comprehensive review of the protocol performed before the start (operational feasibility, vendors, required resources)?
+Weight: 2
+
+Reclutamiento
+1 criteria · Combined weight: 2
+
+What methods has the site used for recruiting patients for clinical research? Is the site willing to carry out active dissemination and promotion actions of the study towards other local sites and/or referral networks?
+Weight: 2
+
+Post Estudio
+1 criteria · Combined weight: 2
+
+Is the management of physical and digital archives post-study closure clearly defined? Is there a follow-up of SAEs once the study is concluded?

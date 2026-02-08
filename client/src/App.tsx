@@ -15,6 +15,7 @@ import AdminCenters from "@/pages/admin/centers.tsx";
 import CenterDetail from "@/pages/admin/center-detail.tsx";
 import SiteDisclaimer from "@/pages/site/disclaimer.tsx";
 import SiteEvaluation from "@/pages/site/evaluation.tsx";
+import ExportResults from "@/pages/admin/export.tsx";
 
 function Router() {
   return (
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/centers" component={AdminCenters} />
       <Route path="/admin/centers/:id" component={CenterDetail} />
+      <Route path="/admin/export" component={ExportResults} />
 
       {/* Site Routes */}
       <Route path="/site/disclaimer" component={SiteDisclaimer} />
