@@ -1,0 +1,98 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { useStore } from "@/lib/store";
+import { Layout } from "@/components/layout";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, ShieldCheck } from "lucide-react";
+
+export default function AdminLogin() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useStore();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    // Simulate API
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    if (username === "admin" && password === "admin") {
+      login({
+        id: "admin-1",
+        name: "Administrator",
+        role: "admin"
+      });
+      toast({
+        title: "Admin Access Granted",
+        description: "Redirecting to dashboard...",
+      });
+      setLocation("/admin");
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "Invalid credentials.",
+      });
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <Layout>
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-slate-900">
+        <div className="w-full max-w-sm">
+          <div className="flex justify-center mb-8">
+            <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm">
+               <ShieldCheck className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          
+          <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur">
+            <CardHeader className="text-center">
+              <CardTitle>Admin Portal</CardTitle>
+              <CardDescription>Innova Trials Management</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input 
+                    id="username" 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="admin"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="admin"
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sign In"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+          
+          <p className="text-center text-slate-500 text-xs mt-8">
+            Restricted access. Authorized personnel only.
+          </p>
+        </div>
+      </div>
+    </Layout>
+  );
+}

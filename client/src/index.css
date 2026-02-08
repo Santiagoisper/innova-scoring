@@ -4,9 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.5rem;
   --radius-xl: 1rem;
   
   --color-background: hsl(var(--background));
@@ -52,96 +52,87 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Outfit', sans-serif;
+  --font-sans: 'Open Sans', sans-serif;
+  --font-heading: 'Roboto', sans-serif;
 }
 
-/* Light Mode - Fintech Professional Theme */
+/* 
+  Theme: Clinical Corporate (Inspired by Novo Nordisk)
+  Colors: Deep Blue, Clean White, Light Grey
+*/
 :root {
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
+  /* Novo Blue approximation: #0033A0 (217 100% 31%) but using HSL */
+  /* Using a slightly softer professional blue for UI */
+  --background: 0 0% 100%;
+  --foreground: 215 28% 17%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 215 28% 17%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
+  --popover-foreground: 215 28% 17%;
 
-  /* Navy Blue Primary */
-  --primary: 221 83% 53%;
-  --primary-foreground: 210 40% 98%;
+  /* Corporate Blue */
+  --primary: 217 90% 31%; /* #083785 */
+  --primary-foreground: 0 0% 100%;
 
-  /* Slate Secondary */
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
+  /* Subtle Grey for Secondary */
+  --secondary: 210 20% 96%;
+  --secondary-foreground: 217 90% 31%;
 
-  --muted: 210 40% 96%;
+  --muted: 210 20% 96%;
   --muted-foreground: 215 16% 47%;
 
-  --accent: 210 40% 96%;
-  --accent-foreground: 222 47% 11%;
+  --accent: 210 20% 93%;
+  --accent-foreground: 217 90% 31%;
 
   --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 0 0% 100%;
 
   --border: 214 32% 91%;
   --input: 214 32% 91%;
-  --ring: 221 83% 53%;
+  --ring: 217 90% 31%;
   
-  --radius: 0.5rem;
+  --radius: 0.25rem; /* More squared/professional corners */
 
-  /* Charts */
-  --chart-1: 221 83% 53%; /* Blue */
-  --chart-2: 142 71% 45%; /* Green */
-  --chart-3: 31 97% 55%;  /* Orange */
-  --chart-4: 243 75% 59%; /* Purple */
-  --chart-5: 0 84% 60%;   /* Red */
+  /* Charts - Corporate Palette */
+  --chart-1: 217 90% 31%; /* Main Blue */
+  --chart-2: 200 80% 45%; /* Lighter Blue */
+  --chart-3: 160 60% 40%; /* Success Green */
+  --chart-4: 35 90% 50%;  /* Warning Orange */
+  --chart-5: 0 70% 50%;   /* Error Red */
 
-  --sidebar: 222 47% 11%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-primary: 221 83% 53%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 217 33% 17%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-border: 217 33% 17%;
-  --sidebar-ring: 221 83% 53%;
+  --sidebar: 217 90% 31%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 0 0% 100%;
+  --sidebar-primary-foreground: 217 90% 31%;
+  --sidebar-accent: 217 80% 35%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 217 80% 35%;
+  --sidebar-ring: 0 0% 100%;
 }
 
 .dark {
+  /* Dark mode is less likely for this client, but good to have fallback */
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
-
   --card: 217 33% 17%;
   --card-foreground: 210 40% 98%;
-
   --popover: 217 33% 17%;
   --popover-foreground: 210 40% 98%;
-
   --primary: 217 91% 60%;
   --primary-foreground: 222 47% 11%;
-
   --secondary: 217 33% 17%;
   --secondary-foreground: 210 40% 98%;
-
   --muted: 217 33% 17%;
   --muted-foreground: 215 20% 65%;
-
   --accent: 217 33% 17%;
   --accent-foreground: 210 40% 98%;
-
   --destructive: 0 62% 30%;
   --destructive-foreground: 210 40% 98%;
-
   --border: 217 33% 17%;
   --input: 217 33% 17%;
   --ring: 224 76% 48%;
-  
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-
   --sidebar: 217 33% 17%;
   --sidebar-foreground: 210 40% 98%;
   --sidebar-primary: 224 76% 48%;
@@ -160,6 +151,6 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+    @apply font-heading tracking-tight font-medium;
   }
 }
