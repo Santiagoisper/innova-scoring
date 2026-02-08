@@ -36,6 +36,7 @@ export default function CenterDetailsPage() {
   const [center, setCenter] = useState<any>(null)
   const [evaluation, setEvaluation] = useState<any>(null)
   const [criteria, setCriteria] = useState<any[]>([])
+  const [evalItems, setEvalItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [generatingPDF, setGeneratingPDF] = useState(false)
 
@@ -51,8 +52,57 @@ export default function CenterDetailsPage() {
         ])
 
         if (centerRes.data) setCenter(centerRes.data)
-        if (evalRes.data) setEvaluation(evalRes.data)
         if (criteriaRes.data) setCriteria(criteriaRes.data)
+
+        if (evalRes.data) {
+          // Load evaluation_items for this evaluation
+          const { data: items } = await supabase
+            .from("evaluation_items")
+            .select("*")
+            .eq("evaluation_id", evalRes.data.id)
+
+          if (items) setEvalItems(items)
+
+          // Recalculate score using ALL criteria weights
+          const allCriteria = criteriaRes.data || []
+          const totalWeight = allCriteria.reduce((sum: number, c: any) => sum + (c.weight || 0), 0)
+
+          if (totalWeight > 0) {
+            let totalWeightedScore = 0
+            const rawResponses = evalRes.data.responses || {}
+            const respScores = rawResponses.scores || rawResponses
+
+            for (const c of allCriteria) {
+              // Check evaluation_items first (admin evaluations)
+              const item = items?.find((it: any) => it.criterion_id === c.id || it.criteria_id === c.id)
+              if (item && typeof item.score === 'number') {
+                totalWeightedScore += item.score * (c.weight || 0)
+                continue
+              }
+
+              // Check responses JSON (client evaluations)
+              const ans = respScores[c.id] || respScores[String(c.id)]
+              if (c.response_type === 'boolean') {
+                if (String(ans).toLowerCase() === 'yes') {
+                  totalWeightedScore += 100 * (c.weight || 0)
+                }
+              } else if (typeof ans === 'number') {
+                totalWeightedScore += ans * (c.weight || 0)
+              }
+            }
+
+            const recalculatedScore = Math.round((totalWeightedScore / totalWeight) * 100) / 100
+            const recalculatedLevel = recalculatedScore >= 80 ? 'green' : recalculatedScore >= 60 ? 'yellow' : 'red'
+
+            setEvaluation({
+              ...evalRes.data,
+              total_score: recalculatedScore,
+              score_level: recalculatedLevel
+            })
+          } else {
+            setEvaluation(evalRes.data)
+          }
+        }
       } catch (error) {
         console.error("Error loading data:", error)
       } finally {
@@ -66,7 +116,7 @@ export default function CenterDetailsPage() {
     if (!center || !evaluation) return
     setGeneratingPDF(true)
     try {
-      await generateCenterReport(center, evaluation, criteria)
+      await generateCenterReport(center, evaluation, criteria, evalItems)
     } catch (error) {
       console.error("PDF generation failed:", error)
       alert("Failed to generate PDF report.")
@@ -75,7 +125,7 @@ export default function CenterDetailsPage() {
     }
   }
 
-  // Extract Responses & Attachments
+  // Extract Responses & Attachments (merge evaluation_items + responses JSON)
   const { responses, attachments } = useMemo(() => {
     let res: Record<string, any> = {}
     let att: Record<string, any> = {}
@@ -87,7 +137,6 @@ export default function CenterDetailsPage() {
         att = raw.attachments || {}
       } else {
         res = raw
-        // Legacy support
         Object.entries(raw).forEach(([key, value]) => {
           if (typeof value === 'string' && value.startsWith('http')) {
             att[key] = value
@@ -95,8 +144,17 @@ export default function CenterDetailsPage() {
         })
       }
     }
+
+    // Merge evaluation_items (admin scores) into responses
+    for (const item of evalItems) {
+      const cid = item.criterion_id || item.criteria_id
+      if (cid && typeof item.score === 'number' && !(cid in res)) {
+        res[cid] = item.score
+      }
+    }
+
     return { responses: res, attachments: att }
-  }, [evaluation])
+  }, [evaluation, evalItems])
 
   const getStatusDisplay = (level: string, score: number) => {
     // Determine level by score if not set
@@ -259,9 +317,11 @@ export default function CenterDetailsPage() {
                 {criteria.map((c, i) => {
                   const ans = responses[c.id] || responses[String(c.id)]
                   const hasAttach = attachments[c.id] || attachments[String(c.id)]
-                  const isYes = String(ans).toLowerCase() === 'yes'
-                  const isNo = String(ans).toLowerCase() === 'no'
-                  
+                  const isNumericScore = typeof ans === 'number'
+                  const isYes = !isNumericScore && String(ans).toLowerCase() === 'yes'
+                  const isNo = !isNumericScore && String(ans).toLowerCase() === 'no'
+                  const hasPending = ans === undefined || ans === null
+
                   return (
                     <div key={c.id} className="p-8 md:p-10 hover:bg-slate-50/30 transition-all group">
                       <div className="flex flex-col md:flex-row justify-between items-start gap-8">
@@ -283,19 +343,35 @@ export default function CenterDetailsPage() {
                         </div>
 
                         <div className="flex flex-col items-end gap-3 min-w-[140px]">
-                          {c.response_type === 'boolean' ? (
+                          {isNumericScore ? (
+                            // Admin numeric score (0-100)
                             <div className={`px-6 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border-2 shadow-sm ${
-                              isYes ? 'border-emerald-500 text-emerald-700 bg-emerald-50' : 
+                              ans >= 80 ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                              ans >= 60 ? 'border-amber-500 text-amber-700 bg-amber-50' :
+                              'border-rose-500 text-rose-700 bg-rose-50'
+                            }`}>
+                              {ans} / 100
+                            </div>
+                          ) : c.response_type === 'boolean' ? (
+                            <div className={`px-6 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border-2 shadow-sm ${
+                              isYes ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
                               isNo ? 'border-rose-500 text-rose-700 bg-rose-50' : 'border-slate-100 text-slate-400 bg-white'
                             }`}>
-                              {ans ? String(ans).toUpperCase() : 'PENDING'}
+                              {hasPending ? 'PENDING' : String(ans).toUpperCase()}
                             </div>
                           ) : (
-                            <div className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-100">
-                              Open Response
+                            <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
+                              hasPending ? 'bg-white text-slate-400 border-slate-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'
+                            }`}>
+                              {hasPending ? 'PENDING' : 'Open Response'}
                             </div>
                           )}
-                          {c.response_type === 'boolean' && ans && (
+                          {isNumericScore && (
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                              Weight: {c.weight} &middot; Contribution: <span className={ans >= 60 ? 'text-emerald-600' : 'text-rose-500'}>{Math.round(ans * c.weight / 100 * 10) / 10}</span>
+                            </span>
+                          )}
+                          {!isNumericScore && c.response_type === 'boolean' && !hasPending && (
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                               Contribution: <span className={isYes ? 'text-emerald-600' : 'text-slate-500'}>{isYes ? `+${c.weight}` : '0'} pts</span>
                             </span>
@@ -309,16 +385,16 @@ export default function CenterDetailsPage() {
                           <div className="absolute -top-3 left-6 px-3 py-1 bg-white border border-slate-100 rounded-lg text-[9px] font-black uppercase text-slate-400">
                             Site Statement
                           </div>
-                          <p className="text-slate-600 text-sm leading-relaxed italic">"{ans}"</p>
+                          <p className="text-slate-600 text-sm leading-relaxed italic">&quot;{ans}&quot;</p>
                         </div>
                       )}
 
                       {/* Attachment Link */}
                       {hasAttach && (
                         <div className="mt-6 ml-0 md:ml-20">
-                          <a 
-                            href={hasAttach} 
-                            target="_blank" 
+                          <a
+                            href={hasAttach}
+                            target="_blank"
                             className="inline-flex items-center gap-3 px-5 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-primary-600 hover:border-primary-200 hover:shadow-lg hover:shadow-primary-50 transition-all group/btn"
                           >
                             <div className="p-1.5 bg-primary-50 rounded-lg group-hover/btn:bg-primary-600 group-hover/btn:text-white transition-colors">
