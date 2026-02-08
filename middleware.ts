@@ -5,7 +5,6 @@ import { createServerClient } from "@supabase/ssr"
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
-  // Solo protegemos /admin
   if (!req.nextUrl.pathname.startsWith("/admin")) return res
 
   const supabase = createServerClient(
@@ -17,7 +16,9 @@ export async function middleware(req: NextRequest) {
           return req.cookies.getAll()
         },
         setAll(cookies) {
-          cookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options))
+          cookies.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options)
+          })
         },
       },
     }
@@ -32,7 +33,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // chequeo rol admin
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
