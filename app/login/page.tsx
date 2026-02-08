@@ -1,11 +1,12 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { supabaseBrowser } from "@/lib/supabase/client"
 
 export default function LoginPage() {
   const supabase = useMemo(() => supabaseBrowser(), [])
+  const router = useRouter()
   const search = useSearchParams()
   const nextPath = search.get("next") || "/admin"
 
@@ -40,10 +41,15 @@ export default function LoginPage() {
       }
 
       setMessage("Login successful. Redirecting.....")
+      
+      // Esperar a que las cookies se propaguen
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       setLoading(false)
 
-      // Redirect duro (no falla)
-      window.location.href = nextPath
+      // Usar router de Next.js para navegación correcta
+      router.push(nextPath)
+      router.refresh()
     } catch (err: any) {
       console.error("LOGIN ERROR:", err)
       setLoading(false)
