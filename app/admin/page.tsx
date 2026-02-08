@@ -41,6 +41,7 @@ type Center = {
   code: string
   country: string
   city: string
+    public_token?: string | null
 }
 
 type Evaluation = {
@@ -105,8 +106,16 @@ export default function AdminDashboard() {
   )
 
   // Metrics Calculation
-  const totalSites = centers.length
-  
+// Global Sites: Centers that have been evaluated AND accepted (green) AND have been sent a link
+  const centersWithEval = centers.filter(c => 
+    finishedEvals.some(e => {
+      const level = e.score_level || getLevel(e.total_score)
+      return e.center_id === c.id && level === 'green'
+    }) && c.public_token
+  )
+  const totalSites = centersWithEval.length 
+
+  // Approved Sites: Only count sites with score_level='green'
   const approvedCount = finishedEvals.filter(e => 
     e.score_level === 'green' || (e.score_level === null && getLevel(e.total_score) === 'green')
   ).length
@@ -123,10 +132,10 @@ export default function AdminDashboard() {
     ? Math.round((approvedCount / finishedEvals.length) * 100) 
     : 0
 
+  // Average Quality: Dynamic average percentage of ALL evaluated sites
   const avgScore = finishedEvals.length > 0
     ? Math.round(finishedEvals.reduce((acc, curr) => acc + (curr.total_score || 0), 0) / finishedEvals.length)
     : 0
-
   const pendingActions = evaluations.filter(e => e.status === 'pending' || !e.status).length
 
   // Geographic Distribution
