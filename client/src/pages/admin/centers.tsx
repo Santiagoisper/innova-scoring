@@ -35,9 +35,11 @@ export default function AdminCenters() {
   });
 
   const filteredSites = sites.filter(s => 
-    s.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.email.toLowerCase().includes(searchTerm.toLowerCase())
+    s.status !== "Pending" && (
+      s.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const handleSendToken = (id: string, email: string) => {

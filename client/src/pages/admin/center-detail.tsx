@@ -12,6 +12,7 @@ import { QUESTIONS } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import jsPDF from "jspdf";
 
 export default function CenterDetail() {
   const [, params] = useRoute("/admin/centers/:id");
@@ -33,40 +34,87 @@ export default function CenterDetail() {
   const questionsList = questions || QUESTIONS;
 
   const handleDownloadReport = () => {
-    // Generate a mock report
-    const reportContent = `
-INNOVA TRIALS - SITE REPORT
-================================================
-Site: ${site.contactName}
-Status: ${site.status}
-Score: ${site.score}%
-Location: ${site.location}
-Registered: ${new Date(site.registeredAt).toLocaleDateString()}
+    // Generate PDF Report
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(22, 163, 74); // Green header
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("INNOVA TRIALS LLC REPORT", 105, 25, { align: "center" });
+    
+    // Site Info
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("SITE DETAILS", 20, 60);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Site Name: ${site.contactName}`, 20, 70);
+    doc.text(`Location: ${site.location || "N/A"}`, 20, 76);
+    doc.text(`Status: ${site.status}`, 20, 82);
+    doc.text(`Score: ${site.score !== undefined ? site.score + "%" : "N/A"}`, 20, 88);
+    doc.text(`Registered: ${new Date(site.registeredAt).toLocaleDateString()}`, 20, 94);
+    doc.text(`Evaluated: ${site.evaluatedAt ? new Date(site.evaluatedAt).toLocaleDateString() : "Pending"}`, 120, 70);
+    doc.text(`Evaluated By: ${site.evaluatedBy || "N/A"}`, 120, 76);
 
-EVALUATION SUMMARY
-------------------------------------------------
-${questionsList.map(q => {
-  const ans = site.answers?.[q.id];
-  let val = "Not Answered";
-  if (typeof ans === 'object' && ans?.value) val = ans.value;
-  else if (ans) val = ans;
-  return `[${q.category}] ${q.text}\nAnswer: ${val}\n`;
-}).join("\n")}
-    `.trim();
+    // Line separator
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 105, 190, 105);
 
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Report_${site.contactName.replace(/\s+/g, '_')}.txt`; // Using .txt for simplicity in mock, could be .pdf if we had a generator
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Evaluation Summary
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("EVALUATION SUMMARY", 20, 120);
+
+    let yPos = 135;
+    const pageHeight = doc.internal.pageSize.height;
+
+    questionsList.forEach((q, index) => {
+      // Check for page break
+      if (yPos > pageHeight - 30) {
+        doc.addPage();
+        yPos = 30;
+      }
+
+      const ans = site.answers?.[q.id];
+      let val = "Not Answered";
+      if (typeof ans === 'object' && ans?.value) val = ans.value;
+      else if (ans) val = ans;
+
+      // Question Text
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      
+      const questionLines = doc.splitTextToSize(`${index + 1}. [${q.category}] ${q.text}`, 170);
+      doc.text(questionLines, 20, yPos);
+      yPos += (questionLines.length * 5) + 2;
+
+      // Answer
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Answer: ${val}`, 25, yPos);
+      yPos += 10;
+    });
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages(); // Incorrect, this gets total at end, but good enough for mock
+    for(let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Generated on ${new Date().toLocaleDateString()} - Innova Trials`, 105, pageHeight - 10, { align: "center" });
+    }
+
+    doc.save(`Report_${site.contactName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
 
     toast({
       title: "Report Downloaded",
-      description: "Detailed site report has been generated.",
+      description: "Detailed PDF report has been generated.",
     });
   };
 
