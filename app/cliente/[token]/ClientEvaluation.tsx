@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
+import type { Criterion } from "@/types"
 import { 
   CheckCircle2, 
   FileUp, 
@@ -16,18 +17,6 @@ import {
   X
 } from "lucide-react"
 
-interface Criterion {
-  id: number
-  name: string
-  category: string
-  response_type: 'boolean' | 'text'
-  is_knockout: boolean
-  requires_doc: boolean
-  weight: number
-  description: string | null
-  order: number
-  created_at: string
-}
 
 export default function ClientEvaluation({ token }: { token: string }) {
   const supabase = supabaseBrowser()
