@@ -1,0 +1,656 @@
+Análisis del Programa Innova Scoring
+
+Resumen Ejecutivo
+
+Innova Scoring v5.0 es una plataforma web profesional para la evaluación y selección de sitios de investigación clínica. El sistema permite evaluar centros de investigación mediante criterios ponderados, generando puntuaciones automáticas y clasificaciones de aprobación.
+
+
+
+
+Arquitectura General
+
+Stack Tecnológico
+
+El programa está construido con tecnologías modernas y robustas:
+
+•
+Framework: Next.js 14 con App Router (React 18.2.0)
+
+•
+Base de Datos: Supabase (PostgreSQL + Autenticación)
+
+•
+Lenguaje: TypeScript 5.3.0
+
+•
+Estilos: Tailwind CSS 3.3.6 con sistema de diseño personalizado
+
+•
+Visualización: Recharts 2.10.3 para gráficos y dashboards
+
+•
+Iconografía: Lucide React 0.263.1
+
+•
+Generación PDF: jsPDF 4.1.0 con jsPDF-AutoTable 5.0.7
+
+•
+Email: Resend 6.9.1
+
+Estructura del Proyecto
+
+El código está organizado de manera clara y modular:
+
+Plain Text
+
+
+├── app/                    # Páginas y rutas (App Router)
+│   ├── admin/             # Panel administrativo completo
+│   ├── cliente/           # Portal del cliente
+│   ├── api/               # Endpoints API
+│   └── login/             # Autenticación
+├── components/            # Componentes reutilizables
+├── lib/                   # Lógica de negocio y utilidades
+│   ├── auth/             # Gestión de usuarios
+│   ├── scoring/          # Calculadora de puntuaciones
+│   ├── supabase/         # Cliente de base de datos
+│   └── utils/            # Utilidades (PDF, etc.)
+├── types/                 # Definiciones TypeScript
+└── supabase/             # Migraciones de base de datos
+
+
+
+Volumen de código: ~6,621 líneas de TypeScript/JavaScript
+
+
+
+
+Funcionalidades Principales
+
+1. Sistema de Evaluación
+
+El núcleo del sistema es un motor de scoring ponderado que:
+
+•
+Evalúa sitios mediante 18 criterios agrupados en 5 categorías:
+
+•
+Experiencia & Capacidad
+
+•
+Infraestructura
+
+•
+Personal
+
+•
+Cumplimiento & Calidad
+
+•
+Sostenibilidad
+
+
+
+•
+Cada criterio tiene:
+
+•
+Puntuación: 0-100
+
+•
+Peso configurable: 1-5
+
+•
+Descripción y metadata
+
+
+
+•
+Cálculo automático del score total ponderado:
+
+TypeScript
+
+
+totalScore = Σ(score × weight) / Σ(weight)
+
+
+
+
+
+•
+Clasificación automática basada en umbrales:
+
+•
+≥80: Aprobado (Verde)
+
+•
+60-79: Condicional (Amarillo)
+
+•
+<60: No Aprobado (Rojo)
+
+
+
+2. Portal del Cliente
+
+Interfaz de autoevaluación guiada mediante wizard paso a paso:
+
+•
+Acceso mediante token único por centro
+
+•
+Flujo de aceptación de términos
+
+•
+Progreso visual en tiempo real
+
+•
+Cálculo de puntuación instantáneo
+
+•
+Pantallas de confirmación y éxito
+
+3. Panel Administrativo
+
+Dashboard profesional con navegación lateral que incluye:
+
+Dashboard Principal
+
+•
+Métricas estratégicas:
+
+•
+Total de sitios globales
+
+•
+Tasa de aprobación
+
+•
+Puntuación promedio de calidad
+
+•
+Tareas pendientes
+
+
+
+•
+Visualizaciones:
+
+•
+Distribución de estados (gráfico de dona)
+
+•
+Huella geográfica (gráfico de barras horizontal)
+
+•
+Top 5 países por número de centros
+
+
+
+Gestión de Centros
+
+•
+CRUD completo de centros de investigación
+
+•
+Generación de enlaces públicos con tokens
+
+•
+Funcionalidad de copiar enlace al portapapeles
+
+•
+Información de contacto y ubicación
+
+Evaluaciones
+
+•
+Interfaz de scoring para evaluadores
+
+•
+Visualización de evaluaciones completadas
+
+•
+Notas y comentarios por criterio
+
+•
+Historial de cambios
+
+Configuración de Rúbrica
+
+•
+Gestión de criterios de evaluación
+
+•
+Ajuste de pesos y descripciones
+
+•
+Organización por categorías
+
+Análisis Avanzados
+
+•
+Dinámica: Análisis de tendencias temporales
+
+•
+Madurez: Modelo de 5 niveles (Initial → Optimized)
+
+•
+Benchmark: Comparaciones entre centros
+
+Exportación
+
+•
+Formatos: CSV, JSON
+
+•
+Datos completos de evaluaciones
+
+4. Sistema de Cuestionarios (Nueva Funcionalidad)
+
+Migración reciente (20260205000100_questionnaires.sql) que añade:
+
+•
+Cuestionarios versionados: Definiciones maestras con configuración JSON
+
+•
+Submissions: Envíos completados por clientes
+
+•
+Respuestas por pregunta: Con scoring automático
+
+•
+Documentación: Subida de evidencia requerida
+
+•
+Penalizaciones: Por documentos faltantes o knockout questions
+
+•
+RLS (Row Level Security): Políticas de acceso granular
+
+
+
+
+Calidad del Código
+
+Fortalezas
+
+1.
+TypeScript bien tipado: Interfaces claras y exhaustivas (Criterion, Center, Evaluation, EvaluationItem)
+
+2.
+Separación de responsabilidades:
+
+•
+Lógica de negocio en lib/
+
+•
+Componentes UI en components/
+
+•
+Rutas API separadas
+
+
+
+3.
+Reutilización: Funciones helper para estados, colores y etiquetas
+
+4.
+Diseño moderno: Sistema de diseño consistente con:
+
+•
+Gradientes y acentos profesionales
+
+•
+Tipografía dual (DM Sans + Plus Jakarta Sans)
+
+•
+Animaciones suaves
+
+•
+Responsive design
+
+
+
+5.
+Seguridad: Row Level Security (RLS) en Supabase con políticas owner-only
+
+6.
+Versionado: Migraciones SQL bien documentadas
+
+Áreas de Mejora
+
+1.
+Testing: No se observan tests unitarios ni de integración
+
+2.
+Validación de entrada: Podría reforzarse en el lado del cliente
+
+3.
+Manejo de errores: Algunos componentes podrían tener mejor gestión de errores
+
+4.
+Documentación: Falta documentación inline en algunos archivos complejos
+
+5.
+Optimización: Algunas queries podrían beneficiarse de paginación
+
+6.
+Accesibilidad: No se observan atributos ARIA ni consideraciones específicas de a11y
+
+
+
+
+Modelo de Datos
+
+Tablas Principales
+
+centers
+
+•
+Información de centros de investigación
+
+•
+Tokens públicos para acceso cliente
+
+•
+Datos de contacto y ubicación
+
+criteria
+
+•
+Definición de criterios de evaluación
+
+•
+Pesos configurables (1-5)
+
+•
+Categorización y ordenamiento
+
+evaluations
+
+•
+Evaluaciones completadas
+
+•
+Score total y estado
+
+•
+Relación con centro y evaluador
+
+evaluation_items
+
+•
+Puntuaciones individuales por criterio
+
+•
+Notas específicas
+
+•
+Relación con evaluación y criterio
+
+questionnaires (nuevo)
+
+•
+Definiciones de cuestionarios versionados
+
+•
+Configuración JSON flexible
+
+questionnaire_submissions (nuevo)
+
+•
+Envíos de clientes
+
+•
+Estados: pending, approved, conditional, rejected
+
+•
+Breakdown JSON de puntuaciones
+
+questionnaire_answers (nuevo)
+
+•
+Respuestas por pregunta
+
+•
+Flags de documentación requerida/subida
+
+questionnaire_documents (nuevo)
+
+•
+Evidencia documental
+
+•
+Paths de archivos subidos
+
+
+
+
+Lógica de Negocio
+
+Algoritmo de Scoring
+
+TypeScript
+
+
+function calculateWeightedScore(items, criteria) {
+  let totalWeightedScore = 0;
+  let totalWeight = 0;
+  
+  for (const item of items) {
+    const criterion = getCriterion(item.criterion_id);
+    const weightedScore = item.score * criterion.weight;
+    totalWeightedScore += weightedScore;
+    totalWeight += criterion.weight;
+  }
+  
+  const totalScore = totalWeight > 0 
+    ? (totalWeightedScore / totalWeight) 
+    : 0;
+    
+  return {
+    totalScore: Math.round(totalScore * 100) / 100,
+    status: calculateStatus(totalScore),
+    weightedScores: [...]
+  };
+}
+
+
+
+Clasificación de Estado
+
+TypeScript
+
+
+function calculateStatus(score: number): EvaluationStatus {
+  if (score >= 80) return 'green';   // Approved
+  if (score >= 60) return 'yellow';  // Conditional
+  return 'red';                      // Not Approved
+}
+
+
+
+
+
+
+Diseño UI/UX
+
+Paleta de Colores
+
+JavaScript
+
+
+const COLORS = {
+  primary: "#004a99",   // Deep Blue (Innova/Novo Nordisk)
+  success: "#10b981",   // Green
+  warning: "#f59e0b",   // Amber
+  danger: "#ef4444",    // Red
+  neutral: "#94a3b8",   // Slate
+  accent: "#6366f1",    // Indigo
+}
+
+
+
+Características Visuales
+
+•
+Gradientes profesionales en elementos clave
+
+•
+Micro-interacciones: Hover states, transitions suaves
+
+•
+Iconografía consistente: Lucide React
+
+•
+Tipografía jerárquica: Tamaños y pesos diferenciados
+
+•
+Espaciado generoso: Cards con padding amplio
+
+•
+Sombras sutiles: Shadow-xl con opacidad controlada
+
+•
+Uppercase tracking: Para labels y títulos de sección
+
+
+
+
+Integración con Servicios
+
+Supabase
+
+•
+Autenticación: Sistema de usuarios con RLS
+
+•
+Base de datos: PostgreSQL con migraciones versionadas
+
+•
+Políticas de seguridad: Owner-only access para submissions
+
+Resend
+
+•
+Sistema de envío de emails (integrado pero no visible en código revisado)
+
+
+
+
+Flujos de Usuario
+
+Cliente (Autoevaluación)
+
+1.
+Acceso mediante URL con token único
+
+2.
+Aceptación de términos y condiciones
+
+3.
+Wizard paso a paso por criterios
+
+4.
+Visualización de progreso en tiempo real
+
+5.
+Confirmación y envío
+
+6.
+Pantalla de éxito
+
+Administrador
+
+1.
+Login en /login
+
+2.
+Dashboard con métricas globales
+
+3.
+Navegación a sección deseada (Centers, Evaluations, etc.)
+
+4.
+Operaciones CRUD según sección
+
+5.
+Exportación de datos
+
+
+
+
+Observaciones Finales
+
+Puntos Destacados
+
+1.
+Arquitectura sólida: Next.js 14 con App Router es una elección moderna y escalable
+
+2.
+Diseño profesional: La v5.0 muestra un rediseño completo con estética corporativa
+
+3.
+Funcionalidad completa: Cubre todo el ciclo de evaluación desde cliente hasta admin
+
+4.
+Extensibilidad: El sistema de cuestionarios añade flexibilidad para nuevos flujos
+
+5.
+Seguridad: RLS bien implementado en Supabase
+
+Recomendaciones
+
+1.
+Testing: Implementar Jest + React Testing Library para tests unitarios y de integración
+
+2.
+Documentación: Añadir JSDoc a funciones complejas y README más detallado
+
+3.
+Validación: Usar Zod o Yup para schemas de validación
+
+4.
+Optimización: Implementar paginación en listados grandes
+
+5.
+Accesibilidad: Añadir atributos ARIA y navegación por teclado
+
+6.
+Monitoreo: Integrar Sentry o similar para error tracking
+
+7.
+CI/CD: Configurar pipeline de testing y deployment automático
+
+8.
+Internacionalización: Aunque está en inglés, considerar i18n para futuro multiidioma
+
+
+
+
+Conclusión
+
+Innova Scoring v5.0 es una aplicación web profesional, bien estructurada y funcional. El código muestra buenas prácticas de desarrollo moderno con TypeScript y React. La arquitectura es escalable y el diseño UI/UX es pulido y consistente.
+
+Las principales áreas de mejora se centran en testing, documentación y optimizaciones de rendimiento. Sin embargo, el producto actual es sólido y cumple con su propósito de manera efectiva.
+
+Calificación general: 8/10
+
+•
+Arquitectura: 9/10
+
+•
+Calidad de código: 8/10
+
+•
+Diseño UI/UX: 9/10
+
+•
+Funcionalidad: 9/10
+
+•
+Testing: 3/10
+
+•
+Documentación: 6/10
+

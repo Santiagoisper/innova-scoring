@@ -6,15 +6,28 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Filter, Eye, Send } from "lucide-react";
+import { Search, Filter, Eye, Send, Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCenters() {
-  const { sites, generateToken } = useStore();
+  const { sites, generateToken, registerSite } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Form State
+  const [formData, setFormData] = useState({
+    contactName: "",
+    email: "",
+    location: "",
+    description: ""
+  });
 
   const filteredSites = sites.filter(s => 
     s.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -27,6 +40,32 @@ export default function AdminCenters() {
     toast({
       title: "Token Sent",
       description: `Access token sent to ${email}`,
+    });
+  };
+
+  const handleAddSite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    registerSite({
+      contactName: formData.contactName,
+      email: formData.email,
+      location: formData.location,
+      description: formData.description,
+      score: 0,
+      token: undefined
+    });
+
+    setIsSubmitting(false);
+    setIsAddModalOpen(false);
+    setFormData({ contactName: "", email: "", location: "", description: "" }); // Reset form
+    
+    toast({
+      title: "Site Added",
+      description: `${formData.contactName} has been successfully registered.`,
     });
   };
 
@@ -60,9 +99,77 @@ export default function AdminCenters() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/90">
+                  <Plus className="h-4 w-4 mr-2" /> Add Site
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Clinical Site</DialogTitle>
+                  <CardDescription>
+                    Manually register a new center to the network.
+                  </CardDescription>
+                </DialogHeader>
+                <form onSubmit={handleAddSite} className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactName">Contact Name</Label>
+                    <Input 
+                      id="contactName" 
+                      required
+                      value={formData.contactName}
+                      onChange={(e) => setFormData({...formData, contactName: e.target.value})}
+                      placeholder="Dr. John Doe"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input 
+                        id="email" 
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        placeholder="john@clinic.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input 
+                        id="location" 
+                        required
+                        value={formData.location}
+                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        placeholder="City, Country"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea 
+                      id="description" 
+                      required
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      placeholder="Brief description of facilities and capabilities..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  <DialogFooter className="pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                        </>
+                      ) : "Add Site"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
