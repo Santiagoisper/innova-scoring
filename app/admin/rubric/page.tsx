@@ -20,7 +20,7 @@ type Criterion = {
   order: number
 }
 
-export default function RubricPage() {
+export default function CriteriaPage() {
   const supabase = supabaseBrowser()
   const [criteria, setCriteria] = useState<Criterion[]>([])
   const [loading, setLoading] = useState(true)
@@ -79,7 +79,7 @@ export default function RubricPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 font-display">Evaluation Rubric</h1>
+          <h1 className="text-2xl font-bold text-slate-900 font-display">Evaluation Criteria</h1>
           <p className="text-slate-600 mt-1">Scoring criteria and weight configuration</p>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-600">
