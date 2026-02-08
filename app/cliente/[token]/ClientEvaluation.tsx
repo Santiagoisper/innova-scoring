@@ -320,4 +320,62 @@ export default function ClientEvaluation({ token }: { token: string }) {
                         </div>
                         <button 
                           onClick={() => setAttachments(prev => {
-                            const n =
+                          { const newAttachments = { ...prev }; delete newAttachments[c.id]; return newAttachments; })
+                }}
+                className="p-2 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                <X className="w-4 h-4 text-red-600" />
+              </button>
+            </div>
+          ) : (
+            <div className="relative">
+              <input
+                type="file"
+                id={`file-${c.id}`}
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleFileUpload(c.id, e.target.files[0])
+                  }
+                }}
+              />
+              <label
+                htmlFor={`file-${c.id}`}
+                className="flex items-center justify-center gap-2 p-6 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-primary-400 hover:bg-primary-25 transition-all"
+              >
+                {uploading[c.id] ? (
+                  <>
+                    <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+                    <span className="text-sm font-semibold text-primary-600">Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-6 h-6 text-slate-400" />
+                    <span className="text-sm font-semibold text-slate-500">Click to Upload Document</span>
+                  </>
+                )}
+              </label>
+            </div>
+          )}
+        </div>
+      </div>
+    ))}
+
+    {/* Submit Button */}
+    <button
+      type="button"
+      onClick={handleSubmit}
+      disabled={submitting || criteria.length === 0}
+      className="w-full py-5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white font-bold text-lg rounded-2xl shadow-lg hover:shadow-xl disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed transition-all duration-200"
+    >
+      {submitting ? (
+        <span className="flex items-center justify-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          Submitting Evaluation...
+        </span>
+      ) : (
+        'Submit Site Evaluation'
+      )}
+    </button>
+  </div>
+)
