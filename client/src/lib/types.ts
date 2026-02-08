@@ -15,6 +15,11 @@ export interface Site {
   score?: number; // 0-100
   answers: Record<string, Answer>;
   location?: string;
+  code?: string;
+  country?: string;
+  city?: string;
+  address?: string;
+  phone?: string;
 }
 
 export interface Answer {

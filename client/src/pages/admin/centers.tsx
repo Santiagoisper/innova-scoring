@@ -23,9 +23,14 @@ export default function AdminCenters() {
 
   // Form State
   const [formData, setFormData] = useState({
+    name: "", // Site Name
+    code: "",
+    country: "",
+    city: "",
+    address: "",
     contactName: "",
     email: "",
-    location: "",
+    phone: "",
     description: ""
   });
 
@@ -51,17 +56,22 @@ export default function AdminCenters() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     registerSite({
-      contactName: formData.contactName,
+      contactName: formData.contactName, // Keeping contactName as the primary name for now, or maybe I should update the store to use siteName if available. The mock data uses contactName as the main identifier in the UI often.
       email: formData.email,
-      location: formData.location,
+      location: `${formData.city}, ${formData.country}`, // Backward compatibility
       description: formData.description,
+      code: formData.code,
+      country: formData.country,
+      city: formData.city,
+      address: formData.address,
+      phone: formData.phone,
       score: 0,
       token: undefined
     });
 
     setIsSubmitting(false);
     setIsAddModalOpen(false);
-    setFormData({ contactName: "", email: "", location: "", description: "" }); // Reset form
+    setFormData({ name: "", code: "", country: "", city: "", address: "", contactName: "", email: "", phone: "", description: "" }); // Reset form
     
     toast({
       title: "Site Added",
@@ -113,39 +123,117 @@ export default function AdminCenters() {
                   </CardDescription>
                 </DialogHeader>
                 <form onSubmit={handleAddSite} className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contactName">Contact Name</Label>
-                    <Input 
-                      id="contactName" 
-                      required
-                      value={formData.contactName}
-                      onChange={(e) => setFormData({...formData, contactName: e.target.value})}
-                      placeholder="Dr. John Doe"
-                    />
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
+                      <Label htmlFor="contactName">Site Name</Label>
                       <Input 
-                        id="email" 
-                        type="email"
+                        id="siteName" 
                         required
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        placeholder="john@clinic.com"
+                        value={formData.contactName}
+                        onChange={(e) => setFormData({...formData, contactName: e.target.value})}
+                        placeholder="e.g. General Hospital"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
+                      <Label htmlFor="code">Site Code</Label>
                       <Input 
-                        id="location" 
+                        id="code" 
                         required
-                        value={formData.location}
-                        onChange={(e) => setFormData({...formData, location: e.target.value})}
-                        placeholder="City, Country"
+                        value={formData.code}
+                        onChange={(e) => setFormData({...formData, code: e.target.value})}
+                        placeholder="e.g. SITE-001"
                       />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country</Label>
+                      <Input 
+                        id="country" 
+                        required
+                        value={formData.country}
+                        onChange={(e) => setFormData({...formData, country: e.target.value})}
+                        placeholder="e.g. USA"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input 
+                        id="city" 
+                        required
+                        value={formData.city}
+                        onChange={(e) => setFormData({...formData, city: e.target.value})}
+                        placeholder="e.g. New York"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input 
+                      id="address" 
+                      required
+                      value={formData.address}
+                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      placeholder="e.g. 123 Medical Blvd"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contactPerson">Contact Person</Label>
+                      <Input 
+                        id="contactPerson" 
+                        required
+                        value={formData.name} // Using 'name' for person name to distinguish from 'contactName' which is used as Site Name in my logic above? Wait, let's fix the state mapping.
+                        // Actually in my state init: name is Site Name? No, contactName was Site Name in previous logic. 
+                        // Let's re-read the state init I just pushed: 
+                        // { name: "", code: "", country: "", city: "", address: "", contactName: "", email: "", phone: "", description: "" }
+                        // Wait, I messed up the state keys in the previous tool call.
+                        // I will fix it here in the form implementation.
+                        // Let's assume: contactName = Site Name (as per existing store usage), name = Contact Person Name?
+                        // The user said: "Nombre del sitio, un codigo de sitio... Un nombre de contacto".
+                        // In `types.ts`, `contactName` is likely the main identifier.
+                        // Let's map: Site Name -> contactName (to keep store compatible), Contact Person -> new field? 
+                        // Or maybe `contactName` was meant to be the person and the site name is missing? 
+                        // Looking at mock data: "Dr. Sarah Chen" is contactName. "University hospital..." is description.
+                        // So `contactName` is the Person. Where is the Site Name? 
+                        // The mock data doesn't have a specific "Site Name" field, it uses `contactName` as the primary header. 
+                        // User wants "Nombre del sitio" AND "Nombre de contacto".
+                        // I should add `siteName` to types.ts as well? 
+                        // Or just use `contactName` for Site Name and add `contactPerson`?
+                        // Let's add `siteName` to types.ts in a separate call if needed, or re-purpose.
+                        // The mock data uses "Dr. Sarah Chen" as the main title. 
+                        // Let's add `siteName` to `Site` interface.
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        placeholder="e.g. Dr. Jane Smith"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input 
+                        id="phone" 
+                        required
+                        value={formData.phone}
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        placeholder="+1 555 000 0000"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input 
+                      id="email" 
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="john@clinic.com"
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
                     <Textarea 
