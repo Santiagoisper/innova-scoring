@@ -24,6 +24,9 @@ interface Criterion {
   is_knockout: boolean
   requires_doc: boolean
   weight: number
+  description: string | null
+  order: number
+  created_at: string
 }
 
 export default function ClientEvaluation({ token }: { token: string }) {
