@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { supabaseBrowser } from "@/lib/supabase/client"
 import Sidebar from "./Sidebar"
 
 export default function AdminLayout({
@@ -14,25 +15,24 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Verificar si existe un token válido
-    const checkAuth = () => {
-      const token = localStorage.getItem("admin_token")
-      const username = localStorage.getItem("admin_username")
+    // Verificar sesión de Supabase
+    const checkAuth = async () => {
+      const supabase = supabaseBrowser()
+      const { data: { session } } = await supabase.auth.getSession()
       
-      console.log('Verificando autenticación:', { token: !!token, username })
+      console.log('Verificando autenticación:', { hasSession: !!session })
       
-      if (!token || !username) {
-        console.log('No hay token, redirigiendo a login')
+      if (!session) {
+        console.log('No hay sesión, redirigiendo a login')
         router.push("/login")
         return
       }
 
-      // Token existe, permitir acceso
+      // Sesión válida, permitir acceso
       setIsAuthenticated(true)
       setLoading(false)
     }
 
-    // Ejecutar verificación después de que el componente esté montado
     checkAuth()
   }, [router])
 
