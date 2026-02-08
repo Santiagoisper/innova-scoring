@@ -15,7 +15,8 @@ import {
   X,
   Link as LinkIcon,
   Trash2,
-  ChevronRight,
+  ChevronRight,,
+    Star
   CheckCircle,
   AlertCircle,
   XCircle,
@@ -87,6 +88,15 @@ export default function CentersPage() {
 
   function getLatestEvaluation(centerId: string) {
     return evaluations.find((e) => e.center_id === centerId)
+  }
+
+    // Función para calcular las estrellas basadas en el score
+  function getStarRating(score: number | null): number {
+    if (score === null) return 0
+    if (score >= 80) return 5
+    if (score >= 60) return 4
+    if (score >= 40) return 3
+    return score >= 20 ? 2 : 1
   }
 
   function getStatusInfo(evalRow?: Evaluation) {
@@ -207,6 +217,18 @@ export default function CentersPage() {
         </td>
         <td className="px-6 py-5">
           <span className="text-xl font-black text-slate-900">{latestEval?.total_score ?? "—"}</span>
+                    <div className="flex gap-0.5 mt-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star
+                key={i}
+                className={`w-4 h-4 ${
+                  i < getStarRating(latestEval?.total_score ?? null)
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "fill-slate-200 text-slate-200"
+                }`}
+              />
+            ))}
+          </div>
         </td>
         <td className="px-6 py-5">
           <div className="flex items-center justify-end gap-2">
