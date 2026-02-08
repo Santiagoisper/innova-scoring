@@ -37,9 +37,9 @@ export default function Sidebar() {
     if (centersRes.data) setCenterCount(centersRes.data.length)
 
     if (evalsRes.data) {
-      setPendingCount(evalsRes.data.filter((e) => e.status === "pending").length)
+      setPendingCount(evalsRes.data.filter((e: any) => e.status === "pending").length)
       setCompletedCount(
-        evalsRes.data.filter((e) => e.status === "completed").length
+        evalsRes.data.filter((e: any) => e.status === "completed").length
       )
     }
 
