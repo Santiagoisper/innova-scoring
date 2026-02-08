@@ -1,12 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { supabaseBrowser } from "@/lib/supabase/client"
 
 export default function LoginPage() {
   const supabase = useMemo(() => supabaseBrowser(), [])
-  const router = useRouter()
   const search = useSearchParams()
   const nextPath = search.get("next") || "/admin"
 
@@ -41,8 +40,10 @@ export default function LoginPage() {
         return
       }
 
-      setMessage("Login successful. Redirecting...")
-      router.replace(nextPath)
+      setMessage("Login successful. Redirecting.....")
+
+      // Redirect duro (no falla)
+      window.location.href = nextPath
     } catch (err: any) {
       console.error("LOGIN CRASH:", err)
       setLoading(false)
