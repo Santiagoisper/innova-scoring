@@ -5,7 +5,7 @@ declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF
     lastAutoTable: { finalY: number }
-    putTotalPages?: (totalPagesExpression: string) => void
+    putTotalPages: (totalPagesExpression: string) => void
   }
 }
 
@@ -14,7 +14,7 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.getWidth()
 
-    // Placeholder usado por jsPDF para calcular total pages al final
+    // Placeholder para total de páginas (jsPDF)
     const totalPagesExp = "{total_pages_count_string}"
 
     // Colors (Novo Nordisk Style)
@@ -106,11 +106,12 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
         let displayAns = 'N/A'
 
         if (c.response_type === 'boolean') {
-          displayAns = String(ans).toLowerCase() === 'yes'
-            ? 'SÍ'
-            : String(ans).toLowerCase() === 'no'
-              ? 'NO'
-              : 'N/A'
+          displayAns =
+            String(ans).toLowerCase() === 'yes'
+              ? 'SÍ'
+              : String(ans).toLowerCase() === 'no'
+                ? 'NO'
+                : 'N/A'
         } else {
           displayAns = ans ? String(ans).substring(0, 50) : 'Sin respuesta'
         }
@@ -161,7 +162,7 @@ export async function generateCenterReport(center: any, evaluation: any, criteri
       }
     }
 
-    // Completa el total de páginas si la función existe
+    // Completar total pages al final
     if ((doc as any).putTotalPages) {
       (doc as any).putTotalPages(totalPagesExp)
     }
