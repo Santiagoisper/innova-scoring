@@ -33,8 +33,13 @@ export default function AdminDashboard() {
     : 0;
 
   // Prepare Rankings
-  // Filter only evaluated sites
-  const evaluatedSites = sites.filter(s => s.score !== undefined);
+  // Filter only evaluated sites that are NOT pending or token sent
+  // We want sites that have a score AND have been evaluated (so status is Approved, Rejected, or ToConsider)
+  const evaluatedSites = sites.filter(s => 
+    s.score !== undefined && 
+    s.status !== "Pending" && 
+    s.status !== "TokenSent"
+  );
   const rankedSites = [...evaluatedSites].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
 
   // Status Distribution Data

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
-import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send } from "lucide-react";
 import { QUESTIONS } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +16,7 @@ import jsPDF from "jspdf";
 
 export default function CenterDetail() {
   const [, params] = useRoute("/admin/centers/:id");
-  const { sites, questions, updateSiteStatus } = useStore();
+  const { sites, questions, updateSiteStatus, generateToken } = useStore();
   const [, setLocation] = useLocation();
   const [site, setSite] = useState<any>(null);
   const { toast } = useToast();
@@ -32,6 +32,14 @@ export default function CenterDetail() {
 
   // Use dynamic questions list if available, otherwise fallback to default
   const questionsList = questions || QUESTIONS;
+
+  const handleGenerateToken = () => {
+    generateToken(site.id);
+    toast({
+      title: "Token Generated",
+      description: "Invitation email with new token has been sent to the site.",
+    });
+  };
 
   const handleDownloadReport = () => {
     // Generate PDF Report
@@ -173,6 +181,7 @@ export default function CenterDetail() {
               {site.status === "Rejected" && <Badge variant="destructive">Rejected</Badge>}
               {site.status === "ToConsider" && <Badge className="bg-amber-500">To Consider</Badge>}
               {site.status === "Pending" && <Badge className="bg-blue-500">Pending</Badge>}
+              {site.status === "TokenSent" && <Badge className="bg-indigo-500">In Evaluation</Badge>}
             </h1>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {site.email}</span>
@@ -196,6 +205,12 @@ export default function CenterDetail() {
             )}
             
             <div className="flex gap-2">
+              {(site.status === "Pending" || site.status === "TokenSent") && (
+                <Button onClick={handleGenerateToken} className="gap-2">
+                  <Send className="h-4 w-4" /> Generate Token
+                </Button>
+              )}
+              
               <Button variant="outline" onClick={handleDownloadReport}>
                 <FileDown className="mr-2 h-4 w-4" /> Download Report
               </Button>
@@ -205,7 +220,9 @@ export default function CenterDetail() {
                   <Button variant="outline" className="w-[200px] justify-between">
                     {site.status === "Approved" ? "Approved" : 
                      site.status === "Rejected" ? "Rejected" : 
-                     site.status === "ToConsider" ? "In Observation" : "Change Status"}
+                     site.status === "ToConsider" ? "In Observation" : 
+                     site.status === "TokenSent" ? "In Evaluation" : 
+                     site.status === "Pending" ? "Pending" : site.status}
                     <ArrowLeft className="h-4 w-4 rotate-270" />
                   </Button>
                 </DropdownMenuTrigger>

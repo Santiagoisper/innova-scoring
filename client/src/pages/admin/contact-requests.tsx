@@ -2,17 +2,17 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
 import { Layout } from "@/components/layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, Send, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
+import { Search, Eye, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ContactRequests() {
-  const { sites, updateSiteStatus, generateToken } = useStore();
+  const { sites, generateToken } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -24,31 +24,10 @@ export default function ContactRequests() {
     )
   );
 
-  const handleSendToken = (id: string, email: string) => {
-    // Generate token but don't change status yet? Or user implies it just sends mail?
-    // User said: "Si apretamos ese de token generara el mail... pero si lo cambiamos a resolved... el sitio lo envia a centers"
-    // So sending token is just an action here.
-    
-    // We can call generateToken from store, but that updates status to TokenSent.
-    // The user wants the status change to happen on "Resolved".
-    // So I should just fake the email send here, OR modify generateToken to NOT change status?
-    // But generateToken usually implies changing status.
-    
-    // Let's just show a toast for now as per "generara el mail".
-    toast({
-      title: "Token Sent",
-      description: `Access token email sent to ${email}`,
-    });
-  };
-
   const handleStatusChange = (id: string, newStatus: string) => {
     if (newStatus === "Resolved") {
       if (confirm("Are you sure you want to resolve this request? The site will be moved to the active Centers list.")) {
         // Move to centers with status "TokenSent" as requested
-        // "donde el cartel que tendra hasta ser evaluado sera el del status Token Sent"
-        
-        // I'll assume we should also generate a token if not exists?
-        // Let's call generateToken which sets status to TokenSent and generates token.
         generateToken(id);
         
         toast({
@@ -93,14 +72,14 @@ export default function ContactRequests() {
               </TableHeader>
               <TableBody>
                 {pendingSites.map((site) => (
-                  <TableRow key={site.id}>
+                  <TableRow key={site.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setLocation(`/admin/centers/${site.id}`)}>
                     <TableCell>
                       <div className="font-medium">{site.contactName}</div>
                       <div className="text-xs text-muted-foreground">{site.email}</div>
                     </TableCell>
                     <TableCell>{site.location || "N/A"}</TableCell>
                     <TableCell>{new Date(site.registeredAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                        <Select onValueChange={(val) => handleStatusChange(site.id, val)} defaultValue="Pending">
                         <SelectTrigger className="w-[130px] h-8">
                           <SelectValue placeholder="Status" />
@@ -114,11 +93,14 @@ export default function ContactRequests() {
                     <TableCell className="text-right">
                       <Button 
                         size="sm" 
-                        variant="outline" 
-                        className="h-8 gap-2"
-                        onClick={() => handleSendToken(site.id, site.email)}
+                        variant="ghost" 
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLocation(`/admin/centers/${site.id}`);
+                        }}
                       >
-                        <Mail className="h-3 w-3" /> Send Token
+                        <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
