@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import type { Criterion } from "@/types"
 import { 
-  CheckCircle2, 
+  CheckCircle2,  // Fix syntax
   FileUp, 
   Loader2, 
   AlertCircle, 
