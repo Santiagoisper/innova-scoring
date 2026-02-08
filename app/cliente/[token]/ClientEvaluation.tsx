@@ -87,7 +87,7 @@ export default function ClientEvaluation({ token }: { token: string }) {
     }
   }
 
-  const handleFileUpload = async (criterionId: number, file: File) => {
+  const handleFileUpload = async (criterionId: string, file: File) => {
     if (!submission?.id) return
     
     setUploading(prev => ({ ...prev, [criterionId]: true }))
