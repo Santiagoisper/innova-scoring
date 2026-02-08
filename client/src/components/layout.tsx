@@ -13,8 +13,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const isAdmin = user?.role === "admin";
+  const isAdminRoute = location.startsWith("/admin");
 
-  if (isAdmin) {
+  if (isAdmin && isAdminRoute) {
     return (
       <div className="flex min-h-screen bg-muted/20 font-sans">
         {/* Sidebar */}
