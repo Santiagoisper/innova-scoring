@@ -16,7 +16,7 @@ import {
   Link as LinkIcon,
   Trash2,
   ChevronRight,
-    Star
+    Star,
   CheckCircle,
   AlertCircle,
   XCircle,
