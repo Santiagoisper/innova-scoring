@@ -14,6 +14,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   const [loading, setLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -29,43 +31,58 @@ export default function LoginPage() {
         password,
       })
 
+      console.log("LOGIN RESULT:", { data, error })
+
       if (error) {
         setLoading(false)
         setError(error.message)
         return
       }
 
-      if (!data.session) {
-        setLoading(false)
-        setError("No session returned from Supabase.")
-        return
-      }
-
-      // Sync session to server cookies
-      const syncRes = await fetch("/api/auth/set", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        }),
-      })
-
-      if (!syncRes.ok) {
-        const json = await syncRes.json().catch(() => null)
-        setLoading(false)
-        setError(json?.error || "Failed to sync session.")
-        return
-      }
-
-      setLoading(false)
       setMessage("Login successful. Redirecting.....")
+      setLoading(false)
 
+      // Redirect duro (no falla)
       window.location.href = nextPath
     } catch (err: any) {
       console.error("LOGIN ERROR:", err)
       setLoading(false)
       setError("Unexpected error during login.")
+    }
+  }
+
+  const onResetPassword = async () => {
+    setResetLoading(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      if (!email) {
+        setResetLoading(false)
+        setError("Please enter your email first.")
+        return
+      }
+
+      const redirectTo = `${window.location.origin}/reset-password`
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      })
+
+      console.log("RESET PASSWORD RESULT:", error)
+
+      if (error) {
+        setResetLoading(false)
+        setError(error.message)
+        return
+      }
+
+      setResetLoading(false)
+      setMessage("Password reset email sent. Check your inbox.")
+    } catch (err: any) {
+      console.error("RESET ERROR:", err)
+      setResetLoading(false)
+      setError("Unexpected error sending reset email.")
     }
   }
 
@@ -126,6 +143,15 @@ export default function LoginPage() {
 
         <button className="btn-primary w-full py-4" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}
+        </button>
+
+        <button
+          type="button"
+          className="w-full py-3 text-sm font-bold text-slate-500 hover:text-slate-900"
+          onClick={onResetPassword}
+          disabled={resetLoading}
+        >
+          {resetLoading ? "Sending reset email..." : "Forgot password?"}
         </button>
       </form>
     </div>
