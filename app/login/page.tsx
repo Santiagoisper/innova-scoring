@@ -12,6 +12,8 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -38,13 +40,40 @@ export default function LoginPage() {
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Email</label>
-          <input className="input mt-2 w-full" value={email} onChange={e => setEmail(e.target.value)} type="email" required />
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            Email
+          </label>
+          <input
+            className="input mt-2 w-full"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            type="email"
+            required
+          />
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Password</label>
-          <input className="input mt-2 w-full" value={password} onChange={e => setPassword(e.target.value)} type="password" required />
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            Password
+          </label>
+
+          <div className="relative mt-2">
+            <input
+              className="input w-full pr-20"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              type={showPassword ? "text" : "password"}
+              required
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500 hover:text-slate-900"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
 
         {error && (
