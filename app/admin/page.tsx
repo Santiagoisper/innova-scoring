@@ -105,8 +105,11 @@ export default function AdminDashboard() {
   )
 
   // Metrics Calculation
-  const totalSites = centers.length
-  
+  // Global Sites: Centers with completed evaluations AND token sent
+  const centersWithEval = centers.filter(c => 
+    finishedEvals.some(e => e.center_id === c.id) && c.public_token
+  )
+  const totalSites = centersWithEval.length  
   const approvedCount = finishedEvals.filter(e => 
     e.score_level === 'green' || (e.score_level === null && getLevel(e.total_score) === 'green')
   ).length
