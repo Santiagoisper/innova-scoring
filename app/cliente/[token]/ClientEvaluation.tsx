@@ -320,7 +320,7 @@ export default function ClientEvaluation({ token }: { token: string }) {
                         </div>
                         <button 
                           onClick={() => setAttachments(prev => {
-                          { const newAttachments = { ...prev }; delete newAttachments[c.id]; return newAttachments; })
+                           const newAttachments = { ...prev }; delete newAttachments[c.id]; return newAttachments; })
                 }}
                 className="p-2 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
               >
