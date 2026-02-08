@@ -33,18 +33,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle()
-
-  if (!profile || profile.role !== "admin") {
-    const url = req.nextUrl.clone()
-    url.pathname = "/unauthorized"
-    return NextResponse.redirect(url)
-  }
-
+  // Solo validamos sesión. El rol lo validamos dentro del panel.
   return res
 }
 
