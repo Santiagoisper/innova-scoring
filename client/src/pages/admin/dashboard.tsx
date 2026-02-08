@@ -44,6 +44,18 @@ export default function AdminDashboard() {
     { name: 'Rejected', value: rejectedSites, color: 'hsl(var(--chart-5))' }, // Red
   ];
 
+  // Country Distribution Data
+  const countryCounts = sites.reduce((acc, site) => {
+    const country = site.country || 'Unknown';
+    acc[country] = (acc[country] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const countryData = Object.entries(countryCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
   return (
     <Layout>
       <div className="container mx-auto p-6 space-y-8 animate-in fade-in duration-500">
@@ -184,6 +196,42 @@ export default function AdminDashboard() {
                 Review Pending <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
+          </Card>
+
+          {/* Top Countries */}
+          <Card className="col-span-1 lg:col-span-3">
+            <CardHeader>
+              <CardTitle>Top 5 Countries by Sites</CardTitle>
+              <CardDescription>Highest concentration of research centers globally.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={countryData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={100} 
+                      tick={{ fontSize: 12 }} 
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                    />
+                    <Bar 
+                      dataKey="value" 
+                      fill="hsl(var(--primary))" 
+                      radius={[0, 4, 4, 0]} 
+                      barSize={32}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
           </Card>
         </div>
       </div>
