@@ -15,22 +15,74 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   const [loading, setLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setMessage(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (error) {
-      setError(error.message)
-      return
+      console.log("LOGIN RESULT:", { data, error })
+
+      setLoading(false)
+
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setMessage("Login successful. Redirecting...")
+      router.replace(nextPath)
+    } catch (err: any) {
+      console.error("LOGIN CRASH:", err)
+      setLoading(false)
+      setError("Unexpected error during login.")
     }
+  }
 
-    router.replace(nextPath)
+  const onResetPassword = async () => {
+    setResetLoading(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      if (!email) {
+        setError("Please enter your email first.")
+        setResetLoading(false)
+        return
+      }
+
+      const redirectTo = `${window.location.origin}/reset-password`
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      })
+
+      console.log("RESET PASSWORD RESULT:", error)
+
+      setResetLoading(false)
+
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setMessage("Password reset email sent. Check your inbox.")
+    } catch (err: any) {
+      console.error("RESET CRASH:", err)
+      setResetLoading(false)
+      setError("Unexpected error sending reset email.")
+    }
   }
 
   return (
@@ -82,8 +134,23 @@ export default function LoginPage() {
           </div>
         )}
 
+        {message && (
+          <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm">
+            {message}
+          </div>
+        )}
+
         <button className="btn-primary w-full py-4" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}
+        </button>
+
+        <button
+          type="button"
+          className="w-full py-3 text-sm font-bold text-slate-500 hover:text-slate-900"
+          onClick={onResetPassword}
+          disabled={resetLoading}
+        >
+          {resetLoading ? "Sending reset email..." : "Forgot password?"}
         </button>
       </form>
     </div>
