@@ -55,8 +55,8 @@ export function calculateWeightedScore(
 }
 
 export function calculateStatus(score: number): EvaluationStatus {
-  if (score >= 80) return 'green';
-  if (score >= 60) return 'yellow';
+  if (score >= 60) return 'green';
+  if (score >= 40) return 'yellow';
   return 'red';
 }
 
@@ -90,4 +90,12 @@ export function getStatusTextColor(status: EvaluationStatus): string {
     case 'yellow': return 'text-amber-600';
     case 'red': return 'text-red-600';
   }
+}
+
+export function getStarRating(score: number): number {
+  if (score >= 80) return 5;
+  if (score >= 60) return 4;
+  if (score >= 40) return 3;
+  if (score >= 20) return 2;
+  return 1;
 }

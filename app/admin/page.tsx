@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { supabaseBrowser } from "@/lib/supabase/client"
+import { calculateStatus, getStarRating } from "@/lib/scoring/calculator"
 import {
   Building2,
   Activity,
@@ -53,6 +54,17 @@ type Evaluation = {
   created_at: string
 }
 
+type CriterionRow = {
+  id: string
+  weight: number
+}
+
+type EvalItemRow = {
+  evaluation_id: string
+  criterion_id: string
+  score: number
+}
+
 /* =========================
    Colors (Innova Trials / Novo Nordisk Style)
 ========================= */
@@ -67,84 +79,96 @@ const COLORS = {
 }
 
 export default function AdminDashboard() {
-  const supabase = supabaseBrowser()
-
   const [centers, setCenters] = useState<Center[]>([])
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
+  const [allCriteria, setAllCriteria] = useState<CriterionRow[]>([])
+  const [allEvalItems, setAllEvalItems] = useState<EvalItemRow[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    const [centersRes, evalsRes] = await Promise.all([
+    const supabase = supabaseBrowser()
+    const [centersRes, evalsRes, criteriaRes, evalItemsRes] = await Promise.all([
       supabase.from("centers").select("*"),
       supabase
         .from("evaluations")
         .select("id, center_id, total_score, status, score_level, created_at")
         .order("created_at", { ascending: false }),
+      supabase.from("criteria").select("id, weight"),
+      supabase.from("evaluation_items").select("evaluation_id, criterion_id, score"),
     ])
 
     if (centersRes.data) setCenters(centersRes.data)
     if (evalsRes.data) setEvaluations(evalsRes.data)
+    if (criteriaRes.data) setAllCriteria(criteriaRes.data)
+    if (evalItemsRes.data) setAllEvalItems(evalItemsRes.data)
     setLoading(false)
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
-  // Determine score level if not set in DB
-  const getLevel = (score: number | null) => {
-    if (score === null) return null
-    if (score >= 80) return 'green'
-    if (score >= 60) return 'yellow'
-    return 'red'
+  // Recalculate score for an evaluation using ALL criteria weights
+  function recalcScore(evalId: string): number {
+    const totalWeight = allCriteria.reduce((sum, c) => sum + (c.weight || 0), 0)
+    if (totalWeight === 0) return 0
+
+    const items = allEvalItems.filter(it => it.evaluation_id === evalId)
+    const criteriaMap = new Map(allCriteria.map(c => [c.id, c.weight || 0]))
+
+    let weightedSum = 0
+    for (const item of items) {
+      const w = criteriaMap.get(item.criterion_id) || 0
+      weightedSum += item.score * w
+    }
+
+    return Math.round((weightedSum / totalWeight) * 100) / 100
   }
 
+  // Build recalculated evaluations
+  const recalcEvals = evaluations.map(e => {
+    const isFinished = e.status === 'completed' || e.status === 'submitted'
+    // For finished evaluations with eval_items, recalculate
+    const hasItems = allEvalItems.some(it => it.evaluation_id === e.id)
+    const score = isFinished && hasItems ? recalcScore(e.id) : (isFinished ? (e.total_score || 0) : 0)
+    const level = isFinished ? calculateStatus(score) : null
+    return { ...e, calcScore: score, calcLevel: level }
+  })
+
   // Filter evaluations that are actually finished
-  const finishedEvals = evaluations.filter((e) => 
-    e.status === "completed" || e.status === "submitted" || (e.total_score !== null && e.total_score > 0)
+  const finishedEvals = recalcEvals.filter(e =>
+    e.status === "completed" || e.status === "submitted"
   )
 
   // Metrics Calculation
   const totalSites = centers.length
-  
-  const approvedCount = finishedEvals.filter(e => 
-    e.score_level === 'green' || (e.score_level === null && getLevel(e.total_score) === 'green')
-  ).length
 
-  const conditionalCount = finishedEvals.filter(e => 
-    e.score_level === 'yellow' || (e.score_level === null && getLevel(e.total_score) === 'yellow')
-  ).length
-
-  const notApprovedCount = finishedEvals.filter(e => 
-    e.score_level === 'red' || (e.score_level === null && getLevel(e.total_score) === 'red')
-  ).length
-
-  const approvedRate = finishedEvals.length > 0 
-    ? Math.round((approvedCount / finishedEvals.length) * 100) 
-    : 0
+  const approvedCount = finishedEvals.filter(e => e.calcLevel === 'green').length
+  const conditionalCount = finishedEvals.filter(e => e.calcLevel === 'yellow').length
+  const notApprovedCount = finishedEvals.filter(e => e.calcLevel === 'red').length
 
   const avgScore = finishedEvals.length > 0
-    ? Math.round(finishedEvals.reduce((acc, curr) => acc + (curr.total_score || 0), 0) / finishedEvals.length)
+    ? Math.round(finishedEvals.reduce((acc, curr) => acc + curr.calcScore, 0) / finishedEvals.length)
     : 0
 
   const pendingActions = evaluations.filter(e => e.status === 'pending' || !e.status).length
 
-  // Star Ranking System
+  // Star Ranking System (new tiers)
   const centerMap = new Map(centers.map(c => [c.id, c.name]))
 
   type RankedSite = { name: string; score: number }
 
   const starTiers: { stars: number; label: string; min: number; max: number; sites: RankedSite[] }[] = [
-    { stars: 5, label: "Excellence", min: 90, max: 100, sites: [] },
-    { stars: 4, label: "High Performance", min: 70, max: 89, sites: [] },
-    { stars: 3, label: "Developing", min: 50, max: 69, sites: [] },
-    { stars: 2, label: "Needs Improvement", min: 30, max: 49, sites: [] },
-    { stars: 1, label: "Critical", min: 0, max: 29, sites: [] },
+    { stars: 5, label: "Excellence", min: 80, max: 100, sites: [] },
+    { stars: 4, label: "High Performance", min: 60, max: 79, sites: [] },
+    { stars: 3, label: "Developing", min: 40, max: 59, sites: [] },
+    { stars: 2, label: "Needs Improvement", min: 20, max: 39, sites: [] },
+    { stars: 1, label: "Critical", min: 0, max: 19, sites: [] },
   ]
 
   for (const ev of finishedEvals) {
-    const score = ev.total_score || 0
+    const score = ev.calcScore
     const name = centerMap.get(ev.center_id) || 'Unknown'
     const tier = starTiers.find(t => score >= t.min && score <= t.max)
     if (tier) {
