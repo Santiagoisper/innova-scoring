@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
-import { ArrowLeft, Mail, MapPin, Calendar, FileText } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File } from "lucide-react";
 import { QUESTIONS } from "@/lib/questions";
 
 export default function CenterDetail() {
   const [, params] = useRoute("/admin/centers/:id");
-  const { sites } = useStore();
+  const { sites, questions } = useStore();
   const [, setLocation] = useLocation();
   const [site, setSite] = useState<any>(null);
 
@@ -24,6 +24,9 @@ export default function CenterDetail() {
   }, [params?.id, sites]);
 
   if (!site) return <div className="p-8">Loading...</div>;
+
+  // Use dynamic questions list if available, otherwise fallback to default
+  const questionsList = questions || QUESTIONS;
 
   return (
     <Layout>
@@ -82,23 +85,45 @@ export default function CenterDetail() {
                   <CardDescription>Detailed questionnaire results.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {QUESTIONS.map((q) => {
-                    const answer = site.answers[q.id];
-                    if (!answer) return null;
+                  {questionsList.map((q) => {
+                    const answerEntry = site.answers[q.id];
+                    if (!answerEntry) return null;
+                    
+                    // Handle new structure vs old structure
+                    let answerValue = "";
+                    let attachment = null;
+                    
+                    if (typeof answerEntry === 'object' && answerEntry !== null && 'value' in answerEntry) {
+                      answerValue = answerEntry.value;
+                      attachment = answerEntry.attachment;
+                    } else {
+                      answerValue = answerEntry as string;
+                    }
                     
                     return (
                       <div key={q.id} className="border-b last:border-0 pb-4 last:pb-0">
                         <p className="font-medium text-sm mb-2">{q.text}</p>
-                        <div className="flex justify-between items-center">
-                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            answer === "Yes" ? "bg-green-100 text-green-800" :
-                            answer === "No" ? "bg-red-100 text-red-800" :
-                            "bg-gray-100 text-gray-800"
-                          }`}>
-                            {answer}
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex flex-col gap-2 flex-1">
+                            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${
+                              answerValue === "Yes" ? "bg-green-100 text-green-800" :
+                              answerValue === "No" ? "bg-red-100 text-red-800" :
+                              "bg-gray-100 text-gray-800"
+                            }`}>
+                              {answerValue}
+                            </div>
+                            {/* Attachment Display */}
+                            {attachment && (
+                              <div className="flex items-center gap-2 mt-1 bg-muted/30 p-2 rounded border w-fit">
+                                <File className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm font-medium">{attachment.name}</span>
+                                <Badge variant="outline" className="text-[10px] h-5">{attachment.type.split('/')[1] || 'file'}</Badge>
+                              </div>
+                            )}
                           </div>
+                          
                           {q.weight > 0 && (
-                            <span className="text-xs text-muted-foreground">Weight: {q.weight}</span>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">Weight: {q.weight}</span>
                           )}
                         </div>
                       </div>

@@ -26,6 +26,12 @@ export interface Answer {
   questionId: string;
   value: "Yes" | "No" | "NA" | string;
   scoreContribution: number;
+  attachment?: {
+    name: string;
+    type: string;
+    size?: number;
+    url?: string;
+  };
 }
 
 export interface Question {

@@ -425,7 +425,13 @@ export function calculateScore(answers: Record<string, any>, questions: Question
   });
 
   activeQuestions.forEach(q => {
-    const answer = answers[q.id];
+    // Handle both new structure (object with value) and legacy structure (direct value)
+    const answerEntry = answers[q.id];
+    let answer = answerEntry;
+    
+    if (typeof answerEntry === 'object' && answerEntry !== null && 'value' in answerEntry) {
+      answer = answerEntry.value;
+    }
     
     // Strict Knock Out Logic (Explicit Critical Questions)
     if (q.isKnockOut) {
