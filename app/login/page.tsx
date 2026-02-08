@@ -42,7 +42,7 @@ export default function LoginPage() {
           router.push('/admin')
         }, 100)
       } else {
-        setError(data.message || 'Usuario o contraseña incorrectos')
+        setError(data.message || 'Username o Password incorrectos')
         console.log('Error en respuesta:', data.message)
       }
     } catch (err) {
@@ -79,7 +79,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Username */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">Usuario</label>
+              <label className="block text-sm font-medium text-white mb-2">Username</label>
               <input
                 type="text"
                 value={username}
@@ -94,7 +94,7 @@ export default function LoginPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-white mb-2">Contraseña</label>
+              <label className="block text-sm font-medium text-white mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -132,7 +132,7 @@ export default function LoginPage() {
               className="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Lock className="w-5 h-5" />
-              {loading ? 'Conectando...' : 'Acceder al Panel'}
+              {loading ? 'Connecting...' : 'Access Panel'}
             </button>
           </form>
 
@@ -142,7 +142,7 @@ export default function LoginPage() {
         {/* Security Badge */}
         <div className="mt-6 text-center text-xs text-white/40 flex items-center justify-center gap-2">
           <Lock className="w-4 h-4" />
-          Conexión Segura
+          Secure Connection
         </div>
       </div>
     </div>
