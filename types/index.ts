@@ -6,6 +6,9 @@ export interface Criterion {
   category: string;
   order: number;
   created_at: string;
+  response_type: 'boolean' | 'text';
+  is_knockout: boolean;
+  requires_doc: boolean;
 }
 
 export interface Center {
