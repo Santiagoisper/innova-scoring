@@ -121,8 +121,8 @@ export default function Home() {
             <div className="grid md:grid-cols-2 gap-12 items-start mb-16">
               {/* Left Column */}
               <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <img src="/images/innova-logo-full.png" alt="Innova Trials LLC" className="h-12 object-contain brightness-0 invert" data-testid="img-logo-home-footer" />
+                <div className="mb-6">
+                  <span className="font-heading font-bold text-xl tracking-tight text-white">Innova Trials LLC</span>
                 </div>
                 <p className="text-slate-400 max-w-sm leading-relaxed">
                   The global standard for research site intelligence and performance scoring.
