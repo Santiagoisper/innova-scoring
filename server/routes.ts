@@ -4,11 +4,14 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { questions as questionsTable } from "@shared/schema";
 import { z } from "zod";
+import { registerChatRoutes } from "./replit_integrations/chat";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  registerChatRoutes(app);
 
   // ========== AUTH ==========
   app.post("/api/auth/admin-login", async (req, res) => {
