@@ -7,24 +7,34 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
-import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw } from "lucide-react";
 import { QUESTIONS } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import jsPDF from "jspdf";
 
 export default function CenterDetail() {
   const [, params] = useRoute("/admin/centers/:id");
-  const { sites, questions, updateSiteStatus, generateToken } = useStore();
+  const { sites, questions, updateSiteStatus, generateToken, updateSiteAnswers } = useStore();
   const [, setLocation] = useLocation();
   const [site, setSite] = useState<any>(null);
   const { toast } = useToast();
+  
+  // Edit Mode State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedAnswers, setEditedAnswers] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (params?.id) {
       const found = sites.find(s => s.id === params.id);
       setSite(found);
+      if (found) {
+        setEditedAnswers(found.answers || {});
+      }
     }
   }, [params?.id, sites]);
 
@@ -39,6 +49,30 @@ export default function CenterDetail() {
       title: "Token Generated",
       description: "Invitation email with new token has been sent to the site.",
     });
+  };
+
+  const handleSaveChanges = () => {
+    updateSiteAnswers(site.id, editedAnswers);
+    setIsEditing(false);
+    toast({
+      title: "Changes Saved",
+      description: "Site responses have been updated successfully.",
+    });
+  };
+
+  const handleAnswerChange = (questionId: string, value: string) => {
+    // We need to preserve attachment if it exists
+    const currentAnswer = editedAnswers[questionId];
+    let attachment = undefined;
+    
+    if (typeof currentAnswer === 'object' && currentAnswer?.attachment) {
+      attachment = currentAnswer.attachment;
+    }
+
+    setEditedAnswers(prev => ({
+      ...prev,
+      [questionId]: attachment ? { value, attachment } : value
+    }));
   };
 
   const handleDownloadReport = () => {
@@ -189,6 +223,11 @@ export default function CenterDetail() {
               <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {site.email}</span>
               <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {site.location || "N/A"}</span>
               <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Registered: {new Date(site.registeredAt).toLocaleDateString()}</span>
+              {site.updatedAt && (
+                <span className="flex items-center gap-1 text-primary/80 font-medium">
+                  <RefreshCw className="h-3.5 w-3.5" /> Updated: {new Date(site.updatedAt).toLocaleDateString()}
+                </span>
+              )}
             </div>
           </div>
           
@@ -207,11 +246,9 @@ export default function CenterDetail() {
             )}
             
             <div className="flex gap-2">
-              {(site.status === "Pending" || site.status === "TokenSent") && (
-                <Button onClick={handleGenerateToken} className="gap-2">
-                  <Send className="h-4 w-4" /> Generate Token
-                </Button>
-              )}
+              <Button onClick={handleGenerateToken} className="gap-2" variant="outline">
+                <Send className="h-4 w-4" /> Generate New Token
+              </Button>
               
               <Button variant="outline" onClick={handleDownloadReport}>
                 <FileDown className="mr-2 h-4 w-4" /> Download Report
@@ -267,14 +304,25 @@ export default function CenterDetail() {
 
                 {site.answers && Object.keys(site.answers).length > 0 ? (
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Evaluation Responses</CardTitle>
-                      <CardDescription>Detailed questionnaire results.</CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle>Evaluation Responses</CardTitle>
+                        <CardDescription>Detailed questionnaire results.</CardDescription>
+                      </div>
+                      <Button 
+                        variant={isEditing ? "default" : "outline"} 
+                        size="sm" 
+                        onClick={() => isEditing ? handleSaveChanges() : setIsEditing(true)}
+                        className="gap-2"
+                      >
+                        {isEditing ? <Save className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+                        {isEditing ? "Save Changes" : "Edit Responses"}
+                      </Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       {questionsList.map((q) => {
-                        const answerEntry = site.answers[q.id];
-                        if (!answerEntry) return null;
+                        const answerEntry = isEditing ? editedAnswers[q.id] : site.answers[q.id];
+                        // If editing and no answer yet, default to empty
                         
                         // Handle new structure vs old structure
                         let answerValue = "";
@@ -287,40 +335,67 @@ export default function CenterDetail() {
                                 ? answerEntry.attachment 
                                 : [answerEntry.attachment];
                           }
-                        } else {
+                        } else if (answerEntry) {
                           answerValue = answerEntry as string;
                         }
                         
                         return (
                           <div key={q.id} className="border-b last:border-0 pb-4 last:pb-0">
                             <p className="font-medium text-sm mb-2">{q.text}</p>
-                            <div className="flex justify-between items-start gap-4">
-                              <div className="flex flex-col gap-2 flex-1">
-                                <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${
-                                  answerValue === "Yes" ? "bg-green-100 text-green-800" :
-                                  answerValue === "No" ? "bg-red-100 text-red-800" :
-                                  "bg-gray-100 text-gray-800"
-                                }`}>
-                                  {answerValue}
-                                </div>
-                                {/* Attachment Display */}
-                                {attachments.length > 0 && (
-                                  <div className="flex flex-col gap-1 mt-1">
-                                    {attachments.map((att, idx) => (
-                                      <div key={idx} className="flex items-center gap-2 bg-muted/30 p-2 rounded border w-fit">
-                                        <File className="h-4 w-4 text-blue-500" />
-                                        <span className="text-sm font-medium">{att.name}</span>
-                                        <Badge variant="outline" className="text-[10px] h-5">{att.type?.split('/')[1] || 'file'}</Badge>
-                                      </div>
-                                    ))}
-                                  </div>
+                            
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                {q.type === "YesNo" ? (
+                                  <Select 
+                                    value={answerValue} 
+                                    onValueChange={(val) => handleAnswerChange(q.id, val)}
+                                  >
+                                    <SelectTrigger className="w-[180px]">
+                                      <SelectValue placeholder="Select..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Yes">Yes</SelectItem>
+                                      <SelectItem value="No">No</SelectItem>
+                                      <SelectItem value="NA">N/A</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Input 
+                                    value={answerValue} 
+                                    onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                                    placeholder="Enter response..."
+                                  />
                                 )}
                               </div>
-                              
-                              {q.weight > 0 && (
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">Weight: {q.weight}</span>
-                              )}
-                            </div>
+                            ) : (
+                              <div className="flex justify-between items-start gap-4">
+                                <div className="flex flex-col gap-2 flex-1">
+                                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${
+                                    answerValue === "Yes" ? "bg-green-100 text-green-800" :
+                                    answerValue === "No" ? "bg-red-100 text-red-800" :
+                                    "bg-gray-100 text-gray-800"
+                                  }`}>
+                                    {answerValue || "Not Answered"}
+                                  </div>
+                                  {/* Attachment Display */}
+                                  {attachments.length > 0 && (
+                                    <div className="flex flex-col gap-1 mt-1">
+                                      {attachments.map((att, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 bg-muted/30 p-2 rounded border w-fit">
+                                          <File className="h-4 w-4 text-blue-500" />
+                                          <span className="text-sm font-medium">{att.name}</span>
+                                          <Badge variant="outline" className="text-[10px] h-5">{att.type?.split('/')[1] || 'file'}</Badge>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {q.weight > 0 && (
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap">Weight: {q.weight}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

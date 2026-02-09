@@ -14,6 +14,8 @@ interface AppState {
   generateToken: (siteId: string) => string;
   submitEvaluation: (siteId: string, answers: Record<string, any>) => void;
   updateSiteStatus: (siteId: string, status: SiteStatus) => void;
+  updateSiteAnswers: (siteId: string, answers: Record<string, any>) => void;
+  consumeToken: (siteId: string) => void;
   deleteSite: (siteId: string) => void;
   
   // Question Management
@@ -156,6 +158,7 @@ export const useStore = create<AppState>()(
             id: Math.random().toString(36).substr(2, 9),
             status: "Pending",
             registeredAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             answers: {}
           },
           ...state.sites
@@ -165,11 +168,49 @@ export const useStore = create<AppState>()(
       generateToken: (siteId) => set((state) => ({
         sites: state.sites.map(s => {
           if (s.id === siteId) {
-            return { ...s, status: "TokenSent", token: `INV-${Math.random().toString(36).substr(2, 6).toUpperCase()}` };
+            return { 
+              ...s, 
+              status: "TokenSent", 
+              token: `INV-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+              updatedAt: new Date().toISOString()
+            };
           }
           return s;
         })
       })),
+
+      consumeToken: (siteId) => set((state) => ({
+        sites: state.sites.map(s => {
+          if (s.id === siteId) {
+            return { ...s, token: undefined, updatedAt: new Date().toISOString() };
+          }
+          return s;
+        })
+      })),
+
+      updateSiteAnswers: (siteId, answers) => set((state) => {
+        // Calculate new score based on updated answers
+        const site = state.sites.find(s => s.id === siteId);
+        if (!site) return {};
+
+        // Merge existing answers with new updates
+        const updatedAnswers = { ...site.answers, ...answers };
+        const result = calculateScore(updatedAnswers, state.questions);
+        
+        return {
+          sites: state.sites.map(s => {
+            if (s.id === siteId) {
+              return { 
+                ...s, 
+                answers: updatedAnswers as any, 
+                score: result.score,
+                updatedAt: new Date().toISOString()
+              };
+            }
+            return s;
+          })
+        };
+      }),
 
       submitEvaluation: (siteId, answers) => set((state) => {
         const result = calculateScore(answers, state.questions);
@@ -188,7 +229,8 @@ export const useStore = create<AppState>()(
                 answers: answers as any, 
                 score: result.score, 
                 status, 
-                evaluatedAt: new Date().toISOString() 
+                evaluatedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
               };
             }
             return s;
@@ -198,7 +240,7 @@ export const useStore = create<AppState>()(
 
       updateSiteStatus: (siteId, status) => set((state) => ({
         sites: state.sites.map(s => {
-          if (s.id === siteId) return { ...s, status };
+          if (s.id === siteId) return { ...s, status, updatedAt: new Date().toISOString() };
           return s;
         })
       })),

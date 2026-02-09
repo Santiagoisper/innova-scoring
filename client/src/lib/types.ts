@@ -10,6 +10,7 @@ export interface Site {
   token?: string;
   password?: string;
   registeredAt: string;
+  updatedAt?: string; // Last update timestamp
   evaluatedAt?: string;
   evaluatedBy?: string; // Admin name
   score?: number; // 0-100

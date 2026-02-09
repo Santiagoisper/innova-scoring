@@ -13,7 +13,7 @@ export default function SiteLogin() {
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, sites } = useStore();
+  const { login, sites, consumeToken } = useStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -27,6 +27,9 @@ export default function SiteLogin() {
     const site = sites.find(s => s.email.toLowerCase() === email.toLowerCase() && s.token === token);
 
     if (site) {
+      // Consume token so it cannot be used again
+      consumeToken(site.id);
+      
       login({
         id: site.id,
         name: site.contactName,
