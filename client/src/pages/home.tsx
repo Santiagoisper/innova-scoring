@@ -86,9 +86,6 @@ export default function Home() {
           
           <div className="pt-8 border-t border-slate-200 w-full max-w-2xl mx-auto">
             <p>© 2026 Innova Trials LLC. All rights reserved.</p>
-            <p className="text-xs text-muted-foreground/60 mt-2">
-              V.1 | By Santiago Isbert Perlender, member of Innova Trials LLC Team powered by Ichtys Technology
-            </p>
           </div>
         </div>
       </div>
