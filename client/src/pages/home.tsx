@@ -17,7 +17,7 @@ export default function Home() {
       <div className="flex-1 flex flex-col bg-white">
         
         {/* Hero Section */}
-        <section className="py-24 px-4 text-center bg-white">
+        <section className="pt-12 pb-24 px-4 text-center bg-white">
           <div className="container mx-auto max-w-4xl">
             <div className="flex justify-center mb-8">
               <img src="/images/innova-logo-full.png" alt="Innova Trials - Innovating science, caring for life" className="h-20 md:h-28 object-contain" data-testid="img-logo-home-hero" />
