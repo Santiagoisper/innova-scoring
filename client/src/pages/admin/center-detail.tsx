@@ -153,18 +153,20 @@ export default function CenterDetail() {
 
   // Collect all attachments
   const allAttachments = Object.entries(site.answers || {})
-    .map(([qId, answer]: [string, any]) => {
+    .flatMap(([qId, answer]: [string, any]) => {
       if (typeof answer === 'object' && answer?.attachment) {
         const question = questionsList.find(q => q.id === qId);
-        return {
+        // Handle array of attachments or single attachment
+        const attachmentList = Array.isArray(answer.attachment) ? answer.attachment : [answer.attachment];
+        
+        return attachmentList.map(att => ({
           questionId: qId,
           questionText: question?.text || "Unknown Question",
-          attachment: answer.attachment
-        };
+          attachment: att
+        }));
       }
-      return null;
-    })
-    .filter(Boolean);
+      return [];
+    });
 
   return (
     <Layout>
@@ -276,11 +278,15 @@ export default function CenterDetail() {
                         
                         // Handle new structure vs old structure
                         let answerValue = "";
-                        let attachment = null;
+                        let attachments: any[] = [];
                         
                         if (typeof answerEntry === 'object' && answerEntry !== null && 'value' in answerEntry) {
                           answerValue = answerEntry.value;
-                          attachment = answerEntry.attachment;
+                          if (answerEntry.attachment) {
+                             attachments = Array.isArray(answerEntry.attachment) 
+                                ? answerEntry.attachment 
+                                : [answerEntry.attachment];
+                          }
                         } else {
                           answerValue = answerEntry as string;
                         }
@@ -298,11 +304,15 @@ export default function CenterDetail() {
                                   {answerValue}
                                 </div>
                                 {/* Attachment Display */}
-                                {attachment && (
-                                  <div className="flex items-center gap-2 mt-1 bg-muted/30 p-2 rounded border w-fit">
-                                    <File className="h-4 w-4 text-blue-500" />
-                                    <span className="text-sm font-medium">{attachment.name}</span>
-                                    <Badge variant="outline" className="text-[10px] h-5">{attachment.type.split('/')[1] || 'file'}</Badge>
+                                {attachments.length > 0 && (
+                                  <div className="flex flex-col gap-1 mt-1">
+                                    {attachments.map((att, idx) => (
+                                      <div key={idx} className="flex items-center gap-2 bg-muted/30 p-2 rounded border w-fit">
+                                        <File className="h-4 w-4 text-blue-500" />
+                                        <span className="text-sm font-medium">{att.name}</span>
+                                        <Badge variant="outline" className="text-[10px] h-5">{att.type?.split('/')[1] || 'file'}</Badge>
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>
