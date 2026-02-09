@@ -1,10 +1,16 @@
 import { useLocation } from "wouter";
+import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout";
 import { ArrowRight, BarChart3, Globe2, ShieldCheck, Mail, MapPin, CheckCircle2, LayoutDashboard, Shield } from "lucide-react";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { questions } = useStore();
+
+  // Dynamic calculations
+  const activeQuestionsCount = questions.filter(q => q.enabled !== false).length;
+  const activeCategoriesCount = new Set(questions.filter(q => q.enabled !== false).map(q => q.category)).size;
 
   return (
     <Layout>
@@ -52,8 +58,8 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { label: "CRITERIA EVALUATED", value: "18" },
-                { label: "CATEGORIES", value: "5" },
+                { label: "CRITERIA EVALUATED", value: activeQuestionsCount },
+                { label: "CATEGORIES", value: activeCategoriesCount },
                 { label: "MATURITY LEVELS", value: "5" },
                 { label: "WEIGHTED SCORING", value: "100%" }
               ].map((stat, i) => (
