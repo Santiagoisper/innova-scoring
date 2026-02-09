@@ -25,7 +25,7 @@ export interface Site {
 
 export interface Answer {
   questionId: string;
-  value: "Yes" | "No" | "NA" | string;
+  value: "Yes" | "No" | "NA" | string | number;
   scoreContribution: number;
   attachment?: {
     name: string;

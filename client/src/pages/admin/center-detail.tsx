@@ -11,9 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
 import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2 } from "lucide-react";
-import { QUESTIONS } from "@/lib/questions";
+import { QUESTIONS, type SiteClassification } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { Star } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -106,7 +107,7 @@ export default function CenterDetail() {
     });
   };
 
-  const handleAnswerChange = (questionId: string, value: string) => {
+  const handleAnswerChange = (questionId: string, value: string | number) => {
     const currentAnswer = editedAnswers[questionId];
     let attachment = undefined;
     
@@ -265,18 +266,32 @@ export default function CenterDetail() {
           </div>
           
           <div className="flex flex-col gap-4 items-end">
-            {site.score !== undefined && (
-              <div className="flex flex-col items-end bg-white p-4 rounded-lg border shadow-sm">
-                <span className="text-sm text-muted-foreground uppercase font-bold tracking-wider mb-1">Overall Score</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-4xl font-bold text-primary">{site.score}%</span>
-                  <div className="flex flex-col items-center">
-                    <StarRating score={site.score} size="md" />
-                    <span className="text-xs text-muted-foreground mt-1">Ranking</span>
+            {site.score !== undefined && (() => {
+              const result = calculateScore(site.answers || {}, questionsList);
+              return (
+                <div className="flex flex-col items-end bg-white p-4 rounded-lg border shadow-sm">
+                  <span className="text-sm text-muted-foreground uppercase font-bold tracking-wider mb-1">Overall Score</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl font-bold text-primary">{site.score}%</span>
+                    <div className="flex flex-col items-center">
+                      <StarRating score={site.score} size="md" />
+                      <span className={`text-xs font-semibold mt-1 px-2 py-0.5 rounded-full ${
+                        result.classification === "Sobresaliente" ? "bg-emerald-100 text-emerald-700" :
+                        result.classification === "Aprobado" ? "bg-blue-100 text-blue-700" :
+                        "bg-red-100 text-red-700"
+                      }`}>
+                        {result.classification}
+                      </span>
+                    </div>
                   </div>
+                  {result.knockOutReason && (
+                    <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> {result.knockOutReason}
+                    </p>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
             
             <div className="flex gap-2">
               <Button onClick={handleGenerateToken} className="gap-2" variant="outline">
@@ -378,19 +393,30 @@ export default function CenterDetail() {
                             {isEditing ? (
                               <div className="space-y-2">
                                 {q.type === "YesNo" ? (
-                                  <Select 
-                                    value={answerValue} 
-                                    onValueChange={(val) => handleAnswerChange(q.id, val)}
-                                  >
-                                    <SelectTrigger className="w-[180px]">
-                                      <SelectValue placeholder="Select..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Yes">Yes</SelectItem>
-                                      <SelectItem value="No">No</SelectItem>
-                                      <SelectItem value="NA">N/A</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                  <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => {
+                                      const currentStars = typeof answerValue === 'string' ? parseInt(answerValue, 10) : Number(answerValue);
+                                      return (
+                                        <button
+                                          key={star}
+                                          type="button"
+                                          onClick={() => handleAnswerChange(q.id, star)}
+                                          className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
+                                        >
+                                          <Star
+                                            className={`h-6 w-6 transition-colors ${
+                                              star <= (isNaN(currentStars) ? 0 : currentStars)
+                                                ? "fill-yellow-400 text-yellow-400"
+                                                : "fill-transparent text-gray-300"
+                                            }`}
+                                          />
+                                        </button>
+                                      );
+                                    })}
+                                    <span className="ml-2 text-sm text-muted-foreground">
+                                      {answerValue ? `${answerValue}/5` : "Not rated"}
+                                    </span>
+                                  </div>
                                 ) : (
                                   <Input 
                                     value={answerValue} 
@@ -402,13 +428,30 @@ export default function CenterDetail() {
                             ) : (
                               <div className="flex justify-between items-start gap-4">
                                 <div className="flex flex-col gap-2 flex-1">
-                                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${
-                                    answerValue === "Yes" ? "bg-green-100 text-green-800" :
-                                    answerValue === "No" ? "bg-red-100 text-red-800" :
-                                    "bg-gray-100 text-gray-800"
-                                  }`}>
-                                    {answerValue || "Not Answered"}
-                                  </div>
+                                  {q.type === "YesNo" ? (
+                                    <div className="flex items-center gap-1">
+                                      {[1, 2, 3, 4, 5].map((star) => {
+                                        const currentStars = typeof answerValue === 'string' ? parseInt(answerValue, 10) : Number(answerValue);
+                                        return (
+                                          <Star
+                                            key={star}
+                                            className={`h-5 w-5 ${
+                                              star <= (isNaN(currentStars) ? 0 : currentStars)
+                                                ? "fill-yellow-400 text-yellow-400"
+                                                : "fill-transparent text-gray-300"
+                                            }`}
+                                          />
+                                        );
+                                      })}
+                                      <span className="ml-2 text-sm text-muted-foreground">
+                                        {answerValue && !isNaN(Number(answerValue)) ? `${answerValue}/5` : (answerValue || "Not Answered")}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit bg-gray-100 text-gray-800`}>
+                                      {answerValue || "Not Answered"}
+                                    </div>
+                                  )}
                                   {attachments.length > 0 && (
                                     <div className="flex flex-col gap-1 mt-1">
                                       {attachments.map((att: any, idx: number) => (

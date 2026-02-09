@@ -401,139 +401,173 @@ export const QUESTIONS: Question[] = [
 
 import { Question } from "./types";
 
+export type SiteClassification = "Sobresaliente" | "Aprobado" | "No Aprobado" | "No Aprobado (KO)" | "No Aprobado (Bloque crítico)";
+
 export interface ScoringResult {
   score: number;
   isKnockOut: boolean;
   categoryScores: Record<string, number>;
   status: "Approved" | "Conditional" | "Rejected";
+  classification: SiteClassification;
+  knockOutReason?: string;
+}
+
+export function starFactor(stars: number): number {
+  switch (stars) {
+    case 1: return 0;
+    case 2: return 0.5;
+    case 3: return 1;
+    case 4: return 1.1;
+    case 5: return 1.2;
+    default: return 0;
+  }
+}
+
+export const CRITICAL_CATEGORIES = [
+  "Quality Management",
+  "Patient Safety",
+];
+
+const CRITICAL_CATEGORY_MINIMUM = 60;
+
+function getStarsFromAnswer(answer: any, questionType: string): number | null {
+  if (answer === undefined || answer === null || answer === "") {
+    return null;
+  }
+  if (typeof answer === 'number' && answer >= 1 && answer <= 5) {
+    return answer;
+  }
+  if (typeof answer === 'string') {
+    const parsed = parseInt(answer, 10);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= 5) return parsed;
+    if (answer === "Yes") return 3;
+    if (answer === "No") return 1;
+    if (answer === "NA" || answer === "N/A") return 3;
+    if (questionType === "Text" && answer.trim().length > 5) return 3;
+    if (questionType === "Text" && answer.trim().length === 0) return null;
+  }
+  return null;
+}
+
+export function calcularScoreGlobal(
+  preguntas: Array<{ pesoPregunta: number; stars: number }>
+): number {
+  const totalScoreBruto = preguntas.reduce(
+    (sum, p) => sum + p.pesoPregunta * starFactor(p.stars),
+    0
+  );
+  const sumaPesos = preguntas.reduce((sum, p) => sum + p.pesoPregunta, 0);
+  if (sumaPesos === 0) return 0;
+  return (totalScoreBruto / sumaPesos) * 100;
+}
+
+export function classificarSitio(
+  preguntas: Array<{ pesoPregunta: number; stars: number; categoria: string; isKO?: boolean }>,
+  categoriasCriticas: string[] = CRITICAL_CATEGORIES,
+  minimoCritico: number = CRITICAL_CATEGORY_MINIMUM
+): { classification: SiteClassification; scoreGlobal: number; categoryScores: Record<string, number>; knockOutReason?: string } {
+  if (preguntas.some(p => p.isKO && p.stars <= 2)) {
+    const koQuestion = preguntas.find(p => p.isKO && p.stars <= 2);
+    const scoreGlobal = calcularScoreGlobal(preguntas);
+    const categoryScores = calcularCategoryScores(preguntas);
+    return {
+      classification: "No Aprobado (KO)",
+      scoreGlobal,
+      categoryScores,
+      knockOutReason: `Knock-out question failed (stars: ${koQuestion?.stars})`
+    };
+  }
+
+  const categoryScores = calcularCategoryScores(preguntas);
+
+  for (const cat of categoriasCriticas) {
+    if (cat in categoryScores && categoryScores[cat] < minimoCritico) {
+      const scoreGlobal = calcularScoreGlobal(preguntas);
+      return {
+        classification: "No Aprobado (Bloque crítico)",
+        scoreGlobal,
+        categoryScores,
+        knockOutReason: `Critical category "${cat}" scored ${Math.round(categoryScores[cat])}% (minimum: ${minimoCritico}%)`
+      };
+    }
+  }
+
+  const scoreGlobal = calcularScoreGlobal(preguntas);
+
+  let classification: SiteClassification;
+  if (scoreGlobal >= 80) {
+    classification = "Sobresaliente";
+  } else if (scoreGlobal >= 50) {
+    classification = "Aprobado";
+  } else {
+    classification = "No Aprobado";
+  }
+
+  return { classification, scoreGlobal, categoryScores };
+}
+
+function calcularCategoryScores(
+  preguntas: Array<{ pesoPregunta: number; stars: number; categoria: string }>
+): Record<string, number> {
+  const catData: Record<string, { num: number; den: number }> = {};
+
+  preguntas.forEach(p => {
+    if (!catData[p.categoria]) {
+      catData[p.categoria] = { num: 0, den: 0 };
+    }
+    catData[p.categoria].num += p.pesoPregunta * starFactor(p.stars);
+    catData[p.categoria].den += p.pesoPregunta;
+  });
+
+  const scores: Record<string, number> = {};
+  Object.keys(catData).forEach(cat => {
+    const { num, den } = catData[cat];
+    scores[cat] = den > 0 ? (num / den) * 100 : 0;
+  });
+  return scores;
 }
 
 export function calculateScore(answers: Record<string, any>, questions: Question[] = QUESTIONS): ScoringResult {
-  const categoryData: Record<string, { totalWeight: number; earnedWeight: number }> = {};
-  let totalWeight = 0;
-  let earnedScore = 0;
-  let isKnockOut = false;
-  
-  // Filter only enabled questions
   const activeQuestions = questions.filter(q => q.enabled !== false);
 
-  // Initialize Category Data
-  activeQuestions.forEach(q => {
-    if (!categoryData[q.category]) {
-      categoryData[q.category] = { totalWeight: 0, earnedWeight: 0 };
-    }
-  });
+  const preguntas: Array<{ pesoPregunta: number; stars: number; categoria: string; isKO: boolean }> = [];
 
   activeQuestions.forEach(q => {
-    // Handle both new structure (object with value) and legacy structure (direct value)
     const answerEntry = answers[q.id];
     let answer = answerEntry;
-    
     if (typeof answerEntry === 'object' && answerEntry !== null && 'value' in answerEntry) {
       answer = answerEntry.value;
     }
-    
-    // Strict Knock Out Logic (Explicit Critical Questions)
-    if (q.isKnockOut) {
-       if (answer === "No") isKnockOut = true;
-    }
-
-    // Weight Calculation
-    if (q.weight > 0) {
-      categoryData[q.category].totalWeight += q.weight;
-      totalWeight += q.weight;
-
-      // Logic for Yes/No
-      if (answer === "Yes") {
-        earnedScore += q.weight;
-        categoryData[q.category].earnedWeight += q.weight;
-      }
-      
-      // Logic for Text
-      else if (q.type === "Text" && typeof answer === "string" && answer.trim().length > 0) {
-        const normalizedAnswer = answer.toLowerCase().trim();
-        
-        // 1. Negative Check: If explicitly "No", "None", "N/A", "No tengo", "Ninguno" -> 0 points
-        const negativeTerms = ["no", "none", "n/a", "na", "ninguno", "ninguna", "nil", "don't have", "no tengo", "no poseo"];
-        const isNegative = negativeTerms.some(term => normalizedAnswer === term || normalizedAnswer === `${term}.`);
-        
-        if (!isNegative) {
-          // 2. Keyword Scoring (if keywords defined)
-          if (q.keywords && q.keywords.length > 0) {
-            // Count how many keywords are present in the answer
-            let matchCount = 0;
-            q.keywords.forEach(keyword => {
-              if (normalizedAnswer.includes(keyword.toLowerCase())) {
-                matchCount++;
-              }
-            });
-            
-            // Scoring Strategy:
-            // If matches found: Proportional score? Or tiered?
-            // Let's say if they have at least 1 keyword, they get 50%. 
-            // If they have >= 3 keywords (or all if < 3), they get 100%.
-            
-            if (matchCount > 0) {
-              const threshold = Math.min(3, q.keywords.length); // Max score at 3 matches or all keywords
-              const ratio = Math.min(matchCount / threshold, 1);
-              const points = q.weight * ratio;
-              
-              earnedScore += points;
-              categoryData[q.category].earnedWeight += points;
-            } else {
-               // If keywords exist but none matched, check length fallback? 
-               // Maybe they listed something else valid. 
-               // Give minimal points (25%) for effort if decent length?
-               if (normalizedAnswer.length > 10) {
-                 const points = q.weight * 0.25;
-                 earnedScore += points;
-                 categoryData[q.category].earnedWeight += points;
-               }
-            }
-          } else {
-            // 3. Heuristic Scoring (No keywords defined)
-            // Just length based, but careful with short junk
-            if (normalizedAnswer.length > 5) {
-               earnedScore += q.weight;
-               categoryData[q.category].earnedWeight += q.weight;
-            }
-          }
-        }
-      }
+    const stars = getStarsFromAnswer(answer, q.type);
+    if (stars !== null) {
+      preguntas.push({
+        pesoPregunta: q.weight,
+        stars,
+        categoria: q.category,
+        isKO: q.isKnockOut ?? false,
+      });
     }
   });
 
-  // Calculate Category Scores
-  const categoryScores: Record<string, number> = {};
-  Object.keys(categoryData).forEach(cat => {
-    const { totalWeight, earnedWeight } = categoryData[cat];
-    categoryScores[cat] = totalWeight > 0 ? (earnedWeight / totalWeight) * 100 : 0;
-    
-    // Risk Asymmetry: Critical Categories Threshold
-    // If Quality Management or Patient Safety is below 60%, fail the site
-    if ((cat === "Quality Management" || cat === "Patient Safety") && categoryScores[cat] < 60) {
-      isKnockOut = true;
-    }
-  });
+  const { classification, scoreGlobal, categoryScores, knockOutReason } = classificarSitio(preguntas);
 
-  const finalScore = totalWeight > 0 ? (earnedScore / totalWeight) * 100 : 0;
-  
-  let status: "Approved" | "Conditional" | "Rejected" = "Rejected";
-  
-  if (isKnockOut) {
+  const isKnockOut = classification === "No Aprobado (KO)" || classification === "No Aprobado (Bloque crítico)";
+
+  let status: "Approved" | "Conditional" | "Rejected";
+  if (isKnockOut || classification === "No Aprobado") {
     status = "Rejected";
-  } else if (finalScore >= 80) {
+  } else if (classification === "Sobresaliente") {
     status = "Approved";
-  } else if (finalScore >= 60) {
-    status = "Conditional";
   } else {
-    status = "Rejected";
+    status = "Conditional";
   }
 
-  return { 
-    score: Math.round(finalScore), 
+  return {
+    score: Math.round(scoreGlobal),
     isKnockOut,
     categoryScores,
-    status
+    status,
+    classification,
+    knockOutReason,
   };
 }

@@ -1,0 +1,108 @@
+Podés pedirle algo muy específico, apuntando solo al motor de cálculo y no a la UI.
+
+Copiá y pegá esto en Replit:
+
+Quiero que me ayudes a modificar SOLO la lógica de cálculo de puntaje de mi app (TypeScript/JavaScript), sin tocar nada visual (componentes, CSS, layout, JSX/HTML).
+
+Contexto:
+
+Ya tengo una app que muestra preguntas y permite elegir de 1 a 5 estrellas por pregunta.
+
+Cada pregunta tiene:
+
+pesoPregunta (número, viene de un Excel tipo “Peso pregunta”).
+​
+
+stars (entero 1–5).
+
+categoria (string, ej. "Cumplimiento normativo y auditorías").
+
+isKO (boolean, opcional, indica si es Knock Out).
+
+Hoy el total se calcula con un promedio simple y no respeta KO ni mínimos por categoría.
+
+Quiero que hagas esto:
+
+Definir una función starFactor(stars: number): number con la siguiente lógica:
+
+1 estrella → factor 0 (No cumple).
+
+2 estrellas → factor 0.5 (Cumple parcialmente).
+
+3 estrellas → factor 1 (Cumple estándar mínimo).
+
+4 estrellas → factor 1.1 (Por encima).
+
+5 estrellas → factor 1.2 (Muy por encima).
+
+Definir la fórmula del score por pregunta:
+
+scorePregunta = pesoPregunta * starFactor(stars).
+
+Cambiar la función que hoy calcula el total para que:
+
+totalScoreBruto = suma(scorePregunta de todas las preguntas).
+
+Supongas que la suma de todos los pesoPregunta equivale a 100 (como en mi Excel).
+​
+
+Entonces scoreGlobal = totalScoreBruto (queda ya en 0–100%).
+
+Agregar una función classificarSitio con esta lógica:
+
+Input:
+
+preguntas: array de { pesoPregunta, stars, categoria, isKO? }.
+
+categoriasCriticas: array de strings (ej: ["Cumplimiento normativo y auditorías", "Seguridad del paciente", "QMS"]).
+
+minimoCritico = 60.
+
+Umbrales globales:
+
+Sobresaliente: scoreGlobal ≥ 80.
+
+Aprobado: 50 ≤ scoreGlobal < 80.
+
+No aprobado: scoreGlobal < 50.
+
+Reglas:
+
+Si existe alguna pregunta con isKO === true y stars <= 2 → retornar "No Aprobado (KO)".
+
+Calcular score por categoría:
+
+Para cada categoría:
+
+num = suma(pesoPregunta * starFactor(stars)) de esa categoría.
+
+den = suma(pesoPregunta) de esa categoría.
+
+scoreCategoria = (num / den) * 100.
+
+Si alguna categoría en categoriasCriticas tiene scoreCategoria < minimoCritico → retornar "No Aprobado (Bloque crítico)".
+
+Calcular scoreGlobal como antes (0–100).
+
+Si scoreGlobal >= 80 → "Sobresaliente".
+
+Si 50 <= scoreGlobal < 80 → "Aprobado".
+
+Si scoreGlobal < 50 → "No Aprobado".
+
+Muy importante:
+
+NO cambies ningún componente visual, ninguna prop de UI, ni nombres de componentes.
+
+Solo agregá estas funciones y conectalas donde hoy se calcula el total numérico y la clasificación.
+
+Si necesitás cambiar un nombre de variable, hacelo mínimo y explícame qué cambiás.
+
+Dame:
+
+El código de las funciones starFactor, calcularScoreGlobal(preguntas) y classificarSitio(...).
+
+Un ejemplo de uso con un array de 3–4 preguntas.
+
+Las modificaciones exactas que tengo que hacer en mi archivo donde hoy se calcula el total (por ejemplo, reemplazando totalScore actual por scoreGlobal).
+

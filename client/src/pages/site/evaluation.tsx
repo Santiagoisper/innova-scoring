@@ -9,11 +9,10 @@ import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Upload, FileText, X } from "lucide-react";
+import { Loader2, CheckCircle2, Upload, FileText, X, Star } from "lucide-react";
 
 export default function SiteEvaluation() {
   const { user } = useStore();
@@ -111,12 +110,18 @@ export default function SiteEvaluation() {
     });
 
     let score = 0;
+    let status: string = "Completed";
     if (typeof calculateScore === 'function') {
       const result = calculateScore(richAnswers, questions);
       score = result.score;
+      if (result.status === "Approved") {
+        status = "Approved";
+      } else if (result.status === "Conditional") {
+        status = "ToConsider";
+      } else {
+        status = "Rejected";
+      }
     }
-
-    const status = score >= 80 ? "Approved" : score >= 50 ? "ToConsider" : "Completed";
 
     try {
       await submitEvaluationApi(user.siteId, { answers: richAnswers, score, status });
@@ -192,20 +197,35 @@ export default function SiteEvaluation() {
                       render={({ field }) => (
                         <div className="space-y-3">
                           {q.type === "YesNo" ? (
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-6">
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="Yes" id={`${q.id}-yes`} />
-                                <Label htmlFor={`${q.id}-yes`} className="font-normal cursor-pointer">Yes</Label>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-1" data-testid={`star-rating-${q.id}`}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => field.onChange(star)}
+                                    className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
+                                    data-testid={`star-${q.id}-${star}`}
+                                  >
+                                    <Star
+                                      className={`h-7 w-7 transition-colors ${
+                                        star <= (field.value || 0)
+                                          ? "fill-yellow-400 text-yellow-400"
+                                          : "fill-transparent text-gray-300"
+                                      }`}
+                                    />
+                                  </button>
+                                ))}
+                                <span className="ml-3 text-sm text-muted-foreground">
+                                  {field.value ? `${field.value}/5` : "Not rated"}
+                                </span>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="No" id={`${q.id}-no`} />
-                                <Label htmlFor={`${q.id}-no`} className="font-normal cursor-pointer">No</Label>
+                              <div className="flex gap-4 text-xs text-muted-foreground">
+                                <span>1 = No / Absent</span>
+                                <span>3 = Meets standard</span>
+                                <span>5 = Excellent</span>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="NA" id={`${q.id}-na`} />
-                                <Label htmlFor={`${q.id}-na`} className="font-normal cursor-pointer">N/A</Label>
-                              </div>
-                            </RadioGroup>
+                            </div>
                           ) : (
                             <Textarea 
                               placeholder="Please provide details..." 
