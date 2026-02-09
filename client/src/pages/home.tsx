@@ -41,9 +41,6 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/40 to-white/90" />
           <div className="container mx-auto max-w-4xl relative z-10">
-            <div className="flex justify-center mb-8">
-              <img src="/images/innova-logo-full.png" alt="Innova Trials - Innovating science, caring for life" className="h-20 md:h-28 object-contain mix-blend-multiply" data-testid="img-logo-home-hero" />
-            </div>
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold tracking-wider mb-6">
               <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
               CLINICAL RESEARCH EXCELLENCE
