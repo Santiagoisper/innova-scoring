@@ -1,0 +1,278 @@
+Does the site have access to local laboratories?
+
+Scoring (Y/N)
+3
+pts
+	
+Do you have a functioning generator?
+
+Scoring (Y/N)
+3
+pts
+	
+Do you have strict control over medical equipment calibrations (thermometers, scales, blood pressure monitors, others)?
+
+Scoring (Y/N)
+5
+pts
+	
+Do you have documented management for the disposal of pathogenic waste (waste from procedures, laboratory, among others)?
+
+Scoring (Y/N)
+4
+pts
+	
+Does the site have enough properly trained staff to guarantee eCRF loading within 5 business days after the patient's visit?
+
+Scoring (Y/N)
+4
+pts
+	
+Are there written, current, versioned, and accessible SOPs for staff?
+
+Scoring (Y/N)
+5
+pts
+	
+Does it have formal internal audit systems or a quality management system? Is there a documented and in-use CAPA (corrective and preventive actions) system?
+
+Scoring (Y/N)
+4
+pts
+	
+Does the center have ISO or other certifications?
+
+Scoring (Y/N)
+4
+pts
+	
+Do you have an electronic medical record (EMR)?
+
+Scoring (Y/N)
+5
+pts
+	
+Do you measure the average query resolution time (Queries Average TAT)?
+
+Scoring (Y/N)
+4
+pts
+	
+Is there a data transmission tracking/control system to the CRF?
+
+Scoring (Y/N)
+5
+pts
+	
+Is there an international safety system for medication-related SAEs?
+
+Scoring (Y/N)
+4
+pts
+	
+Does the site have a fully equipped and available emergency service (ER)?
+
+Scoring (Y/N)
+3
+pts
+	
+Do you have a system that ensures AEs and SAEs are reported in a timely manner?
+
+Scoring (Y/N)
+5
+pts
+	
+Do you have a history of external audits/inspections without critical findings in any of them?
+
+Scoring (Y/N)
+5
+pts
+	
+Does the site have a complete and traceable circuit for IMP handling?
+
+Scoring (Y/N)
+4
+pts
+	
+Does the site allow remote monitoring visits?
+
+Scoring (Y/N)
+4
+pts
+	
+Does the site allow on-site monitoring visits?
+
+Scoring (Y/N)
+4
+pts
+	
+In which technological systems do you have experience? (e.g., eConsent, eCOA, eISF, Medidata Rave, Oracle RDC, Veeva Vault)
+
+Development
+Not Scored		
+Is there a formal record of errors in taking informed consent from the patient?
+
+Scoring (Y/N)
+2
+pts
+	
+Does the center have systems for measuring customer satisfaction? (patient, sponsor)
+
+Scoring (Y/N)
+1
+pts
+	
+Do you have specific staff for the following roles: PI, SI, SC, research nursing, data manager, contract manager, recruiters, others (specify)?
+
+Development
+Not Scored		
+What is the average total time from the first submission of documentation to final approval by the IEC/IRB? Do you use a local, central, or both IEC? Does your IEC have any extra requirements for the submission/approval of documents?
+
+Development
+Not Scored		
+Is there any member of your team designated as responsible for the processing and shipment of biological samples?
+
+Development
+Not Scored		
+Does the site have the capacity to submit documentation to its Ethics Committee (IEC/IRB) prior to the signature/execution of the contract? What is the usual period (in weeks) necessary for the approval of the clinical trial agreement and the corresponding budget?
+
+Development
+Not Scored		
+Does the composition of the IEC/IRB members comply with ICH-GCP requirements?
+
+Scoring (Y/N)
+2
+pts
+	
+Does the site have a pharmacy dedicated exclusively to clinical research for the preparation and dispensing of the Investigational Product (IP)? Will the IP storage be carried out in the pharmacy?
+
+Development
+Not Scored		
+What equipment do you have for IP refrigeration? (e.g., Freezer -20°C to -30°C, -70°C to -80°C, -135°C)
+
+Development
+Not Scored		
+Describe what resources, equipment, and/or facilities the site has available for use in the study. (e.g., ECG, EEG, MRI, PET, MRS, X-Ray, Mammogram, others (specify))
+
+Development
+Not Scored		
+Does the site have the capacity to send digital images for centralized review? Does the site have sufficient high-speed internet connectivity to operate electronic data capture (EDC) systems?
+
+Development
+Not Scored		
+Does the site have 24-hour observation and/or overnight stay capacity available for clinical research?
+
+Scoring (Y/N)
+1
+pts
+	
+Can the site offer afternoon, weekend, and/or holiday service hours for study visits, if required? Does the site have the capacity to administer medication during weekends for continuous dosing schedules?
+
+Development
+Not Scored		
+Does the site have an automated and documented temperature monitoring system for the storage of biological samples?
+
+Scoring (Y/N)
+2
+pts
+	
+In which therapeutic specialties do you have experience with clinical trials? (e.g., Cardiology, Diabetes, Rheumatology, Oncology, Psychiatry, etc.)
+
+Development
+Not Scored		
+How are source documents corresponding to clinical research archived and protected?
+
+Development
+Not Scored		
+Does the site grant study monitors direct and controlled access to the electronic medical record (EMR) for source data verification?
+
+Scoring (Y/N)
+2
+pts
+	
+What methods has the site used for recruiting patients for clinical research? Is the site willing to carry out active dissemination and promotion actions of the study towards other local sites and/or referral networks?
+
+Development
+Not Scored		
+Do you have a documented circuit for temperature control of each thermometer at the site? What type of thermometers do you use for recording? (e.g., Datalogger, daily measurement)
+
+Development
+Not Scored		
+Do you have a laboratory for sample processing? In the case of being a provider, do you have an evaluation system?
+
+Development
+Not Scored		
+Do you have a circuit designed for double-blind studies?
+
+Scoring (Y/N)
+2
+pts
+	
+Do you have a system for updating staff documentation? (CV, GCP, training)?
+
+Scoring (Y/N)
+1
+pts
+	
+Do you have documented traceable initial and continuous training processes in clinical research?
+
+Scoring (Y/N)
+2
+pts
+	
+Does the center have ISO or other certifications?
+
+Scoring (Y/N)
+2
+pts
+	
+Is the management of physical and digital archives post-study closure clearly defined? Is there a follow-up of SAEs once the study is concluded?
+
+Development
+Not Scored		
+Are screen failures and dropouts systematically recorded? (request drop out?) and SF rate
+
+Development
+Not Scored		
+Do you have documentation of the major deviation rate of the center in the last year?
+
+Scoring (Y/N)
+1
+pts
+	
+Is there a formal transfer management system that guarantees that the patient does not incur any economic expense?
+
+Scoring (Y/N)
+2
+pts
+	
+Does the center have verifiable experience in Phase I studies?
+
+Scoring (Y/N)
+2
+pts
+	
+Does the center have verifiable experience in Phase II–IV studies?
+
+Scoring (Y/N)
+2
+pts
+	
+Is there a clearly defined person responsible for on-site and remote monitoring?
+
+Development
+Not Scored		
+Is there documented follow-up of actions derived from monitoring (Follow up letter)?
+
+Scoring (Y/N)
+1
+pts
+	
+Is there a clearly defined person responsible for start-up management?
+
+Development
+Not Scored		
+How is the comprehensive review of the protocol performed before the start (operational feasibility, vendors, required resources)?
+
+Development
+Not Scored		
