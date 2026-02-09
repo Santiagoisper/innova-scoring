@@ -33,6 +33,18 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.removeHeader("X-Powered-By");
+  next();
+});
+
+app.disable("x-powered-by");
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
