@@ -16,6 +16,13 @@ export async function registerRoutes(
       const { username, password } = req.body;
       const user = await storage.getAdminUserByUsername(username);
       if (user && user.password === password) {
+        await storage.createActivityLog({
+          user: user.name,
+          action: "Logged In",
+          target: "Admin Portal",
+          type: "info",
+          sector: "Authentication",
+        });
         res.json({
           id: user.id,
           name: user.name,

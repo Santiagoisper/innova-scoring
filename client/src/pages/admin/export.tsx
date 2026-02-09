@@ -44,8 +44,6 @@ export default function ExportResults() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    console.log("Downloading CSV:", csvContent);
   };
 
   const handleExportJSON = () => {
@@ -56,16 +54,40 @@ export default function ExportResults() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    console.log("Downloading JSON");
+  };
+
+  const handleDownloadSite = (site: any) => {
+    const headers = ["ID", "Contact Name", "Email", "Location", "Status", "Score", "Registered At", "Evaluated At"];
+    const row = [
+      site.id,
+      `"${site.contactName}"`,
+      site.email,
+      `"${site.location || ''}"`,
+      site.status,
+      site.score || 0,
+      site.registeredAt,
+      site.evaluatedAt || ''
+    ];
+
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + headers.join(",") + "\n"
+      + row.join(",");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${site.contactName.replace(/\s+/g, '_')}_result.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getStatusBadge = (status: string) => {
     switch(status) {
-      case "Approved": return <Badge className="bg-emerald-600 hover:bg-emerald-700">Aprobado</Badge>;
-      case "Rejected": return <Badge variant="destructive">Rechazado</Badge>;
-      case "ToConsider": return <Badge className="bg-amber-500 hover:bg-amber-600">Considerar</Badge>;
-      case "Pending": return <Badge variant="secondary">Pendiente</Badge>;
+      case "Approved": return <Badge className="bg-emerald-600 hover:bg-emerald-700">Approved</Badge>;
+      case "Rejected": return <Badge variant="destructive">Rejected</Badge>;
+      case "ToConsider": return <Badge className="bg-amber-500 hover:bg-amber-600">To Consider</Badge>;
+      case "Pending": return <Badge variant="secondary">Pending</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -85,24 +107,24 @@ export default function ExportResults() {
       <div className="container mx-auto p-6 space-y-8 animate-in fade-in duration-500">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-heading font-bold text-primary">Exportar Resultados</h1>
-            <p className="text-muted-foreground">Descarga y gestiona los datos de evaluación</p>
+            <h1 className="text-3xl font-heading font-bold text-primary" data-testid="text-export-title">Export Results</h1>
+            <p className="text-muted-foreground">Download and manage evaluation data</p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Configuración de Exportación</CardTitle>
-            <CardDescription>Selecciona el formato deseado para descargar los reportes.</CardDescription>
+            <CardTitle>Export Settings</CardTitle>
+            <CardDescription>Select the desired format to download reports.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="outline" className="flex-1 h-24 flex-col gap-2 hover:border-primary hover:text-primary transition-colors" onClick={handleExportCSV}>
+              <Button variant="outline" className="flex-1 h-24 flex-col gap-2 hover:border-primary hover:text-primary transition-colors" onClick={handleExportCSV} data-testid="button-export-csv">
                 <FileSpreadsheet className="h-8 w-8 text-green-600" />
                 <span className="font-semibold">CSV Format</span>
                 <span className="text-xs text-muted-foreground">Ideal for Excel / Sheets</span>
               </Button>
-              <Button variant="outline" className="flex-1 h-24 flex-col gap-2 hover:border-primary hover:text-primary transition-colors" onClick={handleExportJSON}>
+              <Button variant="outline" className="flex-1 h-24 flex-col gap-2 hover:border-primary hover:text-primary transition-colors" onClick={handleExportJSON} data-testid="button-export-json">
                 <FileJson className="h-8 w-8 text-amber-600" />
                 <span className="font-semibold">JSON Format</span>
                 <span className="text-xs text-muted-foreground">Raw Data Structure</span>
@@ -115,10 +137,11 @@ export default function ExportResults() {
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Busca por nombre de sitio o código..." 
+              placeholder="Search by site name or code..." 
               className="pl-9 bg-white" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              data-testid="input-search-export"
             />
           </div>
         </div>
@@ -128,11 +151,11 @@ export default function ExportResults() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Información del Sitio</TableHead>
-                  <TableHead>Puntaje</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead className="text-right">Acción</TableHead>
+                  <TableHead>Site Information</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -159,7 +182,7 @@ export default function ExportResults() {
                       {new Date(site.evaluatedAt || site.registeredAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleDownloadSite(site)} data-testid={`button-download-site-${site.id}`}>
                         <Download className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -168,7 +191,7 @@ export default function ExportResults() {
                 {filteredSites.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No se encontraron resultados.
+                      No results found.
                     </TableCell>
                   </TableRow>
                 )}
