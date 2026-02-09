@@ -36,6 +36,7 @@ interface AppState {
   updateQuestion: (id: string, updates: Partial<Question>) => void;
   deleteQuestion: (id: string) => void;
   toggleQuestion: (id: string, enabled: boolean) => void;
+  setQuestions: (questions: Question[]) => void;
 }
 
 // Initial Mock Users
@@ -323,6 +324,8 @@ export const useStore = create<AppState>()(
       toggleQuestion: (id, enabled) => set((state) => ({
         questions: state.questions.map(q => q.id === id ? { ...q, enabled } : q)
       })),
+
+      setQuestions: (questions) => set({ questions }),
     }),
     {
       name: 'innova-trials-storage',

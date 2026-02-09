@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -10,21 +10,31 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, AlertTriangle } from "lucide-react";
+import { Trash2, Plus, AlertTriangle, Save, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Question } from "@/lib/types";
 
 export default function EvaluationSetup() {
-  const { questions, addQuestion, updateQuestion, deleteQuestion, toggleQuestion, user } = useStore();
+  const { questions, addQuestion, deleteQuestion, setQuestions, user } = useStore();
   const { toast } = useToast();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  
+  // Local State for Batch Editing
+  const [localQuestions, setLocalQuestions] = useState<Question[]>(questions);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Sync with store when store changes (e.g. initial load or after save)
+  useEffect(() => {
+    setLocalQuestions(questions);
+    setHasChanges(false);
+  }, [questions]);
   
   // New Question State
   const [newQuestion, setNewQuestion] = useState<Partial<Question>>({
     text: "",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 1,
     isKnockOut: false,
     enabled: true,
@@ -37,7 +47,33 @@ export default function EvaluationSetup() {
     return <div className="p-4">Access Denied</div>;
   }
 
-  const totalWeight = questions.filter(q => q.enabled).reduce((acc, q) => acc + q.weight, 0);
+  const totalWeight = localQuestions.filter(q => q.enabled).reduce((acc, q) => acc + q.weight, 0);
+  const allEnabled = localQuestions.every(q => q.enabled !== false);
+
+  const handleLocalUpdate = (id: string, updates: Partial<Question>) => {
+    setLocalQuestions(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q));
+    setHasChanges(true);
+  };
+
+  const handleToggleAll = (enabled: boolean) => {
+    setLocalQuestions(prev => prev.map(q => ({ ...q, enabled })));
+    setHasChanges(true);
+  };
+
+  const handleSaveChanges = () => {
+    setQuestions(localQuestions);
+    toast({
+      title: "Changes Saved",
+      description: "Evaluation criteria have been updated successfully."
+    });
+  };
+
+  const handleDiscardChanges = () => {
+    if (confirm("Discard all unsaved changes?")) {
+      setLocalQuestions(questions);
+      setHasChanges(false);
+    }
+  };
 
   const handleAddQuestion = () => {
     if (!newQuestion.text || !newQuestion.category) {
@@ -49,6 +85,13 @@ export default function EvaluationSetup() {
       return;
     }
 
+    if (hasChanges) {
+       if(!confirm("You have unsaved changes. Saving them now before adding new question.")) {
+         return;
+       }
+       setQuestions(localQuestions);
+    }
+
     addQuestion({
       ...newQuestion,
       keywords: newQuestion.type === "Text" && keywordsInput ? keywordsInput.split(',').map(s => s.trim()).filter(Boolean) : undefined
@@ -58,7 +101,7 @@ export default function EvaluationSetup() {
     setNewQuestion({
       text: "",
       type: "YesNo",
-      category: "Infraestructura",
+      category: "Infrastructure",
       weight: 1,
       isKnockOut: false,
       enabled: true,
@@ -72,7 +115,20 @@ export default function EvaluationSetup() {
     });
   };
 
-  const categories = Array.from(new Set(questions.map(q => q.category)));
+  const handleDeleteQuestion = (id: string) => {
+    if (confirm("Are you sure you want to delete this question?")) {
+      if (hasChanges) {
+        setQuestions(localQuestions); // Save first to avoid state conflict
+      }
+      deleteQuestion(id);
+      toast({
+        title: "Question Deleted",
+        description: "Question has been removed."
+      });
+    }
+  };
+
+  const categories = Array.from(new Set(localQuestions.map(q => q.category)));
 
   return (
     <Layout>
@@ -205,17 +261,42 @@ export default function EvaluationSetup() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Questions List</CardTitle>
-            <CardDescription>
-              Toggle visibility to show/hide questions in the form. Adjust weights to sum to 100%.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardTitle>Questions List</CardTitle>
+              <CardDescription>
+                Toggle visibility to show/hide questions in the form. Adjust weights to sum to 100%.
+              </CardDescription>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {hasChanges && (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <span className="text-xs text-amber-600 font-medium hidden sm:inline-block">Unsaved Changes</span>
+                  <Button size="sm" variant="ghost" onClick={handleDiscardChanges}>Discard</Button>
+                  <Button size="sm" onClick={handleSaveChanges} className="bg-primary hover:bg-primary/90">
+                    <Save className="mr-2 h-4 w-4" /> Save Changes
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">Status</TableHead>
+                  <TableHead className="w-[100px]">
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={allEnabled}
+                        onCheckedChange={handleToggleAll}
+                        id="toggle-all"
+                      />
+                      <Label htmlFor="toggle-all" className="cursor-pointer text-xs font-normal text-muted-foreground">
+                        {allEnabled ? "All On" : "All Off"}
+                      </Label>
+                    </div>
+                  </TableHead>
                   <TableHead>Question</TableHead>
                   <TableHead className="w-[150px]">Category</TableHead>
                   <TableHead className="w-[100px]">Type</TableHead>
@@ -224,12 +305,12 @@ export default function EvaluationSetup() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {questions.map((q) => (
+                {localQuestions.map((q) => (
                   <TableRow key={q.id} className={!q.enabled ? "opacity-60 bg-muted/50" : ""}>
                     <TableCell>
                       <Switch 
                         checked={q.enabled !== false}
-                        onCheckedChange={(checked) => toggleQuestion(q.id, checked)}
+                        onCheckedChange={(checked) => handleLocalUpdate(q.id, { enabled: checked })}
                       />
                     </TableCell>
                     <TableCell className="font-medium">
@@ -257,7 +338,7 @@ export default function EvaluationSetup() {
                         className="w-16 h-8" 
                         value={q.weight}
                         min="0"
-                        onChange={(e) => updateQuestion(q.id, { weight: parseInt(e.target.value) || 0 })}
+                        onChange={(e) => handleLocalUpdate(q.id, { weight: parseInt(e.target.value) || 0 })}
                       />
                     </TableCell>
                     <TableCell>
@@ -265,7 +346,7 @@ export default function EvaluationSetup() {
                         variant="ghost" 
                         size="icon" 
                         className="text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteQuestion(q.id)}
+                        onClick={() => handleDeleteQuestion(q.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
