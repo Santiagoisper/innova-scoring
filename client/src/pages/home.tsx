@@ -55,24 +55,35 @@ export default function Home() {
               A comprehensive platform for clinical research organizations to assess, score, and benchmark investigational sites across key criteria.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+            <div className="flex flex-col items-center gap-5">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+                <Button 
+                  size="lg" 
+                  className="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white h-14 px-10 text-base rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 border border-blue-400/20 overflow-hidden group"
+                  onClick={() => setLocation("/login/site")}
+                  data-testid="button-client-portal"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  <LayoutDashboard className="mr-2 h-5 w-5" /> Client Portal <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                <Button 
+                  size="lg" 
+                  className="relative h-14 px-10 text-base rounded-full border-2 border-slate-700 text-slate-800 bg-white/70 backdrop-blur-sm hover:bg-slate-900 hover:text-white hover:border-slate-900 hover:scale-105 hover:shadow-lg hover:shadow-slate-500/20 transition-all duration-300 overflow-hidden group"
+                  onClick={() => setLocation("/login/admin")}
+                  data-testid="button-admin-access"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  <ShieldCheck className="mr-2 h-5 w-5" /> Admin Access
+                </Button>
+              </div>
               <Button 
                 size="lg" 
-                className="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white h-14 px-10 text-base rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 border border-blue-400/20 overflow-hidden group"
-                onClick={() => setLocation("/login/site")}
-                data-testid="button-client-portal"
+                variant="ghost"
+                className="relative h-12 px-8 text-base rounded-full text-blue-700 hover:text-blue-800 hover:bg-blue-50/80 transition-all duration-300 group"
+                onClick={() => setLocation("/register")}
+                data-testid="button-register-site"
               >
-                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                <LayoutDashboard className="mr-2 h-5 w-5" /> Client Portal <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <Button 
-                size="lg" 
-                className="relative h-14 px-10 text-base rounded-full border-2 border-slate-700 text-slate-800 bg-white/70 backdrop-blur-sm hover:bg-slate-900 hover:text-white hover:border-slate-900 hover:scale-105 hover:shadow-lg hover:shadow-slate-500/20 transition-all duration-300 overflow-hidden group"
-                onClick={() => setLocation("/login/admin")}
-                data-testid="button-admin-access"
-              >
-                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                <ShieldCheck className="mr-2 h-5 w-5" /> Admin Access
+                <CheckCircle2 className="mr-2 h-5 w-5" /> Register Site <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </div>
