@@ -19,15 +19,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-screen bg-muted/20 font-sans">
         {/* Sidebar */}
-        <aside className="w-64 bg-primary text-primary-foreground flex flex-col fixed inset-y-0 left-0 z-50">
-          <div className="h-16 flex items-center px-6 border-b border-white/10">
+        <aside className="w-64 bg-primary text-primary-foreground flex flex-col fixed inset-y-0 left-0 z-50 overflow-hidden">
+          <style>{`
+            @keyframes sidebarShimmer {
+              0% { background-position: 0% 0%; }
+              100% { background-position: 100% 100%; }
+            }
+          `}</style>
+          <div className="absolute inset-0 opacity-[0.07]" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px',
+            animation: 'sidebarShimmer 30s linear infinite'
+          }} />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/10" />
+          <div className="relative z-10 h-16 flex items-center px-6 border-b border-white/10">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setLocation("/admin")}>
-              <img src="/images/innova-logo.png" alt="Innova Trials" className="h-9 w-9 object-contain brightness-0 invert" data-testid="img-logo-admin-sidebar" />
               <span className="font-heading font-semibold text-xl tracking-tight">Innova Trials LLC</span>
             </div>
           </div>
 
-          <nav className="flex-1 py-6 px-3 space-y-1">
+          <nav className="relative z-10 flex-1 py-6 px-3 space-y-1">
             <Link href="/admin" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
               location === "/admin" ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
             }`}>
@@ -72,7 +83,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           </nav>
 
-          <div className="p-4 border-t border-white/10">
+          <div className="relative z-10 p-4 border-t border-white/10">
             <div className="flex items-center gap-3 px-3 py-2 mb-2">
               <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
                 <span className="font-bold text-xs">{user.name.charAt(0)}</span>
