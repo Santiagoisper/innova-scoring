@@ -29,15 +29,8 @@ export function Chatbot() {
     }
   }, [isOpen]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isStreaming) return;
-
-    const userMessage = input.trim();
-    setInput("");
-    const newMessages: ChatMessage[] = [...messages, { role: "user", content: userMessage }];
-    setMessages(newMessages);
+  const streamChat = useCallback(async (userMessage: string, currentHistory: ChatMessage[]) => {
     setIsStreaming(true);
-
     setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
     try {
@@ -46,17 +39,14 @@ export function Chatbot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          history: messages.slice(-10),
+          history: currentHistory.slice(-10),
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
+      if (!response.ok) throw new Error("Failed to send message");
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-
       if (!reader) throw new Error("No reader");
 
       let assistantContent = "";
@@ -69,9 +59,8 @@ export function Chatbot() {
         const lines = text.split("\n").filter(line => line.startsWith("data: "));
 
         for (const line of lines) {
-          const jsonStr = line.slice(6);
           try {
-            const data = JSON.parse(jsonStr);
+            const data = JSON.parse(line.slice(6));
             if (data.done) break;
             if (data.error) throw new Error(data.error);
             if (data.content) {
@@ -85,7 +74,7 @@ export function Chatbot() {
           } catch {}
         }
       }
-    } catch (error) {
+    } catch {
       setMessages(prev => {
         const updated = [...prev];
         updated[updated.length - 1] = {
@@ -97,62 +86,30 @@ export function Chatbot() {
     } finally {
       setIsStreaming(false);
     }
-  };
+  }, []);
+
+  const sendMessage = useCallback(async () => {
+    if (!input.trim() || isStreaming) return;
+
+    const userMessage = input.trim();
+    setInput("");
+    const updatedHistory: ChatMessage[] = [...messages, { role: "user", content: userMessage }];
+    setMessages(updatedHistory);
+    await streamChat(userMessage, updatedHistory);
+  }, [input, isStreaming, messages, streamChat]);
+
+  const sendSuggestion = useCallback(async (text: string) => {
+    if (isStreaming) return;
+    const updatedHistory: ChatMessage[] = [...messages, { role: "user", content: text }];
+    setMessages(updatedHistory);
+    await streamChat(text, updatedHistory);
+  }, [isStreaming, messages, streamChat]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-  };
-
-  const sendSuggestion = (text: string) => {
-    if (isStreaming) return;
-    setInput("");
-    const newMsgs: ChatMessage[] = [...messages, { role: "user", content: text }];
-    setMessages(newMsgs);
-    setIsStreaming(true);
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
-    fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, history: messages.slice(-10) }),
-    })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Failed");
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        if (!reader) throw new Error("No reader");
-        let assistantContent = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const lines = decoder.decode(value).split("\n").filter(l => l.startsWith("data: "));
-          for (const line of lines) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.done) break;
-              if (data.content) {
-                assistantContent += data.content;
-                setMessages(prev => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-                  return updated;
-                });
-              }
-            } catch {}
-          }
-        }
-      })
-      .catch(() => {
-        setMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: "Sorry, I encountered an error. Please try again." };
-          return updated;
-        });
-      })
-      .finally(() => setIsStreaming(false));
   };
 
   const clearChat = () => {
@@ -170,10 +127,6 @@ export function Chatbot() {
   return (
     <>
       <style>{`
-        @keyframes chatBounce {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
         @keyframes chatSlideUp {
           from { opacity: 0; transform: translateY(20px) scale(0.95); }
           to { opacity: 1; transform: translateY(0) scale(1); }
@@ -264,6 +217,7 @@ export function Chatbot() {
             {messages.map((msg, i) => (
               <div
                 key={i}
+                data-testid={`chat-message-${msg.role}-${i}`}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
