@@ -12,11 +12,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { fetchAdminUsers, createAdminUser, deleteAdminUser as deleteAdminUserApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, UserPlus, Shield, ShieldAlert, ShieldCheck, Lock, Save, Loader2 } from "lucide-react";
+import { Trash2, UserPlus, Shield, ShieldAlert, ShieldCheck, Lock, Save, Loader2, Moon, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdminSettings() {
-  const { user: currentUser } = useStore();
+  const { user: currentUser, darkMode, toggleDarkMode } = useStore();
   const { data: adminUsers = [], isLoading } = useQuery({ queryKey: ["/api/admin-users"], queryFn: fetchAdminUsers });
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -186,6 +187,38 @@ export default function AdminSettings() {
             </Dialog>
           )}
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {darkMode ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+              Appearance
+            </CardTitle>
+            <CardDescription>
+              Customize how the platform looks.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-4">
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center transition-colors duration-300 ${darkMode ? 'bg-indigo-500/20 text-indigo-400' : 'bg-amber-100 text-amber-600'}`}>
+                  {darkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Dark Mode</p>
+                  <p className="text-xs text-muted-foreground">
+                    {darkMode ? "Dark theme is active" : "Switch to dark theme for reduced eye strain"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                data-testid="switch-dark-mode"
+                checked={darkMode}
+                onCheckedChange={toggleDarkMode}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

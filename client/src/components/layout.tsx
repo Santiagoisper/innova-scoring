@@ -104,8 +104,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Main Content Area */}
         <main className="flex-1 ml-64 flex flex-col min-h-screen">
-          <header className="h-16 bg-white border-b flex items-center px-8 shadow-sm sticky top-0 z-40">
-            <h1 className="text-xl font-semibold text-gray-800">
+          <header className="h-16 bg-background border-b flex items-center px-8 shadow-sm sticky top-0 z-40">
+            <h1 className="text-xl font-semibold text-foreground">
               {location === "/admin" ? "Dashboard" : 
                location.startsWith("/admin/centers") ? "Centers Management" :
                location.startsWith("/admin/evaluation-setup") ? "Evaluation Setup" :
@@ -163,7 +163,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Footer - Hide on Home page as it has a custom footer */}
       {location !== "/" && (
-        <footer className="border-t bg-white py-6 text-center text-sm text-muted-foreground">
+        <footer className="border-t bg-background py-6 text-center text-sm text-muted-foreground">
           <div className="container mx-auto">
             <p>© {new Date().getFullYear()} Innova Trials LLC. All rights reserved.</p>
           </div>
