@@ -267,13 +267,13 @@ export default function CenterDetail() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[200px]">
                   <DropdownMenuItem onClick={() => handleStatusChange("Approved")} className="text-emerald-600 font-medium">
-                    <CheckCircle2 className="mr-2 h-4 w-4" /> Approve (SI)
+                    <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleStatusChange("ToConsider")} className="text-amber-600 font-medium">
                     <Clock className="mr-2 h-4 w-4" /> In Observation
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleStatusChange("Rejected")} className="text-red-600 font-medium">
-                    <XCircle className="mr-2 h-4 w-4" /> Reject (NO)
+                    <XCircle className="mr-2 h-4 w-4" /> Reject
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

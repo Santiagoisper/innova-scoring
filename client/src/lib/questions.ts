@@ -4,7 +4,7 @@ export const QUESTIONS: Question[] = [
     id: "inf1",
     text: "Does the site have access to local laboratories?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 3,
     enabled: true
   },
@@ -12,7 +12,7 @@ export const QUESTIONS: Question[] = [
     id: "inf2",
     text: "Do you have a functioning generator?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 3,
     enabled: true
   },
@@ -20,91 +20,91 @@ export const QUESTIONS: Question[] = [
     id: "inf3",
     text: "Do you have strict control over medical equipment calibrations (thermometers, scales, blood pressure monitors, others)?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 5
   },
   {
     id: "inf4",
     text: "Do you have documented management for the disposal of pathogenic waste (waste from procedures, laboratory, among others)?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 4
   },
   {
     id: "inf5",
     text: "Does the site have a pharmacy dedicated exclusively to clinical research for the preparation and dispensing of the Investigational Product (IP)? Will the IP storage be carried out in the pharmacy?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 2
   },
   {
     id: "inf6",
     text: "What equipment do you have for IP refrigeration? (e.g., Freezer -20°C to -30°C, -70°C to -80°C, -135°C)",
     type: "Text",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 2
   },
   {
     id: "inf7",
     text: "Describe what resources, equipment, and/or facilities the site has available for use in the study.",
     type: "Text",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 1
   },
   {
     id: "inf8",
     text: "Does the site have the capacity to send digital images for centralized review? Does the site have sufficient high-speed internet connectivity to operate electronic data capture (EDC) systems?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 1
   },
   {
     id: "inf9",
     text: "Does the site have 24-hour observation and/or overnight stay capacity available for clinical research?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 1
   },
   {
     id: "inf10",
     text: "Can the site offer afternoon, weekend, and/or holiday service hours for study visits, if required? Does the site have the capacity to administer medication during weekends for continuous dosing schedules?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 2
   },
   {
     id: "inf11",
     text: "Does the site have an automated and documented temperature monitoring system for the storage of biological samples?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 2
   },
   {
     id: "inf12",
     text: "How are source documents corresponding to clinical research archived and protected?",
     type: "Text",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 2
   },
   {
     id: "inf13",
     text: "Do you have a documented circuit for temperature control of each thermometer at the site? What type of thermometers do you use for recording?",
     type: "Text",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 2
   },
   {
     id: "inf14",
     text: "Do you have a laboratory for sample processing? In the case of being a provider, do you have an evaluation system?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 2
   },
   {
     id: "inf15",
     text: "Do you have a circuit designed for double-blind studies?",
     type: "YesNo",
-    category: "Infraestructura",
+    category: "Infrastructure",
     weight: 2
   },
 
@@ -152,70 +152,70 @@ export const QUESTIONS: Question[] = [
     weight: 2
   },
 
-  // Gestión de Calidad (20)
+  // Quality Management (20)
   {
     id: "qms1",
     text: "Are there written, current, versioned, and accessible SOPs for staff?",
     type: "YesNo",
-    category: "Gestión de Calidad",
+    category: "Quality Management",
     weight: 5
   },
   {
     id: "qms2",
     text: "Does it have formal internal audit systems or a quality management system? Is there a documented and in-use CAPA system?",
     type: "YesNo",
-    category: "Gestión de Calidad",
+    category: "Quality Management",
     weight: 4
   },
   {
     id: "qms3",
     text: "Does the center have ISO or other certifications?",
     type: "YesNo",
-    category: "Gestión de Calidad",
+    category: "Quality Management",
     weight: 4
   },
   {
     id: "qms4",
     text: "Is there a formal record of errors in taking informed consent from the patient?",
     type: "YesNo",
-    category: "Gestión de Calidad",
+    category: "Quality Management",
     weight: 2
   },
   {
     id: "qms5",
     text: "Does the center have ISO or other certifications?",
     type: "YesNo",
-    category: "Gestión de Calidad",
+    category: "Quality Management",
     weight: 2
   },
   {
     id: "qms6",
     text: "Are screen failures and dropouts systematically recorded? And SF rate?",
     type: "Text",
-    category: "Gestión de Calidad",
+    category: "Quality Management",
     weight: 2
   },
   {
     id: "qms7",
     text: "Do you have documentation of the major deviation rate of the center in the last year?",
     type: "YesNo",
-    category: "Gestión de Calidad",
+    category: "Quality Management",
     weight: 1
   },
 
-  // Tecnologia (7)
+  // Technology (7)
   {
     id: "tech1",
     text: "Do you have an electronic medical record (EMR)?",
     type: "YesNo",
-    category: "Tecnologia",
+    category: "Technology",
     weight: 5
   },
   {
     id: "tech2",
     text: "In which technological systems do you have experience? (e.g., eConsent, eCOA, eISF, Medidata Rave, Oracle RDC, Veeva Vault)",
     type: "Text",
-    category: "Tecnologia",
+    category: "Technology",
     weight: 2
   },
 
@@ -242,104 +242,104 @@ export const QUESTIONS: Question[] = [
     weight: 1
   },
 
-  // Seguridad del paciente (12)
+  // Patient Safety (12)
   {
     id: "safe1",
     text: "Is there an international safety system for medication-related SAEs?",
     type: "YesNo",
-    category: "Seguridad del paciente",
+    category: "Patient Safety",
     weight: 4
   },
   {
     id: "safe2",
     text: "Does the site have a fully equipped and available emergency service (ER)?",
     type: "YesNo",
-    category: "Seguridad del paciente",
+    category: "Patient Safety",
     weight: 3
   },
   {
     id: "safe3",
     text: "Do you have a system that ensures AEs and SAEs are reported in a timely manner?",
     type: "YesNo",
-    category: "Seguridad del paciente",
+    category: "Patient Safety",
     weight: 5
   },
 
-  // Reputación científica y trayectoria (11)
+  // Scientific Reputation (11)
   {
     id: "rep1",
     text: "Do you have a history of external audits/inspections without critical findings in any of them?",
     type: "YesNo",
-    category: "Reputación científica",
+    category: "Scientific Reputation",
     weight: 5
   },
   {
     id: "rep2",
     text: "In which therapeutic specialties do you have experience with clinical trials?",
     type: "Text",
-    category: "Reputación científica",
+    category: "Scientific Reputation",
     weight: 2
   },
   {
     id: "rep3",
     text: "Does the center have verifiable experience in Phase I studies?",
     type: "YesNo",
-    category: "Reputación científica",
+    category: "Scientific Reputation",
     weight: 2
   },
   {
     id: "rep4",
     text: "Does the center have verifiable experience in Phase II–IV studies?",
     type: "YesNo",
-    category: "Reputación científica",
+    category: "Scientific Reputation",
     weight: 2
   },
 
-  // Cuidado de IMP (4)
+  // IMP Management (4)
   {
     id: "imp1",
     text: "Does the site have a complete and traceable circuit for IMP handling?",
     type: "YesNo",
-    category: "Cuidado de IMP",
+    category: "IMP Management",
     weight: 4
   },
 
-  // Relación con sponsors (10)
+  // Sponsor Relationship (10)
   {
     id: "rel1",
     text: "Does the site allow remote monitoring visits?",
     type: "YesNo",
-    category: "Relación con sponsors",
+    category: "Sponsor Relationship",
     weight: 4
   },
   {
     id: "rel2",
     text: "Does the site allow on-site monitoring visits?",
     type: "YesNo",
-    category: "Relación con sponsors",
+    category: "Sponsor Relationship",
     weight: 4
   },
   {
     id: "rel3",
     text: "Does the site grant study monitors direct and controlled access to the electronic medical record (EMR) for source data verification?",
     type: "YesNo",
-    category: "Relación con sponsors",
+    category: "Sponsor Relationship",
     weight: 2
   },
 
-  // Experiencia del paciente (3)
+  // Patient Experience (3)
   {
     id: "pat1",
     text: "Does the center have systems for measuring customer satisfaction? (patient, sponsor)",
     type: "YesNo",
-    category: "Experiencia del paciente",
+    category: "Patient Experience",
     weight: 1
   },
   {
     id: "pat2",
     text: "Is there a formal transfer management system that guarantees that the patient does not incur any economic expense?",
     type: "YesNo",
-    category: "Experiencia del paciente",
+    category: "Patient Experience",
     weight: 2
   },
 
@@ -380,21 +380,21 @@ export const QUESTIONS: Question[] = [
     weight: 2
   },
 
-  // Reclutamiento (2)
+  // Recruitment (2)
   {
     id: "rec1",
     text: "What methods has the site used for recruiting patients for clinical research? Is the site willing to carry out active dissemination and promotion actions of the study towards other local sites and/or referral networks?",
     type: "Text",
-    category: "Reclutamiento",
+    category: "Recruitment",
     weight: 2
   },
 
-  // Post Estudio (2)
+  // Post Study (2)
   {
     id: "post1",
     text: "Is the management of physical and digital archives post-study closure clearly defined? Is there a follow-up of SAEs once the study is concluded?",
     type: "YesNo",
-    category: "Post Estudio",
+    category: "Post Study",
     weight: 2
   }
 ];
@@ -511,7 +511,7 @@ export function calculateScore(answers: Record<string, any>, questions: Question
     
     // Risk Asymmetry: Critical Categories Threshold
     // If Quality Management or Patient Safety is below 60%, fail the site
-    if ((cat === "Gestión de Calidad" || cat === "Seguridad del paciente") && categoryScores[cat] < 60) {
+    if ((cat === "Quality Management" || cat === "Patient Safety") && categoryScores[cat] < 60) {
       isKnockOut = true;
     }
   });
