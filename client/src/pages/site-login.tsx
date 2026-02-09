@@ -51,6 +51,9 @@ export default function SiteLogin() {
         <div className="w-full max-w-md">
           {/* Informational Side/Top */}
           <div className="mb-8 text-center">
+            <div className="flex justify-center mb-4">
+              <img src="/images/innova-logo.png" alt="Innova Trials" className="h-14 w-14 object-contain" data-testid="img-logo-site-login" />
+            </div>
             <h1 className="text-3xl font-heading font-bold text-primary mb-2">Participant Login</h1>
             <p className="text-muted-foreground">
               Secure access for authorized clinical research sites.

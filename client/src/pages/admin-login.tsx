@@ -50,9 +50,7 @@ export default function AdminLogin() {
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-slate-900">
         <div className="w-full max-w-sm">
           <div className="flex justify-center mb-8">
-            <div className="h-16 w-16 bg-white/10 rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm">
-               <ShieldCheck className="h-8 w-8 text-white" />
-            </div>
+            <img src="/images/innova-logo.png" alt="Innova Trials" className="h-16 w-16 object-contain brightness-0 invert" data-testid="img-logo-admin-login" />
           </div>
           
           <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur">

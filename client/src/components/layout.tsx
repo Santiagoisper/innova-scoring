@@ -22,9 +22,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <aside className="w-64 bg-primary text-primary-foreground flex flex-col fixed inset-y-0 left-0 z-50">
           <div className="h-16 flex items-center px-6 border-b border-white/10">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setLocation("/admin")}>
-              <div className="h-8 w-8 bg-white/10 rounded-sm flex items-center justify-center border border-white/20">
-                <span className="font-heading font-bold text-white text-lg">I</span>
-              </div>
+              <img src="/images/innova-logo.png" alt="Innova Trials" className="h-9 w-9 object-contain brightness-0 invert" data-testid="img-logo-admin-sidebar" />
               <span className="font-heading font-semibold text-xl tracking-tight">Innova Trials LLC</span>
             </div>
           </div>
@@ -120,9 +118,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setLocation("/")}>
-            <div className="h-8 w-8 bg-white/10 rounded-sm flex items-center justify-center border border-white/20">
-              <span className="font-heading font-bold text-white text-lg">I</span>
-            </div>
+            <img src="/images/innova-logo.png" alt="Innova Trials" className="h-9 w-9 object-contain brightness-0 invert" data-testid="img-logo-public-navbar" />
             <span className="font-heading font-semibold text-xl tracking-tight">Innova Trials LLC</span>
           </div>
 

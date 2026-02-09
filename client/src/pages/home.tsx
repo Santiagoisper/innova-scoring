@@ -118,10 +118,8 @@ export default function Home() {
             <div className="grid md:grid-cols-2 gap-12 items-start mb-16">
               {/* Left Column */}
               <div>
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center">
-                    <span className="font-heading font-bold text-white text-lg">✨</span>
-                  </div>
+                <div className="flex items-center gap-3 mb-6">
+                  <img src="/images/innova-logo.png" alt="Innova Trials" className="h-10 w-10 object-contain brightness-0 invert" data-testid="img-logo-home-footer" />
                   <span className="font-heading font-bold text-xl tracking-tight">Innova Trials</span>
                 </div>
                 <p className="text-slate-400 max-w-sm leading-relaxed">
