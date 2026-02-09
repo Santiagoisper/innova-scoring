@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useStore } from "@/lib/store";
+import { registerSite } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,14 +24,12 @@ const registerSchema = z.object({
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
-// Mock Country List
 const COUNTRIES = [
   "Argentina", "Brazil", "Canada", "Chile", "Colombia", "France", "Germany", "Mexico", "Peru", "Spain", "UK", "USA", "Uruguay"
 ];
 
 export default function Register() {
   const [isSuccess, setIsSuccess] = useState(false);
-  const { registerSite } = useStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -40,23 +38,28 @@ export default function Register() {
   });
 
   const onSubmit = async (data: RegisterForm) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    registerSite({
-      ...data,
-      location: `${data.location}, ${data.country}`,
-      city: data.location,
-      country: data.country,
-      score: 0,
-      token: undefined
-    });
-    
-    setIsSuccess(true);
-    toast({
-      title: "Registration Submitted",
-      description: "Your application has been sent to our administrators for review.",
-    });
+    try {
+      await registerSite({
+        ...data,
+        location: `${data.location}, ${data.country}`,
+        city: data.location,
+        country: data.country,
+        score: 0,
+        token: undefined
+      });
+      
+      setIsSuccess(true);
+      toast({
+        title: "Registration Submitted",
+        description: "Your application has been sent to our administrators for review.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message || "An error occurred. Please try again.",
+      });
+    }
   };
 
   if (isSuccess) {

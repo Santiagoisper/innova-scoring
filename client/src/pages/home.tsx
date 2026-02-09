@@ -1,16 +1,16 @@
 import { useLocation } from "wouter";
-import { useStore } from "@/lib/store";
+import { useQuery } from "@tanstack/react-query";
+import { fetchStats } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout";
 import { ArrowRight, BarChart3, Globe2, ShieldCheck, Mail, MapPin, CheckCircle2, LayoutDashboard, Shield } from "lucide-react";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { questions } = useStore();
+  const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: fetchStats });
 
-  // Dynamic calculations
-  const activeQuestionsCount = questions.filter(q => q.enabled !== false).length;
-  const activeCategoriesCount = new Set(questions.filter(q => q.enabled !== false).map(q => q.category)).size;
+  const activeQuestionsCount = stats?.activeQuestions ?? stats?.activeQuestionsCount ?? 0;
+  const activeCategoriesCount = stats?.categories ?? stats?.activeCategoriesCount ?? 0;
 
   return (
     <Layout>

@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { fetchQuestions, createQuestion, deleteQuestion as deleteQuestionApi, bulkUpdateQuestions } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,27 +13,25 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, AlertTriangle, Save, ToggleLeft, ToggleRight } from "lucide-react";
+import { Trash2, Plus, AlertTriangle, Save, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Question } from "@/lib/types";
 
 export default function EvaluationSetup() {
-  const { questions, addQuestion, deleteQuestion, setQuestions, user } = useStore();
+  const { user } = useStore();
+  const { data: questions = [], isLoading } = useQuery({ queryKey: ["/api/questions"], queryFn: fetchQuestions });
   const { toast } = useToast();
   const [isAddOpen, setIsAddOpen] = useState(false);
   
-  // Local State for Batch Editing
-  const [localQuestions, setLocalQuestions] = useState<Question[]>(questions);
+  const [localQuestions, setLocalQuestions] = useState<Question[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Sync with store when store changes (e.g. initial load or after save)
   useEffect(() => {
     setLocalQuestions(questions);
     setHasChanges(false);
   }, [questions]);
   
-  // New Question State
   const [newQuestion, setNewQuestion] = useState<Partial<Question>>({
     text: "",
     type: "YesNo",
@@ -43,8 +44,39 @@ export default function EvaluationSetup() {
   
   const [keywordsInput, setKeywordsInput] = useState("");
 
+  const addQuestionMutation = useMutation({
+    mutationFn: (data: any) => createQuestion(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/questions"] });
+    }
+  });
+
+  const deleteQuestionMutation = useMutation({
+    mutationFn: (id: string) => deleteQuestionApi(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/questions"] });
+    }
+  });
+
+  const bulkUpdateMutation = useMutation({
+    mutationFn: (updates: Array<{ id: string; enabled?: boolean; weight?: number }>) => bulkUpdateQuestions(updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/questions"] });
+    }
+  });
+
   if (user?.role !== "admin") {
     return <div className="p-4">Access Denied</div>;
+  }
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
   }
 
   const totalWeight = localQuestions.filter(q => q.enabled).reduce((acc, q) => acc + q.weight, 0);
@@ -61,7 +93,13 @@ export default function EvaluationSetup() {
   };
 
   const handleSaveChanges = () => {
-    setQuestions(localQuestions);
+    const updates = localQuestions.map(q => ({
+      id: q.id,
+      enabled: q.enabled,
+      weight: q.weight
+    }));
+    bulkUpdateMutation.mutate(updates);
+    setHasChanges(false);
     toast({
       title: "Changes Saved",
       description: "Evaluation criteria have been updated successfully."
@@ -89,13 +127,13 @@ export default function EvaluationSetup() {
        if(!confirm("You have unsaved changes. Saving them now before adding new question.")) {
          return;
        }
-       setQuestions(localQuestions);
+       handleSaveChanges();
     }
 
-    addQuestion({
+    addQuestionMutation.mutate({
       ...newQuestion,
       keywords: newQuestion.type === "Text" && keywordsInput ? keywordsInput.split(',').map(s => s.trim()).filter(Boolean) : undefined
-    } as Omit<Question, "id">);
+    });
     
     setIsAddOpen(false);
     setNewQuestion({
@@ -118,9 +156,9 @@ export default function EvaluationSetup() {
   const handleDeleteQuestion = (id: string) => {
     if (confirm("Are you sure you want to delete this question?")) {
       if (hasChanges) {
-        setQuestions(localQuestions); // Save first to avoid state conflict
+        handleSaveChanges();
       }
-      deleteQuestion(id);
+      deleteQuestionMutation.mutate(id);
       toast({
         title: "Question Deleted",
         description: "Question has been removed."

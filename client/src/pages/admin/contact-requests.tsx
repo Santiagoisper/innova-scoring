@@ -1,23 +1,34 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { fetchSites, generateToken as generateTokenApi } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, CheckCircle2 } from "lucide-react";
+import { Search, Eye, CheckCircle2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ContactRequests() {
-  const { sites, generateToken } = useStore();
+  const { user } = useStore();
+  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites });
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const pendingSites = sites.filter(s => 
+  const generateTokenMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => generateTokenApi(id, user?.name || "Admin"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
+    }
+  });
+
+  const pendingSites = sites.filter((s: any) => 
     s.status === "Pending" && (
       s.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -27,8 +38,7 @@ export default function ContactRequests() {
   const handleStatusChange = (id: string, newStatus: string) => {
     if (newStatus === "Resolved") {
       if (confirm("Are you sure you want to resolve this request? The site will be moved to the active Centers list.")) {
-        // Move to centers with status "TokenSent" as requested
-        generateToken(id);
+        generateTokenMutation.mutate({ id });
         
         toast({
           title: "Request Resolved",
@@ -37,6 +47,16 @@ export default function ContactRequests() {
       }
     }
   };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -71,7 +91,7 @@ export default function ContactRequests() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingSites.map((site) => (
+                {pendingSites.map((site: any) => (
                   <TableRow key={site.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setLocation(`/admin/centers/${site.id}`)}>
                     <TableCell>
                       <div className="font-medium">{site.contactName}</div>

@@ -1,28 +1,28 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useStore } from "@/lib/store";
+import { useQuery } from "@tanstack/react-query";
+import { fetchSites } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Download, FileJson, FileSpreadsheet } from "lucide-react";
+import { Search, Download, FileJson, FileSpreadsheet, Loader2 } from "lucide-react";
 
 export default function ExportResults() {
-  const { sites } = useStore();
+  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites });
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredSites = sites.filter(s => 
+  const filteredSites = sites.filter((s: any) => 
     s.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (s.location && s.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleExportCSV = () => {
-    // Generate CSV content
     const headers = ["ID", "Contact Name", "Email", "Location", "Status", "Score", "Registered At", "Evaluated At"];
-    const rows = filteredSites.map(s => [
+    const rows = filteredSites.map((s: any) => [
       s.id,
       `"${s.contactName}"`,
       s.email,
@@ -35,7 +35,7 @@ export default function ExportResults() {
     
     const csvContent = "data:text/csv;charset=utf-8," 
       + headers.join(",") + "\n" 
-      + rows.map(e => e.join(",")).join("\n");
+      + rows.map((e: any) => e.join(",")).join("\n");
       
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -45,7 +45,6 @@ export default function ExportResults() {
     link.click();
     document.body.removeChild(link);
     
-    // Fallback for mock environment if download is blocked
     console.log("Downloading CSV:", csvContent);
   };
 
@@ -70,6 +69,16 @@ export default function ExportResults() {
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -127,7 +136,7 @@ export default function ExportResults() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSites.map((site) => (
+                {filteredSites.map((site: any) => (
                   <TableRow key={site.id}>
                     <TableCell>
                       <div className="font-medium">{site.contactName}</div>

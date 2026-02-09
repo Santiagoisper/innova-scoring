@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm, Controller } from "react-hook-form";
 import { useStore } from "@/lib/store";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { fetchQuestions, submitEvaluation as submitEvaluationApi } from "@/lib/api";
+import { calculateScore } from "@/lib/questions";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,13 +16,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, Upload, FileText, X } from "lucide-react";
 
 export default function SiteEvaluation() {
-  const { user, submitEvaluation, questions } = useStore();
+  const { user } = useStore();
+  const { data: questions = [], isLoading } = useQuery({ queryKey: ["/api/questions"], queryFn: fetchQuestions });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Local state to store files before submission
-  // Key: questionId, Value: File array
   const [attachments, setAttachments] = useState<Record<string, File[]>>({});
   
   const form = useForm();
@@ -28,8 +30,17 @@ export default function SiteEvaluation() {
     return <div>Unauthorized</div>;
   }
 
-  // Filter only enabled questions
-  const activeQuestions = questions.filter(q => q.enabled !== false);
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
+
+  const activeQuestions = questions.filter((q: any) => q.enabled !== false);
 
   const handleFileChange = (questionId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -63,7 +74,6 @@ export default function SiteEvaluation() {
         }));
       }
       
-      // Reset input value to allow selecting the same file again if needed
       e.target.value = '';
     }
   };
@@ -88,13 +98,10 @@ export default function SiteEvaluation() {
   };
 
   const onSubmit = async (data: any) => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
     const richAnswers: Record<string, any> = {};
-     Object.keys(data).forEach(key => {
+    Object.keys(data).forEach(key => {
       richAnswers[key] = {
         value: data[key],
-        // Save as array of attachments
         attachment: attachments[key] ? attachments[key].map(f => ({
           name: f.name,
           type: f.type,
@@ -103,12 +110,28 @@ export default function SiteEvaluation() {
       };
     });
 
-    submitEvaluation(user.siteId, richAnswers);
-    setIsSubmitted(true);
-    toast({
-      title: "Evaluation Submitted",
-      description: "Your responses have been recorded.",
-    });
+    let score = 0;
+    if (typeof calculateScore === 'function') {
+      const result = calculateScore(richAnswers, questions);
+      score = result.score;
+    }
+
+    const status = score >= 80 ? "Approved" : score >= 50 ? "ToConsider" : "Completed";
+
+    try {
+      await submitEvaluationApi(user.siteId, { answers: richAnswers, score, status });
+      setIsSubmitted(true);
+      toast({
+        title: "Evaluation Submitted",
+        description: "Your responses have been recorded.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: error.message || "An error occurred.",
+      });
+    }
   };
 
   if (isSubmitted) {
@@ -139,8 +162,7 @@ export default function SiteEvaluation() {
     );
   }
 
-  // Group questions by category
-  const categories = Array.from(new Set(activeQuestions.map(q => q.category)));
+  const categories = Array.from(new Set(activeQuestions.map((q: any) => q.category)));
 
   return (
     <Layout>
@@ -157,7 +179,7 @@ export default function SiteEvaluation() {
                 <CardTitle className="text-xl">{category}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                {activeQuestions.filter(q => q.category === category).map((q, idx) => (
+                {activeQuestions.filter((q: any) => q.category === category).map((q: any, idx: number) => (
                   <div key={q.id} className="space-y-3">
                     <Label className="text-sm font-medium text-justify block leading-relaxed pr-4">
                       {idx + 1}. {q.text} {q.isKnockOut && <span className="text-destructive">*</span>}
@@ -195,7 +217,6 @@ export default function SiteEvaluation() {
                       )}
                     />
                     
-                    {/* File Upload Section */}
                     <div className="mt-2">
                        <Label htmlFor={`file-${q.id}`} className="text-xs text-muted-foreground mb-1.5 block">
                          Attach supporting document (JPG, Excel, Word, TXT)
@@ -207,11 +228,10 @@ export default function SiteEvaluation() {
                            type="file" 
                            className="h-9 text-xs max-w-sm cursor-pointer file:cursor-pointer"
                            accept=".jpg,.jpeg,.xls,.xlsx,.doc,.docx,.txt"
-                           multiple // Allow multiple files selection
+                           multiple
                            onChange={(e) => handleFileChange(q.id, e)}
                          />
                          
-                         {/* Attachments List */}
                          {attachments[q.id] && attachments[q.id].length > 0 && (
                            <div className="flex flex-col gap-2 mt-1">
                              {attachments[q.id].map((file, fileIdx) => (

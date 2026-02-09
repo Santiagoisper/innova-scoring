@@ -1,12 +1,23 @@
 import { useStore } from "@/lib/store";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { fetchActivityLog, clearActivityLog as clearActivityLogApi } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Activity, User, Shield, FileText, Settings, AlertTriangle, Layers } from "lucide-react";
+import { Activity, User, Shield, FileText, Settings, AlertTriangle, Layers, Loader2 } from "lucide-react";
 
 export default function ActivityLog() {
-  const { activityLog, clearActivityLog, user } = useStore();
+  const { user } = useStore();
+  const { data: activityLog = [], isLoading } = useQuery({ queryKey: ["/api/activity-log"], queryFn: fetchActivityLog });
+
+  const clearMutation = useMutation({
+    mutationFn: clearActivityLogApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/activity-log"] });
+    }
+  });
 
   const getIcon = (type: string) => {
     switch(type) {
@@ -20,11 +31,21 @@ export default function ActivityLog() {
 
   const handleClearLogs = () => {
     if (confirm("Are you sure you want to clear the system logs?")) {
-      clearActivityLog();
+      clearMutation.mutate();
     }
   };
 
   const canClear = user?.permission === 'readwrite';
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -61,7 +82,7 @@ export default function ActivityLog() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {activityLog.map((log) => (
+                  {activityLog.map((log: any) => (
                     <div key={log.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
                       <div className={`mt-1 h-8 w-8 rounded-full flex items-center justify-center bg-muted/50 border`}>
                         {getIcon(log.type)}

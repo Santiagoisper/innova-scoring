@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
+import { useQuery } from "@tanstack/react-query";
+import { fetchSites } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,47 +11,51 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell 
 } from "recharts";
-import { Users, FileText, CheckCircle2, AlertTriangle, TrendingUp, ArrowRight } from "lucide-react";
+import { Users, FileText, CheckCircle2, AlertTriangle, TrendingUp, ArrowRight, Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { sites, user } = useStore();
+  const { user } = useStore();
   const [, setLocation] = useLocation();
+  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites });
 
   if (user?.role !== "admin") {
-    // Basic protection
     return <div className="p-4">Access Denied</div>;
   }
 
-  // Calculate Metrics
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
+
   const totalSites = sites.length;
-  const pendingSites = sites.filter(s => s.status === "Pending").length;
-  const approvedSites = sites.filter(s => s.status === "Approved").length;
-  const rejectedSites = sites.filter(s => s.status === "Rejected").length;
-  const toConsiderSites = sites.filter(s => s.status === "ToConsider").length;
+  const pendingSites = sites.filter((s: any) => s.status === "Pending").length;
+  const approvedSites = sites.filter((s: any) => s.status === "Approved").length;
+  const rejectedSites = sites.filter((s: any) => s.status === "Rejected").length;
+  const toConsiderSites = sites.filter((s: any) => s.status === "ToConsider").length;
   
   const approvalRate = totalSites > 0 
     ? Math.round((approvedSites / (totalSites - pendingSites)) * 100) || 0 
     : 0;
 
-  // Prepare Rankings
-  // Filter only evaluated sites that are NOT pending or token sent
-  // We want sites that have a score AND have been evaluated (so status is Approved, Rejected, or ToConsider)
-  const evaluatedSites = sites.filter(s => 
+  const evaluatedSites = sites.filter((s: any) => 
     s.score !== undefined && 
     s.status !== "Pending" && 
     s.status !== "TokenSent"
   );
-  const rankedSites = [...evaluatedSites].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
+  const rankedSites = [...evaluatedSites].sort((a: any, b: any) => (b.score || 0) - (a.score || 0)).slice(0, 5);
 
-  // Status Distribution Data
   const statusData = [
-    { name: 'Approved', value: approvedSites, color: 'hsl(var(--chart-3))' }, // Green
-    { name: 'Conditional', value: toConsiderSites, color: 'hsl(var(--chart-4))' }, // Orange
-    { name: 'Rejected', value: rejectedSites, color: 'hsl(var(--chart-5))' }, // Red
+    { name: 'Approved', value: approvedSites, color: 'hsl(var(--chart-3))' },
+    { name: 'Conditional', value: toConsiderSites, color: 'hsl(var(--chart-4))' },
+    { name: 'Rejected', value: rejectedSites, color: 'hsl(var(--chart-5))' },
   ];
 
-  // Country Distribution Data
-  const countryCounts = sites.reduce((acc, site) => {
+  const countryCounts = sites.reduce((acc: Record<string, number>, site: any) => {
     const country = site.country || 'Unknown';
     acc[country] = (acc[country] || 0) + 1;
     return acc;
@@ -58,7 +63,7 @@ export default function AdminDashboard() {
 
   const countryData = Object.entries(countryCounts)
     .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
+    .sort((a, b) => (b.value as number) - (a.value as number))
     .slice(0, 5);
 
   return (
@@ -116,7 +121,7 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {evaluatedSites.length > 0 
-                  ? Math.round(evaluatedSites.reduce((acc, s) => acc + (s.score || 0), 0) / evaluatedSites.length) 
+                  ? Math.round(evaluatedSites.reduce((acc: number, s: any) => acc + (s.score || 0), 0) / evaluatedSites.length) 
                   : 0}
               </div>
               <p className="text-xs text-muted-foreground">Benchmarked globally</p>
@@ -133,7 +138,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {rankedSites.map((site, i) => (
+                {rankedSites.map((site: any, i: number) => (
                   <div key={site.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-lg border hover:bg-muted/40 transition-colors cursor-pointer" onClick={() => setLocation(`/admin/centers/${site.id}`)}>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-sm">

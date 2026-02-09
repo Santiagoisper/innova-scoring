@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { fetchSite, fetchQuestions, updateSiteStatus as updateSiteStatusApi, generateToken as generateTokenApi, updateSiteAnswers as updateSiteAnswersApi } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
-import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2 } from "lucide-react";
 import { QUESTIONS } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -16,35 +19,73 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import jsPDF from "jspdf";
+import { calculateScore } from "@/lib/questions";
 
 export default function CenterDetail() {
   const [, params] = useRoute("/admin/centers/:id");
-  const { sites, questions, updateSiteStatus, generateToken, updateSiteAnswers } = useStore();
+  const { user } = useStore();
   const [, setLocation] = useLocation();
-  const [site, setSite] = useState<any>(null);
   const { toast } = useToast();
   
-  // Edit Mode State
+  const { data: site, isLoading: siteLoading } = useQuery({
+    queryKey: ["/api/sites", params?.id],
+    queryFn: () => fetchSite(params!.id),
+    enabled: !!params?.id
+  });
+
+  const { data: questions = [] } = useQuery({
+    queryKey: ["/api/questions"],
+    queryFn: fetchQuestions
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedAnswers, setEditedAnswers] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    if (params?.id) {
-      const found = sites.find(s => s.id === params.id);
-      setSite(found);
-      if (found) {
-        setEditedAnswers(found.answers || {});
-      }
+    if (site) {
+      setEditedAnswers(site.answers || {});
     }
-  }, [params?.id, sites]);
+  }, [site]);
 
-  if (!site) return <div className="p-8">Loading...</div>;
+  const statusMutation = useMutation({
+    mutationFn: ({ status }: { status: string }) => updateSiteStatusApi(site.id, status, user?.name || "Admin"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sites", params?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
+    }
+  });
 
-  // Use dynamic questions list if available, otherwise fallback to default
-  const questionsList = questions || QUESTIONS;
+  const tokenMutation = useMutation({
+    mutationFn: () => generateTokenApi(site.id, user?.name || "Admin"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sites", params?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
+    }
+  });
+
+  const answersMutation = useMutation({
+    mutationFn: ({ answers, score }: { answers: any; score: number }) => 
+      updateSiteAnswersApi(site.id, answers, score, user?.name || "Admin"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sites", params?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
+    }
+  });
+
+  if (siteLoading || !site) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
+
+  const questionsList = questions.length > 0 ? questions : QUESTIONS;
 
   const handleGenerateToken = () => {
-    generateToken(site.id);
+    tokenMutation.mutate();
     toast({
       title: "Token Generated",
       description: "Invitation email with new token has been sent to the site.",
@@ -52,7 +93,12 @@ export default function CenterDetail() {
   };
 
   const handleSaveChanges = () => {
-    updateSiteAnswers(site.id, editedAnswers);
+    let score = 0;
+    if (typeof calculateScore === 'function') {
+      const result = calculateScore(editedAnswers, questionsList);
+      score = result.score;
+    }
+    answersMutation.mutate({ answers: editedAnswers, score });
     setIsEditing(false);
     toast({
       title: "Changes Saved",
@@ -61,7 +107,6 @@ export default function CenterDetail() {
   };
 
   const handleAnswerChange = (questionId: string, value: string) => {
-    // We need to preserve attachment if it exists
     const currentAnswer = editedAnswers[questionId];
     let attachment = undefined;
     
@@ -76,18 +121,15 @@ export default function CenterDetail() {
   };
 
   const handleDownloadReport = () => {
-    // Generate PDF Report
     const doc = new jsPDF();
     
-    // Header
-    doc.setFillColor(22, 163, 74); // Green header
+    doc.setFillColor(22, 163, 74);
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.text("INNOVA TRIALS LLC REPORT", 105, 25, { align: "center" });
     
-    // Site Info
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -103,11 +145,9 @@ export default function CenterDetail() {
     doc.text(`Evaluated: ${site.evaluatedAt ? new Date(site.evaluatedAt).toLocaleDateString() : "Pending"}`, 120, 70);
     doc.text(`Evaluated By: ${site.evaluatedBy || "N/A"}`, 120, 76);
 
-    // Line separator
     doc.setDrawColor(200, 200, 200);
     doc.line(20, 105, 190, 105);
 
-    // Evaluation Summary
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("EVALUATION SUMMARY", 20, 120);
@@ -115,8 +155,7 @@ export default function CenterDetail() {
     let yPos = 135;
     const pageHeight = doc.internal.pageSize.height;
 
-    questionsList.forEach((q, index) => {
-      // Check for page break
+    questionsList.forEach((q: any, index: number) => {
       if (yPos > pageHeight - 30) {
         doc.addPage();
         yPos = 30;
@@ -127,7 +166,6 @@ export default function CenterDetail() {
       if (typeof ans === 'object' && ans?.value) val = ans.value;
       else if (ans) val = ans;
 
-      // Question Text
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(60, 60, 60);
@@ -136,15 +174,13 @@ export default function CenterDetail() {
       doc.text(questionLines, 20, yPos);
       yPos += (questionLines.length * 5) + 2;
 
-      // Answer
       doc.setFont("helvetica", "normal");
       doc.setTextColor(0, 0, 0);
       doc.text(`Answer: ${val}`, 25, yPos);
       yPos += 10;
     });
     
-    // Footer
-    const pageCount = doc.internal.getNumberOfPages(); // Incorrect, this gets total at end, but good enough for mock
+    const pageCount = doc.internal.getNumberOfPages();
     for(let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
@@ -161,9 +197,8 @@ export default function CenterDetail() {
   };
 
   const handleStatusChange = (newStatus: "Approved" | "Rejected" | "ToConsider") => {
-    updateSiteStatus(site.id, newStatus);
+    statusMutation.mutate({ status: newStatus });
     
-    // Simulate email notification
     let title = "";
     let description = "";
     
@@ -185,15 +220,13 @@ export default function CenterDetail() {
     });
   };
 
-  // Collect all attachments
   const allAttachments = Object.entries(site.answers || {})
     .flatMap(([qId, answer]: [string, any]) => {
       if (typeof answer === 'object' && answer?.attachment) {
-        const question = questionsList.find(q => q.id === qId);
-        // Handle array of attachments or single attachment
+        const question = questionsList.find((q: any) => q.id === qId);
         const attachmentList = Array.isArray(answer.attachment) ? answer.attachment : [answer.attachment];
         
-        return attachmentList.map(att => ({
+        return attachmentList.map((att: any) => ({
           questionId: qId,
           questionText: question?.text || "Unknown Question",
           attachment: att
@@ -282,7 +315,6 @@ export default function CenterDetail() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Main Info */}
           <div className="md:col-span-2 space-y-6">
             <Tabs defaultValue="details" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
@@ -320,11 +352,9 @@ export default function CenterDetail() {
                       </Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {questionsList.map((q) => {
+                      {questionsList.map((q: any) => {
                         const answerEntry = isEditing ? editedAnswers[q.id] : site.answers[q.id];
-                        // If editing and no answer yet, default to empty
                         
-                        // Handle new structure vs old structure
                         let answerValue = "";
                         let attachments: any[] = [];
                         
@@ -379,10 +409,9 @@ export default function CenterDetail() {
                                   }`}>
                                     {answerValue || "Not Answered"}
                                   </div>
-                                  {/* Attachment Display */}
                                   {attachments.length > 0 && (
                                     <div className="flex flex-col gap-1 mt-1">
-                                      {attachments.map((att, idx) => (
+                                      {attachments.map((att: any, idx: number) => (
                                         <div key={idx} className="flex items-center gap-2 bg-muted/30 p-2 rounded border w-fit">
                                           <File className="h-4 w-4 text-blue-500" />
                                           <span className="text-sm font-medium">{att.name}</span>
@@ -455,7 +484,6 @@ export default function CenterDetail() {
             </Tabs>
           </div>
 
-          {/* Sidebar Actions */}
           <div className="space-y-6">
             <Card>
               <CardHeader>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useStore } from "@/lib/store";
+import { siteLogin } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ export default function SiteLogin() {
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, sites, consumeToken } = useStore();
+  const { login } = useStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -21,27 +22,20 @@ export default function SiteLogin() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const site = sites.find(s => s.email.toLowerCase() === email.toLowerCase() && s.token === token);
-
-    if (site) {
-      // Consume token so it cannot be used again
-      consumeToken(site.id);
-      
+    try {
+      const result = await siteLogin(email, token);
       login({
-        id: site.id,
-        name: site.contactName,
+        id: result.id,
+        name: result.name || result.contactName,
         role: "site",
-        siteId: site.id
+        siteId: result.siteId || result.id
       });
       toast({
         title: "Welcome back",
         description: "You have successfully logged in.",
       });
       setLocation("/site/disclaimer");
-    } else {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Invalid Credentials",

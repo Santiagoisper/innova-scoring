@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useStore } from "@/lib/store";
+import { adminLogin } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ export default function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, adminUsers } = useStore();
+  const { login } = useStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -21,13 +22,8 @@ export default function AdminLogin() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    // Authenticate against adminUsers store
-    const user = adminUsers?.find(u => u.username === username && u.password === password);
-
-    if (user) {
+    try {
+      const user = await adminLogin(username, password);
       login({
         id: user.id,
         name: user.name,
@@ -39,7 +35,7 @@ export default function AdminLogin() {
         description: `Welcome back, ${user.name}.`,
       });
       setLocation("/admin");
-    } else {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Access Denied",

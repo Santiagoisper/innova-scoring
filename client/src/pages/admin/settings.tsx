@@ -8,21 +8,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { fetchAdminUsers, createAdminUser, deleteAdminUser as deleteAdminUserApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, UserPlus, Shield, ShieldAlert, Lock, Save } from "lucide-react";
+import { Trash2, UserPlus, Shield, ShieldAlert, ShieldCheck, Lock, Save, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function AdminSettings() {
-  const { adminUsers, addAdminUser, deleteAdminUser, user: currentUser } = useStore();
+  const { user: currentUser } = useStore();
+  const { data: adminUsers = [], isLoading } = useQuery({ queryKey: ["/api/admin-users"], queryFn: fetchAdminUsers });
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
-  // Form State
   const [newUser, setNewUser] = useState({
     name: "",
     username: "",
     password: "",
     permission: "readonly" as "readonly" | "readwrite"
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => createAdminUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin-users"] });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteAdminUserApi(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin-users"] });
+    }
   });
 
   const handleAddUser = () => {
@@ -35,8 +52,7 @@ export default function AdminSettings() {
       return;
     }
 
-    // Check if username exists
-    if (adminUsers.some(u => u.username === newUser.username)) {
+    if (adminUsers.some((u: any) => u.username === newUser.username)) {
       toast({
         variant: "destructive",
         title: "Username Taken",
@@ -45,7 +61,7 @@ export default function AdminSettings() {
       return;
     }
 
-    addAdminUser({
+    createMutation.mutate({
       name: newUser.name,
       username: newUser.username,
       password: newUser.password,
@@ -72,7 +88,7 @@ export default function AdminSettings() {
       return;
     }
 
-    deleteAdminUser(id);
+    deleteMutation.mutate(id);
     toast({
       title: "User Deleted",
       description: "Administrator account has been removed."
@@ -80,6 +96,16 @@ export default function AdminSettings() {
   };
 
   const canEdit = currentUser?.permission === "readwrite";
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -183,7 +209,7 @@ export default function AdminSettings() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {adminUsers.map((user) => (
+                {adminUsers.map((user: any) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.name}
@@ -224,5 +250,3 @@ export default function AdminSettings() {
     </Layout>
   );
 }
-
-import { ShieldCheck } from "lucide-react";

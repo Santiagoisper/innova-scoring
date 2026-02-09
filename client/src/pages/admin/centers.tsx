@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { fetchSites, registerSite as registerSiteApi, generateToken as generateTokenApi, deleteSite as deleteSiteApi } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,16 +17,16 @@ import { Search, Filter, Eye, Send, Plus, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCenters() {
-  const { sites, generateToken, registerSite, deleteSite } = useStore();
+  const { user } = useStore();
+  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites });
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Form State
   const [formData, setFormData] = useState({
-    name: "", // Site Name
+    name: "",
     code: "",
     country: "",
     city: "",
@@ -34,7 +37,21 @@ export default function AdminCenters() {
     description: ""
   });
 
-  const filteredSites = sites.filter(s => 
+  const generateTokenMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => generateTokenApi(id, user?.name || "Admin"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
+    }
+  });
+
+  const deleteSiteMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => deleteSiteApi(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
+    }
+  });
+
+  const filteredSites = sites.filter((s: any) => 
     s.status !== "Pending" && (
       s.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -43,7 +60,7 @@ export default function AdminCenters() {
   );
 
   const handleSendToken = (id: string, email: string) => {
-    generateToken(id);
+    generateTokenMutation.mutate({ id });
     toast({
       title: "Token Sent",
       description: `Access token sent to ${email}`,
@@ -52,7 +69,7 @@ export default function AdminCenters() {
 
   const handleDeleteSite = (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
-      deleteSite(id);
+      deleteSiteMutation.mutate({ id });
       toast({
         title: "Site Deleted",
         description: `${name} has been removed from the registry.`,
@@ -65,31 +82,37 @@ export default function AdminCenters() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      await registerSiteApi({
+        contactName: formData.contactName,
+        email: formData.email,
+        location: `${formData.city}, ${formData.country}`,
+        description: formData.description,
+        code: formData.code,
+        country: formData.country,
+        city: formData.city,
+        address: formData.address,
+        phone: formData.phone,
+        score: 0,
+        token: undefined
+      });
 
-    registerSite({
-      contactName: formData.contactName, // Keeping contactName as the primary name for now, or maybe I should update the store to use siteName if available. The mock data uses contactName as the main identifier in the UI often.
-      email: formData.email,
-      location: `${formData.city}, ${formData.country}`, // Backward compatibility
-      description: formData.description,
-      code: formData.code,
-      country: formData.country,
-      city: formData.city,
-      address: formData.address,
-      phone: formData.phone,
-      score: 0,
-      token: undefined
-    });
-
+      queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
+      setIsAddModalOpen(false);
+      setFormData({ name: "", code: "", country: "", city: "", address: "", contactName: "", email: "", phone: "", description: "" });
+      
+      toast({
+        title: "Site Added",
+        description: `${formData.contactName} has been successfully registered.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to add site.",
+      });
+    }
     setIsSubmitting(false);
-    setIsAddModalOpen(false);
-    setFormData({ name: "", code: "", country: "", city: "", address: "", contactName: "", email: "", phone: "", description: "" }); // Reset form
-    
-    toast({
-      title: "Site Added",
-      description: `${formData.contactName} has been successfully registered.`,
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -102,6 +125,16 @@ export default function AdminCenters() {
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -199,26 +232,7 @@ export default function AdminCenters() {
                       <Input 
                         id="contactPerson" 
                         required
-                        value={formData.name} // Using 'name' for person name to distinguish from 'contactName' which is used as Site Name in my logic above? Wait, let's fix the state mapping.
-                        // Actually in my state init: name is Site Name? No, contactName was Site Name in previous logic. 
-                        // Let's re-read the state init I just pushed: 
-                        // { name: "", code: "", country: "", city: "", address: "", contactName: "", email: "", phone: "", description: "" }
-                        // Wait, I messed up the state keys in the previous tool call.
-                        // I will fix it here in the form implementation.
-                        // Let's assume: contactName = Site Name (as per existing store usage), name = Contact Person Name?
-                        // The user said: "Nombre del sitio, un codigo de sitio... Un nombre de contacto".
-                        // In `types.ts`, `contactName` is likely the main identifier.
-                        // Let's map: Site Name -> contactName (to keep store compatible), Contact Person -> new field? 
-                        // Or maybe `contactName` was meant to be the person and the site name is missing? 
-                        // Looking at mock data: "Dr. Sarah Chen" is contactName. "University hospital..." is description.
-                        // So `contactName` is the Person. Where is the Site Name? 
-                        // The mock data doesn't have a specific "Site Name" field, it uses `contactName` as the primary header. 
-                        // User wants "Nombre del sitio" AND "Nombre de contacto".
-                        // I should add `siteName` to types.ts as well? 
-                        // Or just use `contactName` for Site Name and add `contactPerson`?
-                        // Let's add `siteName` to types.ts in a separate call if needed, or re-purpose.
-                        // The mock data uses "Dr. Sarah Chen" as the main title. 
-                        // Let's add `siteName` to `Site` interface.
+                        value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
                         placeholder="e.g. Dr. Jane Smith"
                       />
@@ -288,7 +302,7 @@ export default function AdminCenters() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSites.map((site) => (
+                {filteredSites.map((site: any) => (
                   <TableRow key={site.id}>
                     <TableCell>
                       <div className="font-medium">{site.contactName}</div>
