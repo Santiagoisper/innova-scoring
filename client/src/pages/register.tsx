@@ -209,26 +209,26 @@ export default function Register() {
             </p>
           </div>
 
-          <Card className="border-0 shadow-2xl bg-white/[0.07] backdrop-blur-xl border-white/10 ring-1 ring-white/10">
+          <Card className="border-0 shadow-2xl bg-white backdrop-blur-xl ring-1 ring-white/20">
             <CardHeader>
-              <CardTitle className="text-white">Submit Your Application</CardTitle>
-              <CardDescription className="text-blue-200/60">
+              <CardTitle className="text-slate-900">Submit Your Application</CardTitle>
+              <CardDescription className="text-slate-500">
                 Please provide your site details to apply for our clinical trial network.
               </CardDescription>
             </CardHeader>
             <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="contactName" className="text-blue-100/80">Primary Contact Name</Label>
-                <Input id="contactName" placeholder="Dr. Jane Smith" {...form.register("contactName")} className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-[#005AD2]/50 focus:ring-[#005AD2]/20" />
+                <Label htmlFor="contactName" className="text-slate-700">Primary Contact Name</Label>
+                <Input id="contactName" placeholder="Dr. Jane Smith" {...form.register("contactName")} className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[#005AD2] focus:ring-[#005AD2]/20" />
                 {form.formState.errors.contactName && (
                   <p className="text-xs text-red-400">{form.formState.errors.contactName.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-blue-100/80">Email Address</Label>
-                <Input id="email" type="email" placeholder="jane.smith@hospital.com" {...form.register("email")} className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-[#005AD2]/50 focus:ring-[#005AD2]/20" />
+                <Label htmlFor="email" className="text-slate-700">Email Address</Label>
+                <Input id="email" type="email" placeholder="jane.smith@hospital.com" {...form.register("email")} className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[#005AD2] focus:ring-[#005AD2]/20" />
                 {form.formState.errors.email && (
                   <p className="text-xs text-red-400">{form.formState.errors.email.message}</p>
                 )}
@@ -236,9 +236,9 @@ export default function Register() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="country" className="text-blue-100/80">Country</Label>
+                  <Label htmlFor="country" className="text-slate-700">Country</Label>
                   <Select onValueChange={(val) => form.setValue("country", val)} defaultValue={form.getValues("country")}>
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white [&>span]:text-white/30 focus:border-[#005AD2]/50 focus:ring-[#005AD2]/20">
+                    <SelectTrigger className="bg-white border-slate-200 text-slate-900 focus:border-[#005AD2] focus:ring-[#005AD2]/20">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
@@ -253,8 +253,8 @@ export default function Register() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="location" className="text-blue-100/80">City</Label>
-                  <Input id="location" placeholder="e.g. New York" {...form.register("location")} className="bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-[#005AD2]/50 focus:ring-[#005AD2]/20" />
+                  <Label htmlFor="location" className="text-slate-700">City</Label>
+                  <Input id="location" placeholder="e.g. New York" {...form.register("location")} className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[#005AD2] focus:ring-[#005AD2]/20" />
                   {form.formState.errors.location && (
                     <p className="text-xs text-red-400">{form.formState.errors.location.message}</p>
                   )}
@@ -262,11 +262,11 @@ export default function Register() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-blue-100/80">Site Description</Label>
+                <Label htmlFor="description" className="text-slate-700">Site Description</Label>
                 <Textarea 
                   id="description" 
                   placeholder="Describe your facilities, therapeutic areas of expertise, and patient population..." 
-                  className="min-h-[120px] bg-white/10 border-white/20 text-white placeholder:text-white/30 focus:border-[#005AD2]/50 focus:ring-[#005AD2]/20"
+                  className="min-h-[120px] bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[#005AD2] focus:ring-[#005AD2]/20"
                   {...form.register("description")} 
                 />
                 {form.formState.errors.description && (
