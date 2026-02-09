@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { seedDatabase } from "@/lib/api";
+import { Chatbot } from "@/components/chatbot";
 
 // Pages
 import Home from "@/pages/home";
@@ -60,6 +61,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <Chatbot />
       </TooltipProvider>
     </QueryClientProvider>
   );
