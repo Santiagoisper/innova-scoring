@@ -147,22 +147,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-white py-8 text-center text-sm text-muted-foreground">
-        <div className="container mx-auto space-y-4">
-          <div className="space-y-1">
-            <p className="font-semibold text-gray-900">Contact Information</p>
-            <p>104 Crandon Blvd, Suite 312</p>
-            <p>Key Biscayne, FL 33149</p>
-            <p className="mt-2">+1-(786)-351-1786</p>
-            <p className="text-primary hover:underline"><a href="mailto:info@innovatrials.com">info@innovatrials.com</a></p>
-            <p className="text-primary hover:underline"><a href="https://www.innovatrials.com" target="_blank" rel="noopener noreferrer">www.innovatrials.com</a></p>
-          </div>
-          <div className="pt-4 border-t w-full max-w-md mx-auto">
-            <p>© 2026 Innova Trials. All rights reserved.</p>
-            <p className="text-xs text-muted-foreground/60 mt-2">
-              V.1 | By Santiago Isbert Perlender, member of Innova Trials LLC Team powered by Ichtys Technology
-            </p>
-          </div>
+      <footer className="border-t bg-white py-6 text-center text-sm text-muted-foreground">
+        <div className="container mx-auto">
+          <p>© {new Date().getFullYear()} Innova Trials LLC. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -71,6 +71,27 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Contact Info Footer - Only on Home */}
+      <div className="bg-slate-50 border-t py-12 text-center text-sm text-muted-foreground">
+        <div className="container mx-auto space-y-6">
+          <div className="space-y-2">
+            <h3 className="font-heading font-bold text-lg text-gray-900 mb-4">Contact Information</h3>
+            <p className="text-base">104 Crandon Blvd, Suite 312</p>
+            <p className="text-base">Key Biscayne, FL 33149</p>
+            <p className="text-base font-medium mt-2">+1-(786)-351-1786</p>
+            <p className="text-base text-primary hover:underline"><a href="mailto:info@innovatrials.com">info@innovatrials.com</a></p>
+            <p className="text-base text-primary hover:underline"><a href="https://www.innovatrials.com" target="_blank" rel="noopener noreferrer">www.innovatrials.com</a></p>
+          </div>
+          
+          <div className="pt-8 border-t border-slate-200 w-full max-w-2xl mx-auto">
+            <p>© 2026 Innova Trials LLC. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground/60 mt-2">
+              V.1 | By Santiago Isbert Perlender, member of Innova Trials LLC Team powered by Ichtys Technology
+            </p>
+          </div>
+        </div>
+      </div>
     </Layout>
   );
 }
