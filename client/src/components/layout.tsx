@@ -155,12 +155,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t bg-white py-6 text-center text-sm text-muted-foreground">
-        <div className="container mx-auto">
-          <p>© {new Date().getFullYear()} Innova Trials LLC. All rights reserved.</p>
-        </div>
-      </footer>
+      {/* Footer - Hide on Home page as it has a custom footer */}
+      {location !== "/" && (
+        <footer className="border-t bg-white py-6 text-center text-sm text-muted-foreground">
+          <div className="container mx-auto">
+            <p>© {new Date().getFullYear()} Innova Trials LLC. All rights reserved.</p>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
