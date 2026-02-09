@@ -74,10 +74,20 @@ shared/                  # Shared code between client/server
 migrations/              # Drizzle migration files
 ```
 
+## AI Chatbot
+
+- **Floating widget**: Available on all pages via `Chatbot` component in `App.tsx`
+- **Backend**: `server/replit_integrations/chat/routes.ts` — single `/api/chat` endpoint with SSE streaming
+- **AI Provider**: Replit AI Integrations (OpenAI-compatible) via `AI_INTEGRATIONS_OPENAI_API_KEY` and `AI_INTEGRATIONS_OPENAI_BASE_URL` env vars (auto-managed)
+- **Model**: gpt-4o-mini with clinical research system prompt
+- **Design**: Stateless — conversation history is maintained client-side only (no DB persistence for chat messages)
+- **Features**: Streaming responses, suggestion buttons, clear chat, markdown formatting
+
 ## External Dependencies
 
 - **PostgreSQL**: Primary database, connected via `DATABASE_URL` environment variable. Required for the application to start.
 - **Drizzle ORM + Drizzle Kit**: Database ORM and migration tooling. Use `npm run db:push` to sync schema.
+- **OpenAI (via Replit AI Integrations)**: Powers the AI chatbot assistant. No API key management needed — handled by Replit.
 - **No external auth service**: Authentication is handled internally with plaintext password comparison (no hashing currently implemented).
 - **No email service configured in this codebase**: Though Resend is referenced in attached analysis documents as part of the original Next.js project, the current Express codebase generates tokens but doesn't send emails.
 - **Recharts**: Used for score visualization (gauge charts, bar charts).
