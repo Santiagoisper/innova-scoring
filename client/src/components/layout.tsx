@@ -66,6 +66,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Activity className="h-5 w-5" />
               <span className="font-medium">Activity Log</span>
             </Link>
+            <Link href="/admin/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              location.startsWith("/admin/settings") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+            }`}>
+              <Settings className="h-5 w-5" />
+              <span className="font-medium">Settings</span>
+            </Link>
           </nav>
 
           <div className="p-4 border-t border-white/10">
@@ -75,7 +81,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex-1 overflow-hidden">
                 <p className="text-sm font-medium truncate">{user.name}</p>
-                <p className="text-xs text-white/50 truncate">Administrator</p>
+                <div className="flex items-center gap-1">
+                   <p className="text-xs text-white/50 truncate capitalize">{user.role}</p>
+                   {user.permission === "readonly" && <span className="text-[10px] bg-white/10 px-1 rounded text-white/70">Read Only</span>}
+                </div>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start text-white/70 hover:text-white hover:bg-white/10">

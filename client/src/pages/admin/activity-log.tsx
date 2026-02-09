@@ -1,52 +1,47 @@
-import { useState } from "react";
+import { useStore } from "@/lib/store";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Activity, User, Shield, FileText, Settings, AlertTriangle } from "lucide-react";
-
-// Mock Activity Data
-const INITIAL_ACTIVITY_LOG = [
-  { id: 1, user: "Admin User", action: "Approved Site", target: "Boston General Hospital", date: "2023-10-25 14:30", type: "success" },
-  { id: 2, user: "System", action: "Token Generated", target: "Miami Research Center", date: "2023-10-25 11:15", type: "info" },
-  { id: 3, user: "Dr. Sarah Chen", action: "Submitted Evaluation", target: "Oncology Unit A", date: "2023-10-24 09:45", type: "warning" },
-  { id: 4, user: "Admin User", action: "Login", target: "Admin Portal", date: "2023-10-24 08:00", type: "info" },
-  { id: 5, user: "System", action: "Failed Login Attempt", target: "IP: 192.168.1.45", date: "2023-10-23 23:12", type: "error" },
-];
+import { Activity, User, Shield, FileText, Settings, AlertTriangle, Layers } from "lucide-react";
 
 export default function ActivityLog() {
-  const [activityLog, setActivityLog] = useState(INITIAL_ACTIVITY_LOG);
+  const { activityLog, clearActivityLog, user } = useStore();
 
   const getIcon = (type: string) => {
     switch(type) {
       case "success": return <Shield className="h-4 w-4 text-green-600" />;
       case "warning": return <FileText className="h-4 w-4 text-amber-600" />;
       case "error": return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case "info": return <Layers className="h-4 w-4 text-blue-600" />;
       default: return <Activity className="h-4 w-4 text-blue-600" />;
     }
   };
 
-  const clearLogs = () => {
+  const handleClearLogs = () => {
     if (confirm("Are you sure you want to clear the system logs?")) {
-      setActivityLog([]);
+      clearActivityLog();
     }
   };
+
+  const canClear = user?.permission === 'readwrite';
 
   return (
     <Layout>
       <div className="container mx-auto p-6 space-y-8 animate-in fade-in duration-500">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-heading font-bold text-primary relative">
-              System Activity L
-              <span 
-                className="cursor-pointer hover:text-destructive transition-colors"
-                onClick={clearLogs}
-                title="Reset Logs"
-              >
-                o
-              </span>
-              g
+            <h1 className="text-3xl font-heading font-bold text-primary relative flex items-center gap-2">
+              System Activity Log
+              {canClear && (
+                <Badge 
+                  variant="outline" 
+                  className="cursor-pointer hover:bg-destructive hover:text-white transition-colors ml-2"
+                  onClick={handleClearLogs}
+                >
+                  Clear Logs
+                </Badge>
+              )}
             </h1>
             <p className="text-muted-foreground">Audit trail of all actions performed within the platform.</p>
           </div>
@@ -79,9 +74,16 @@ export default function ActivityLog() {
                           </p>
                           <span className="text-xs text-muted-foreground">{log.date}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground bg-muted/20 p-2 rounded-md inline-block">
-                          {log.target}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-sm text-muted-foreground bg-muted/20 p-1 px-2 rounded-md inline-block">
+                            {log.target}
+                          </p>
+                          {log.sector && (
+                            <Badge variant="outline" className="text-xs font-normal">
+                              {log.sector}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

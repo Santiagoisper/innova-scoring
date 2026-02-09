@@ -13,7 +13,7 @@ export default function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useStore();
+  const { login, adminUsers } = useStore();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -24,15 +24,19 @@ export default function AdminLogin() {
     // Simulate API
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    if (username === "admin" && password === "admin") {
+    // Authenticate against adminUsers store
+    const user = adminUsers?.find(u => u.username === username && u.password === password);
+
+    if (user) {
       login({
-        id: "admin-1",
-        name: "Administrator",
-        role: "admin"
+        id: user.id,
+        name: user.name,
+        role: "admin",
+        permission: user.permission
       });
       toast({
         title: "Admin Access Granted",
-        description: "Redirecting to dashboard...",
+        description: `Welcome back, ${user.name}.`,
       });
       setLocation("/admin");
     } else {

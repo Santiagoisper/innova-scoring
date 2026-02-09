@@ -51,4 +51,26 @@ export interface User {
   name: string;
   role: "admin" | "site";
   siteId?: string;
+  permission?: "readonly" | "readwrite";
+}
+
+export type Permission = "readonly" | "readwrite";
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  name: string;
+  password?: string; 
+  permission: Permission;
+  role: "admin";
+}
+
+export interface ActivityLogEntry {
+  id: number;
+  user: string;
+  action: string;
+  target: string;
+  date: string;
+  type: "success" | "info" | "warning" | "error";
+  sector?: string;
 }

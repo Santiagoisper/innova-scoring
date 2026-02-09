@@ -19,6 +19,7 @@ import SiteEvaluation from "@/pages/site/evaluation.tsx";
 import ExportResults from "@/pages/admin/export.tsx";
 import ContactRequests from "@/pages/admin/contact-requests.tsx";
 import ActivityLog from "@/pages/admin/activity-log.tsx";
+import AdminSettings from "@/pages/admin/settings.tsx";
 
 function Router() {
   return (
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/admin/export" component={ExportResults} />
       <Route path="/admin/contact-requests" component={ContactRequests} />
       <Route path="/admin/activity-log" component={ActivityLog} />
+      <Route path="/admin/settings" component={AdminSettings} />
 
       {/* Site Routes */}
       <Route path="/site/disclaimer" component={SiteDisclaimer} />
