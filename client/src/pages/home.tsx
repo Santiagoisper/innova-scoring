@@ -18,11 +18,23 @@ export default function Home() {
         
         {/* Hero Section */}
         <section className="pt-12 pb-24 px-4 text-center bg-white relative overflow-hidden">
+          <style>{`
+            @keyframes heroFloat {
+              0% { transform: scale(1.05) translate(0, 0); }
+              25% { transform: scale(1.1) translate(-10px, -5px); }
+              50% { transform: scale(1.05) translate(5px, -10px); }
+              75% { transform: scale(1.1) translate(-5px, 5px); }
+              100% { transform: scale(1.05) translate(0, 0); }
+            }
+          `}</style>
           <div 
-            className="absolute inset-0 bg-cover bg-center opacity-30"
-            style={{ backgroundImage: "url('/images/hero-bg.png')" }}
+            className="absolute -inset-10 bg-cover bg-center opacity-60"
+            style={{ 
+              backgroundImage: "url('/images/hero-bg.png')",
+              animation: "heroFloat 20s ease-in-out infinite"
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/70 to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/50 to-white" />
           <div className="container mx-auto max-w-4xl relative z-10">
             <div className="flex justify-center mb-8">
               <img src="/images/innova-logo-full.png" alt="Innova Trials - Innovating science, caring for life" className="h-20 md:h-28 object-contain" data-testid="img-logo-home-hero" />
