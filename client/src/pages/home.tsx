@@ -51,25 +51,28 @@ export default function Home() {
               <span className="text-blue-600">with Precision</span>
             </h1>
             
-            <p className="text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl text-slate-800 font-medium mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
               A comprehensive platform for clinical research organizations to assess, score, and benchmark investigational sites across key criteria.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
               <Button 
                 size="lg" 
-                className="bg-slate-900 text-white hover:bg-slate-800 h-12 px-8 text-base rounded-md"
+                className="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white h-14 px-10 text-base rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 border border-blue-400/20 overflow-hidden group"
                 onClick={() => setLocation("/login/site")}
+                data-testid="button-client-portal"
               >
-                <LayoutDashboard className="mr-2 h-4 w-4" /> Client Portal <ArrowRight className="ml-2 h-4 w-4" />
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <LayoutDashboard className="mr-2 h-5 w-5" /> Client Portal <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button 
                 size="lg" 
-                variant="outline" 
-                className="border-slate-200 text-slate-700 hover:bg-slate-50 h-12 px-8 text-base rounded-md"
+                className="relative h-14 px-10 text-base rounded-full border-2 border-slate-700 text-slate-800 bg-white/70 backdrop-blur-sm hover:bg-slate-900 hover:text-white hover:border-slate-900 hover:scale-105 hover:shadow-lg hover:shadow-slate-500/20 transition-all duration-300 overflow-hidden group"
                 onClick={() => setLocation("/login/admin")}
+                data-testid="button-admin-access"
               >
-                <ShieldCheck className="mr-2 h-4 w-4" /> Admin Access
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <ShieldCheck className="mr-2 h-5 w-5" /> Admin Access
               </Button>
             </div>
           </div>
