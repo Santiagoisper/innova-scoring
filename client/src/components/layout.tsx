@@ -118,7 +118,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 w-full border-b bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setLocation("/")}>
-            <img src="/images/innova-logo.png" alt="Innova Trials" className="h-9 w-9 object-contain brightness-0 invert" data-testid="img-logo-public-navbar" />
             <span className="font-heading font-semibold text-xl tracking-tight">Innova Trials LLC</span>
           </div>
 
