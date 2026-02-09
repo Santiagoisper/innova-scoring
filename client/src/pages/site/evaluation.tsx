@@ -24,7 +24,7 @@ export default function SiteEvaluation() {
   
   const form = useForm();
 
-  if (!user || user.role !== "site") {
+  if (!user || user.role !== "site" || !user.siteId) {
     return <div>Unauthorized</div>;
   }
 

@@ -328,15 +328,17 @@ export default function CenterDetail() {
                         let answerValue = "";
                         let attachments: any[] = [];
                         
-                        if (typeof answerEntry === 'object' && answerEntry !== null && 'value' in answerEntry) {
-                          answerValue = answerEntry.value;
-                          if (answerEntry.attachment) {
-                             attachments = Array.isArray(answerEntry.attachment) 
-                                ? answerEntry.attachment 
-                                : [answerEntry.attachment];
+                        if (typeof answerEntry === 'object' && answerEntry !== null && !Array.isArray(answerEntry)) {
+                          if ('value' in answerEntry) {
+                            answerValue = String(answerEntry.value || "");
+                            if (answerEntry.attachment) {
+                               attachments = Array.isArray(answerEntry.attachment) 
+                                  ? answerEntry.attachment 
+                                  : [answerEntry.attachment];
+                            }
                           }
-                        } else if (answerEntry) {
-                          answerValue = answerEntry as string;
+                        } else if (answerEntry !== undefined && answerEntry !== null && typeof answerEntry !== 'object') {
+                          answerValue = String(answerEntry);
                         }
                         
                         return (
