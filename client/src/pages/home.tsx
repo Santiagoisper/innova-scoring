@@ -20,21 +20,26 @@ export default function Home() {
         <section className="pt-12 pb-24 px-4 text-center bg-white relative overflow-hidden">
           <style>{`
             @keyframes heroFloat {
-              0% { transform: scale(1.05) translate(0, 0); }
-              25% { transform: scale(1.1) translate(-10px, -5px); }
-              50% { transform: scale(1.05) translate(5px, -10px); }
-              75% { transform: scale(1.1) translate(-5px, 5px); }
-              100% { transform: scale(1.05) translate(0, 0); }
+              0% { transform: scale(1.1) translate(0, 0) rotate(0deg); }
+              20% { transform: scale(1.15) translate(-20px, -15px) rotate(0.5deg); }
+              40% { transform: scale(1.1) translate(15px, -20px) rotate(-0.5deg); }
+              60% { transform: scale(1.2) translate(-10px, 10px) rotate(0.3deg); }
+              80% { transform: scale(1.15) translate(20px, -5px) rotate(-0.3deg); }
+              100% { transform: scale(1.1) translate(0, 0) rotate(0deg); }
+            }
+            @keyframes heroPulse {
+              0%, 100% { opacity: 0.75; }
+              50% { opacity: 0.9; }
             }
           `}</style>
           <div 
-            className="absolute -inset-10 bg-cover bg-center opacity-60"
+            className="absolute -inset-20 bg-cover bg-center"
             style={{ 
               backgroundImage: "url('/images/hero-bg.png')",
-              animation: "heroFloat 20s ease-in-out infinite"
+              animation: "heroFloat 12s ease-in-out infinite, heroPulse 6s ease-in-out infinite"
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/50 to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/40 to-white/90" />
           <div className="container mx-auto max-w-4xl relative z-10">
             <div className="flex justify-center mb-8">
               <img src="/images/innova-logo-full.png" alt="Innova Trials - Innovating science, caring for life" className="h-20 md:h-28 object-contain" data-testid="img-logo-home-hero" />
