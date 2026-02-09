@@ -104,12 +104,11 @@ export default function SiteEvaluation() {
     });
 
     submitEvaluation(user.siteId, richAnswers);
-      setIsSubmitted(true);
-      toast({
-        title: "Evaluation Submitted",
-        description: "Your responses have been recorded.",
-      });
-    }
+    setIsSubmitted(true);
+    toast({
+      title: "Evaluation Submitted",
+      description: "Your responses have been recorded.",
+    });
   };
 
   if (isSubmitted) {
