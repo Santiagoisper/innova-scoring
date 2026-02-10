@@ -1,0 +1,141 @@
+Quiero que revises y, SOLO SI ES NECESARIO, mejores el motor de scoring de mi app sin cambiar nada visual.
+
+Contexto técnico:
+
+Admin: EvaluationSetup en React (TypeScript). Ahí defino:
+
+questions con campos: id, text, type ("YesNo" o "Text"), category, weight, enabled, isKnockOut, keywords.
+
+El admin ve Total Weight como suma de q.weight de las preguntas enabled.
+
+Cliente: SiteEvaluation:
+
+Renderiza los activeQuestions (solo enabled !== false).
+
+Para YesNo uso un control de 1 a 5 estrellas (Star), guardado en field.value.
+
+Al enviar el formulario:
+
+Armo richAnswers como { [questionId]: { value, attachment? } }.
+
+Llamo a calculateScore(richAnswers, questions) desde @/lib/questions.
+
+Uso result.score y result.status para guardar en la DB y mostrar estados ("Approved", "ToConsider", "Rejected").
+
+Lógica actual en @/lib/questions.ts (NO la destruyas, quiero que la valides y, si hace falta, la ajustes fino):
+
+starFactor(stars):
+
+1 → 0
+
+2 → 0.5
+
+3 → 1
+
+4 → 1.1
+
+5 → 1.2
+
+getStarsFromAnswer:
+
+Si es número 1–5 → lo toma.
+
+Si es "Yes" → 3.
+
+Si es "No" → 1.
+
+Si es texto "NA"/"N/A" → 3.
+
+Si es Text con longitud > 5 → 3.
+
+calcularScoreGlobal(preguntas):
+
+totalScoreBruto = sum(pesoPregunta * starFactor(stars)).
+
+sumaPesos = sum(pesoPregunta).
+
+scoreGlobal = (totalScoreBruto / sumaPesos) * 100.
+
+classificarSitio(preguntas, categoriasCriticas, minimoCritico):
+
+KO: si isKO === true y stars <= 2 → "No Aprobado (KO)".
+
+Calcula categoryScores por categoría (weighted avg * 100).
+
+Si alguna categoría en CRITICAL_CATEGORIES ("Quality Management", "Patient Safety") < 60 → "No Aprobado (Bloque crítico)".
+
+Si pasa lo anterior:
+
+scoreGlobal ≥ 80 → "Sobresaliente".
+
+scoreGlobal ≥ 50 → "Aprobado".
+
+scoreGlobal < 50 → "No Aprobado".
+
+calculateScore(answers, questions):
+
+Filtra questions por enabled.
+
+Para cada pregunta, calcula stars con getStarsFromAnswer.
+
+Arma array preguntas = { pesoPregunta: q.weight, stars, categoria: q.category, isKO: q.isKnockOut ?? false }.
+
+Llama a classificarSitio.
+
+Mapea a:
+
+classification: "Sobresaliente" | "Aprobado" | "No Aprobado" | "No Aprobado (KO)" | "No Aprobado (Bloque crítico)".
+
+status:
+
+Si KO o "No Aprobado" → "Rejected".
+
+Si "Sobresaliente" → "Approved".
+
+Si "Aprobado" → "Conditional".
+
+Lo que necesito de vos (modelo):
+
+Validar que el motor de scoring implementa correctamente estas ideas:
+
+Escala 1–5 estrellas como tipo Likert, convertida a factor 0–1.2.
+
+Promedio ponderado por weight para score global y por categoría.
+
+KO real (preguntas isKnockOut) que descalifican con estrellas 1–2.
+
+Mínimo de 60% en categorías críticas antes de aprobar.
+
+Umbrales globales: <50 No Aprobado, 50–79 Aprobado, ≥80 Sobresaliente.
+
+Sin cambiar ningún componente visual ni la forma en que se guardan las respuestas:
+
+Sugerir SOLO ajustes pequeños si detectás algún problema matemático o de bordes (por ejemplo, qué pasa si no hay respuestas, si todas son Text, etc.).
+
+Si proponés cambios, devolveme el archivo @/lib/questions.ts completo, listo para copiar/pegar, manteniendo las firmas:
+
+starFactor
+
+getStarsFromAnswer
+
+calcularScoreGlobal
+
+classificarSitio
+
+calculateScore
+
+No quiero que toques:
+
+EvaluationSetup.tsx
+
+SiteEvaluation.tsx
+
+Tipos de datos de Question
+
+El shape del resultado de calculateScore.
+
+Tu salida debe ser:
+
+O bien “todo está correcto, no es necesario cambiar nada”.
+
+O bien el código completo actualizado de @/lib/questions.ts con cambios mínimos y comentados, manteniendo el comportamiento visual intacto.
