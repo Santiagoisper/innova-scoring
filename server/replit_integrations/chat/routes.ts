@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import OpenAI from "openai";
+import { storage } from "../../storage";
 
 let _openai: OpenAI | null = null;
 
@@ -32,10 +33,24 @@ Guidelines:
 export function registerChatRoutes(app: Express): void {
   app.post("/api/chat", async (req: Request, res: Response) => {
     try {
-      const { message, history = [] } = req.body;
+      const { message, history = [], sessionId, userType, userName } = req.body;
 
       if (!message) {
         return res.status(400).json({ error: "Message is required" });
+      }
+
+      const chatSessionId = sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+
+      try {
+        await storage.createChatLog({
+          sessionId: chatSessionId,
+          role: "user",
+          content: message,
+          userType: userType || null,
+          userName: userName || null,
+        });
+      } catch (e) {
+        console.error("Failed to save user chat log:", e);
       }
 
       const chatMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
@@ -68,7 +83,19 @@ export function registerChatRoutes(app: Express): void {
         }
       }
 
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      try {
+        await storage.createChatLog({
+          sessionId: chatSessionId,
+          role: "assistant",
+          content: fullResponse,
+          userType: userType || null,
+          userName: userName || null,
+        });
+      } catch (e) {
+        console.error("Failed to save assistant chat log:", e);
+      }
+
+      res.write(`data: ${JSON.stringify({ done: true, sessionId: chatSessionId })}\n\n`);
       res.end();
     } catch (error) {
       console.error("Error in chat:", error);

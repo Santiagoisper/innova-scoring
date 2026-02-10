@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogOut, Building2, ClipboardCheck, MessageSquare, Activity, Settings } from "lucide-react";
+import { LayoutDashboard, LogOut, Building2, ClipboardCheck, MessageSquare, Activity, Settings, MessageCircle } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -75,6 +75,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Activity className="h-5 w-5" />
               <span className="font-medium">Activity Log</span>
             </Link>
+            <Link href="/admin/chat-logs" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              location.startsWith("/admin/chat-logs") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+            }`}>
+              <MessageCircle className="h-5 w-5" />
+              <span className="font-medium">Chat Logs</span>
+            </Link>
             <Link href="/admin/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
               location.startsWith("/admin/settings") ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
             }`}>
@@ -111,7 +117,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                location.startsWith("/admin/evaluation-setup") ? "Evaluation Setup" :
                location.startsWith("/admin/export") ? "Export Data" :
                location.startsWith("/admin/contact-requests") ? "Contact Requests" :
-               location.startsWith("/admin/activity-log") ? "Activity Log" : "Admin Portal"}
+               location.startsWith("/admin/activity-log") ? "Activity Log" :
+               location.startsWith("/admin/chat-logs") ? "AI Chat Logs" : "Admin Portal"}
             </h1>
           </header>
           <div className="flex-1 p-0">

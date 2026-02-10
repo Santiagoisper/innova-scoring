@@ -23,6 +23,7 @@ import ExportResults from "@/pages/admin/export.tsx";
 import ContactRequests from "@/pages/admin/contact-requests.tsx";
 import ActivityLog from "@/pages/admin/activity-log.tsx";
 import AdminSettings from "@/pages/admin/settings.tsx";
+import ChatLogs from "@/pages/admin/chat-logs.tsx";
 
 function Router() {
   return (
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/admin/contact-requests" component={ContactRequests} />
       <Route path="/admin/activity-log" component={ActivityLog} />
       <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin/chat-logs" component={ChatLogs} />
 
       {/* Site Routes */}
       <Route path="/site/disclaimer" component={SiteDisclaimer} />

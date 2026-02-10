@@ -130,3 +130,9 @@ export async function seedDatabase() {
   const res = await apiRequest("POST", "/api/seed");
   return res.json();
 }
+
+export async function fetchChatLogs() {
+  const res = await fetch("/api/chat-logs", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch chat logs");
+  return res.json();
+}

@@ -32,6 +32,7 @@ export const sites = pgTable("sites", {
   updatedAt: timestamp("updated_at").defaultNow(),
   evaluatedAt: timestamp("evaluated_at"),
   evaluatedBy: text("evaluated_by"),
+  tokenSentAt: timestamp("token_sent_at"),
 });
 
 export const questions = pgTable("questions", {
@@ -56,10 +57,21 @@ export const activityLog = pgTable("activity_log", {
   sector: text("sector"),
 });
 
+export const chatLogs = pgTable("chat_logs", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  userType: text("user_type"),
+  userName: text("user_name"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: true });
 export const insertSiteSchema = createInsertSchema(sites).omit({ id: true, registeredAt: true, updatedAt: true });
 export const insertQuestionSchema = createInsertSchema(questions).omit({ id: true });
 export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id: true, date: true });
+export const insertChatLogSchema = createInsertSchema(chatLogs).omit({ id: true, createdAt: true });
 
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type AdminUser = typeof adminUsers.$inferSelect;
@@ -69,3 +81,5 @@ export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
 export type Question = typeof questions.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLogEntry = typeof activityLog.$inferSelect;
+export type InsertChatLog = z.infer<typeof insertChatLogSchema>;
+export type ChatLog = typeof chatLogs.$inferSelect;

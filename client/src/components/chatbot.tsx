@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, Send, Loader2, Trash2, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useStore } from "@/lib/store";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -12,8 +13,10 @@ export function Chatbot() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { user } = useStore();
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,6 +43,9 @@ export function Chatbot() {
         body: JSON.stringify({
           message: userMessage,
           history: currentHistory.slice(-10),
+          sessionId: sessionId,
+          userType: user?.role || "anonymous",
+          userName: user?.name || "Anonymous",
         }),
       });
 
@@ -61,7 +67,12 @@ export function Chatbot() {
         for (const line of lines) {
           try {
             const data = JSON.parse(line.slice(6));
-            if (data.done) break;
+            if (data.done) {
+              if (data.sessionId && !sessionId) {
+                setSessionId(data.sessionId);
+              }
+              break;
+            }
             if (data.error) throw new Error(data.error);
             if (data.content) {
               assistantContent += data.content;
@@ -86,7 +97,7 @@ export function Chatbot() {
     } finally {
       setIsStreaming(false);
     }
-  }, []);
+  }, [sessionId, user]);
 
   const sendMessage = useCallback(async () => {
     if (!input.trim() || isStreaming) return;
@@ -114,6 +125,7 @@ export function Chatbot() {
 
   const clearChat = () => {
     setMessages([]);
+    setSessionId(null);
   };
 
   const formatMessage = (content: string) => {

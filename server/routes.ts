@@ -174,6 +174,7 @@ export async function registerRoutes(
       const updated = await storage.updateSite(req.params.id, {
         token,
         status: "TokenSent",
+        tokenSentAt: new Date(),
       });
       if (updated) {
         if (req.body.adminName) {
@@ -342,6 +343,37 @@ export async function registerRoutes(
     try {
       await storage.clearActivityLog();
       res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== CHAT LOGS ==========
+  app.get("/api/chat-logs", async (_req, res) => {
+    try {
+      const logs = await storage.getAllChatLogs();
+      const sessions: Record<string, any> = {};
+      logs.forEach(log => {
+        if (!sessions[log.sessionId]) {
+          sessions[log.sessionId] = {
+            sessionId: log.sessionId,
+            userType: log.userType,
+            userName: log.userName,
+            startedAt: log.createdAt,
+            messages: [],
+          };
+        }
+        sessions[log.sessionId].messages.push({
+          id: log.id,
+          role: log.role,
+          content: log.content,
+          createdAt: log.createdAt,
+        });
+      });
+      const sessionList = Object.values(sessions).sort(
+        (a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+      );
+      res.json(sessionList);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

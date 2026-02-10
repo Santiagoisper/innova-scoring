@@ -1,11 +1,12 @@
 import { eq, desc } from "drizzle-orm";
 import { db } from "./db";
 import {
-  adminUsers, sites, questions, activityLog,
+  adminUsers, sites, questions, activityLog, chatLogs,
   type AdminUser, type InsertAdminUser,
   type Site, type InsertSite,
   type Question, type InsertQuestion,
   type ActivityLogEntry, type InsertActivityLog,
+  type ChatLog, type InsertChatLog,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -34,11 +35,16 @@ export interface IStorage {
   createActivityLog(entry: InsertActivityLog): Promise<ActivityLogEntry>;
   clearActivityLog(): Promise<void>;
 
+  getAllChatLogs(): Promise<ChatLog[]>;
+  createChatLog(entry: InsertChatLog): Promise<ChatLog>;
+  getChatLogsBySession(sessionId: string): Promise<ChatLog[]>;
+
   getStats(): Promise<{
     totalSites: number;
     activeQuestions: number;
     categories: number;
     completedEvaluations: number;
+    avgResponseTimeDays: number | null;
   }>;
 }
 
@@ -146,11 +152,25 @@ export class DatabaseStorage implements IStorage {
     await db.delete(activityLog);
   }
 
+  async getAllChatLogs(): Promise<ChatLog[]> {
+    return db.select().from(chatLogs).orderBy(desc(chatLogs.createdAt));
+  }
+
+  async createChatLog(entry: InsertChatLog): Promise<ChatLog> {
+    const [created] = await db.insert(chatLogs).values(entry).returning();
+    return created;
+  }
+
+  async getChatLogsBySession(sessionId: string): Promise<ChatLog[]> {
+    return db.select().from(chatLogs).where(eq(chatLogs.sessionId, sessionId)).orderBy(chatLogs.createdAt);
+  }
+
   async getStats(): Promise<{
     totalSites: number;
     activeQuestions: number;
     categories: number;
     completedEvaluations: number;
+    avgResponseTimeDays: number | null;
   }> {
     const allSites = await db.select().from(sites);
     const allQuestions = await db.select().from(questions);
@@ -162,11 +182,25 @@ export class DatabaseStorage implements IStorage {
       s.status === "Completed" || s.status === "Approved" || s.status === "Rejected" || s.status === "ToConsider"
     );
 
+    let avgResponseTimeDays: number | null = null;
+    const sitesWithResponseTime = allSites.filter(s =>
+      s.tokenSentAt && s.evaluatedAt
+    );
+    if (sitesWithResponseTime.length > 0) {
+      const totalDays = sitesWithResponseTime.reduce((sum, s) => {
+        const sent = new Date(s.tokenSentAt!).getTime();
+        const completed = new Date(s.evaluatedAt!).getTime();
+        return sum + (completed - sent) / (1000 * 60 * 60 * 24);
+      }, 0);
+      avgResponseTimeDays = Math.round((totalDays / sitesWithResponseTime.length) * 10) / 10;
+    }
+
     return {
       totalSites: allSites.length,
       activeQuestions: activeQuestions.length,
       categories: categories.length,
       completedEvaluations: completedEvaluations.length,
+      avgResponseTimeDays,
     };
   }
 }

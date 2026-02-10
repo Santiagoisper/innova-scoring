@@ -80,8 +80,14 @@ migrations/              # Drizzle migration files
 - **Backend**: `server/replit_integrations/chat/routes.ts` — single `/api/chat` endpoint with SSE streaming
 - **AI Provider**: Replit AI Integrations (OpenAI-compatible) via `AI_INTEGRATIONS_OPENAI_API_KEY` and `AI_INTEGRATIONS_OPENAI_BASE_URL` env vars (auto-managed)
 - **Model**: gpt-4o-mini with clinical research system prompt
-- **Design**: Stateless — conversation history is maintained client-side only (no DB persistence for chat messages)
-- **Features**: Streaming responses, suggestion buttons, clear chat, markdown formatting
+- **Persistence**: Chat messages are saved to `chat_logs` table with sessionId, role, userType, userName
+- **Admin View**: `/admin/chat-logs` page shows all chat sessions grouped by sessionId, expandable conversations, summary stats
+- **Features**: Streaming responses, suggestion buttons, clear chat, markdown formatting, session tracking
+
+## Dashboard Metrics
+
+- **Average Response Time**: Calculated from `tokenSentAt` to `evaluatedAt` on sites table, displayed in days on admin dashboard
+- Sites table has `tokenSentAt` timestamp field set when tokens are generated
 
 ## External Dependencies
 

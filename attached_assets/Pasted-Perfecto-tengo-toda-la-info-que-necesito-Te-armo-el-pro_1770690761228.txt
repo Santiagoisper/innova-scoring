@@ -1,0 +1,103 @@
+Perfecto, tengo toda la info que necesito. Te armo el prompt listo para copiar y pegar en Replit Agent:
+
+Acá tenés el prompt completo. Copialo tal cual en el chat del Replit Agent:
+
+text
+Necesito que hagas los siguientes cambios para limpiar metadata y profesionalizar el deployment. 
+NO cambies ninguna funcionalidad, lógica de negocio, ni diseño visual. Solo tocá lo que te indico:
+
+## 1. Corregir meta tags en index.html (client/index.html o donde esté)
+
+Reemplazá TODAS las referencias a "innova-scoring-web.replit.app" por "innovasitescoring.com".
+
+Cambiar:
+  <meta property="og:image" content="https://innova-scoring-web.replit.app/opengraph.jpg" />
+  <meta name="twitter:image" content="https://innova-scoring-web.replit.app/opengraph.jpg" />
+
+Por:
+  <meta property="og:image" content="https://innovasitescoring.com/opengraph.jpg" />
+  <meta name="twitter:image" content="https://innovasitescoring.com/opengraph.jpg" />
+
+Asegurate de que el archivo opengraph.jpg exista en la carpeta pública (public/ o dist/).
+
+Además, agregá estas meta tags si no existen:
+  <meta name="generator" content="Innova Trials Platform" />
+  <meta name="author" content="Innova Trials" />
+
+## 2. Agregar robots.txt como archivo estático
+
+Creá un archivo robots.txt en la carpeta pública (public/) con este contenido:
+
+User-agent: *
+Allow: /
+Sitemap: https://innovasitescoring.com/sitemap.xml
+
+## 3. Agregar sitemap.xml básico
+
+Creá un archivo sitemap.xml en la carpeta pública con:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://innovasitescoring.com/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://innovasitescoring.com/login/admin</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://innovasitescoring.com/login/site</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://innovasitescoring.com/register</loc>
+    <priority>0.7</priority>
+  </url>
+</urlset>
+
+## 4. Redirect de replit.app al dominio custom
+
+En el servidor Express (server/index.ts o similar), agregá un middleware 
+AL PRINCIPIO de la cadena de middlewares (antes de las rutas) que haga:
+
+Si el header "host" contiene "replit.app" o "repl.co", redirigir con 301 
+a la misma ruta pero en https://innovasitescoring.com
+
+Ejemplo:
+app.use((req, res, next) => {
+  const host = req.headers.host || '';
+  if (host.includes('replit.app') || host.includes('repl.co')) {
+    return res.redirect(301, `https://innovasitescoring.com${req.originalUrl}`);
+  }
+  next();
+});
+
+## 5. Asegurar que robots.txt y sitemap.xml se sirvan correctamente
+
+En el servidor Express, ANTES del middleware que sirve la SPA (el catch-all 
+que devuelve index.html), agregá rutas estáticas explícitas para estos archivos:
+
+app.get('/robots.txt', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/robots.txt'));
+});
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml');
+  res.sendFile(path.join(__dirname, '../public/sitemap.xml'));
+});
+
+Ajustá las rutas según la estructura real del proyecto.
+
+## 6. Buscar en TODO el código fuente cualquier otra referencia a "replit"
+
+Hacé un search global en el proyecto por "replit", "repl.app", "repl.co" y 
+"replit.app". Si encontrás alguna referencia en comentarios, configs, 
+variables de entorno, o cualquier archivo, reemplazala o eliminala.
+
+## IMPORTANTE
+- No cambies NADA de la lógica de la aplicación
+- No cambies el diseño ni los estilos
+- No cambies las dependencias ni el package.json (salvo que sea estrictamente necesario)
+- No toques la base de datos ni los schemas
+- Después de los cambios, verificá que el build funcione correctamente
+- Mostrá un resumen de todos los archivos que modificaste

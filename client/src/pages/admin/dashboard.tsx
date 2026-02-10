@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
 import { useQuery } from "@tanstack/react-query";
-import { fetchSites } from "@/lib/api";
+import { fetchSites, fetchStats } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,13 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell 
 } from "recharts";
-import { Users, FileText, CheckCircle2, AlertTriangle, TrendingUp, ArrowRight, Loader2 } from "lucide-react";
+import { Users, FileText, CheckCircle2, AlertTriangle, TrendingUp, ArrowRight, Loader2, Clock } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user } = useStore();
   const [, setLocation] = useLocation();
   const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites });
+  const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: fetchStats });
 
   if (user?.role !== "admin") {
     return <div className="p-4">Access Denied</div>;
@@ -82,14 +83,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Registrations</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalSites}</div>
+              <div data-testid="text-total-registrations" className="text-2xl font-bold">{totalSites}</div>
               <p className="text-xs text-muted-foreground">Across all regions</p>
             </CardContent>
           </Card>
@@ -99,7 +100,7 @@ export default function AdminDashboard() {
               <FileText className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pendingSites}</div>
+              <div data-testid="text-pending-review" className="text-2xl font-bold">{pendingSites}</div>
               <p className="text-xs text-muted-foreground">Awaiting tokens</p>
             </CardContent>
           </Card>
@@ -109,7 +110,7 @@ export default function AdminDashboard() {
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{approvalRate}%</div>
+              <div data-testid="text-approval-rate" className="text-2xl font-bold">{approvalRate}%</div>
               <p className="text-xs text-muted-foreground">Of evaluated sites</p>
             </CardContent>
           </Card>
@@ -119,12 +120,24 @@ export default function AdminDashboard() {
               <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div data-testid="text-avg-network-score" className="text-2xl font-bold">
                 {evaluatedSites.length > 0 
                   ? Math.round(evaluatedSites.reduce((acc: number, s: any) => acc + (s.score || 0), 0) / evaluatedSites.length) 
                   : 0}
               </div>
               <p className="text-xs text-muted-foreground">Benchmarked globally</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg. Response Time</CardTitle>
+              <Clock className="h-4 w-4 text-amber-600" />
+            </CardHeader>
+            <CardContent>
+              <div data-testid="text-avg-response-time" className="text-2xl font-bold">
+                {stats?.avgResponseTimeDays != null ? `${stats.avgResponseTimeDays}d` : "N/A"}
+              </div>
+              <p className="text-xs text-muted-foreground">Token to completion</p>
             </CardContent>
           </Card>
         </div>
