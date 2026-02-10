@@ -1,0 +1,95 @@
+Usá este prompt tal cual en Replit (apuntado al proyecto de innovasitescoring.com):
+
+Quiero que revises exhaustivamente mi app ya desplegada en este Repl y limpies cualquier traza residual de Replit en el FRONTEND público, sin romper nada de funcionalidad ni de diseño.
+
+Objetivo: asegurar que, visto desde afuera (código fuente, recursos estáticos, scripts, cookies accesibles al navegador), no haya ninguna referencia visible a:
+
+replit
+
+replit.com
+
+replit.app
+
+repl.co
+
+Instrucciones concretas:
+
+Revisá el HTML público
+
+Abrí el archivo HTML principal (por ejemplo client/index.html o el equivalente).
+
+Buscá en TODO el documento: “replit”, “replit.app”, “repl.co”.
+
+Confirmá que:
+
+Las meta tags og:image y twitter:image ya usan https://innovasitescoring.com/… y NO dominios de Replit.
+
+No haya comentarios HTML ni meta tags que mencionen Replit, AI, agentes, plataformas, etc.
+
+Si encontrás algo, eliminá o reemplazá por referencias neutras a la plataforma “Innova Trials”.
+
+Revisá todos los recursos estáticos
+
+Inspeccioná la carpeta pública (public/, client/public/ o equivalente):
+
+robots.txt
+
+sitemap.xml
+
+manifest.json
+
+cualquier otro archivo estático (icons, opengraph, etc.)
+
+Abrí cada archivo de texto y buscá “replit”, “replit.app”, “repl.co”.
+
+Corrigí cualquier URL vieja de Replit para que apunte a https://innovasitescoring.com/ o dejala vacía si no aplica.
+
+Revisá el bundle JS y los imports
+
+Buscá globalmente en el proyecto (search en todo el repo) las cadenas:
+
+"replit"
+
+"replit.app"
+
+"repl.co"
+
+Si aparecen en código que se ejecuta en el cliente (React, hooks, config de front, etc.), limpiá o reemplazá por valores neutros o por el dominio innovasitescoring.com.
+
+No cambies la lógica de negocio ni las rutas; solo limpiá comentarios, constantes de tracking o configuraciones que mencionen Replit.
+
+Revisá scripts de terceros / telemetría
+
+Buscá si se carga algún script remoto cuyo dominio sea de Replit (por ejemplo, scripts de analytics o telemetría de Replit).
+
+Si existe alguno que no sea imprescindible para el funcionamiento, eliminá su inclusión del HTML o del código.
+
+No agregues nuevos trackers; solo eliminá los de Replit si hay.
+
+Mantener intacto lo siguiente
+
+No cambies nada de:
+
+Lógica de scoring, formularios, rutas, API calls, base de datos.
+
+Diseño, CSS, componentes visuales (Buttons, Badges, Layouts, etc.).
+
+Dependencias de package.json (salvo que sea indispensable para remover un script de Replit).
+
+Verificación final (simulada)
+
+Simulá que hacés:
+
+view-source:https://innovasitescoring.com
+
+Un listado de recursos estáticos y scripts cargados.
+
+Confirmame en texto:
+
+Qué archivos tocaste.
+
+Que ya no existe ninguna ocurrencia de “replit”, “replit.app” ni “repl.co” en el código que se expone al navegador (HTML, JS público, estáticos).
+
+Que la única mención posible a Replit queda, si acaso, en código de backend del redirect (host header), que no se ve en view-source.
+
+IMPORTANTE:
