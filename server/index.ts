@@ -33,6 +33,14 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+app.use((req, res, next) => {
+  const host = req.headers.host || '';
+  if (host.includes('replit.app') || host.includes('repl.co')) {
+    return res.redirect(301, `https://innovasitescoring.com${req.originalUrl}`);
+  }
+  next();
+});
+
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
