@@ -124,7 +124,7 @@ export default function SiteEvaluation() {
     }
 
     try {
-      await submitEvaluationApi(user.siteId, { answers: richAnswers, score, status });
+      await submitEvaluationApi(user.siteId!, { answers: richAnswers, score, status });
       setIsSubmitted(true);
       toast({
         title: "Evaluation Submitted",
@@ -167,7 +167,7 @@ export default function SiteEvaluation() {
     );
   }
 
-  const categories = Array.from(new Set(activeQuestions.map((q: any) => q.category)));
+  const categories: string[] = Array.from(new Set(activeQuestions.map((q: any) => q.category as string)));
 
   return (
     <Layout>
@@ -178,10 +178,10 @@ export default function SiteEvaluation() {
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {categories.map(category => (
+          {categories.map((category: string) => (
             <Card key={category} className="shadow-md">
               <CardHeader className="bg-muted/30 border-b">
-                <CardTitle className="text-xl">{category}</CardTitle>
+                <CardTitle className="text-xl">{category as string}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
                 {activeQuestions.filter((q: any) => q.category === category).map((q: any, idx: number) => (
