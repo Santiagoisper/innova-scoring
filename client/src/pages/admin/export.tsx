@@ -20,30 +20,44 @@ export default function ExportResults() {
     (s.location && s.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const escapeCSV = (value: any): string => {
+    const str = String(value ?? "");
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
+  const downloadCSV = (csvString: string, filename: string) => {
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportCSV = () => {
     const headers = ["ID", "Contact Name", "Email", "Location", "Status", "Score", "Registered At", "Evaluated At"];
     const rows = filteredSites.map((s: any) => [
       s.id,
-      `"${s.contactName}"`,
+      s.contactName,
       s.email,
-      `"${s.location || ''}"`,
+      s.location || "",
       s.status,
       s.score || 0,
-      s.registeredAt,
-      s.evaluatedAt || ''
+      s.registeredAt || "",
+      s.evaluatedAt || ""
     ]);
     
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n" 
-      + rows.map((e: any) => e.join(",")).join("\n");
+    const csvString = headers.map(escapeCSV).join(",") + "\n" 
+      + rows.map((row: any[]) => row.map(escapeCSV).join(",")).join("\n");
       
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "innova_trials_results.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCSV(csvString, "innova_trials_results.csv");
   };
 
   const handleExportJSON = () => {
@@ -60,26 +74,17 @@ export default function ExportResults() {
     const headers = ["ID", "Contact Name", "Email", "Location", "Status", "Score", "Registered At", "Evaluated At"];
     const row = [
       site.id,
-      `"${site.contactName}"`,
+      site.contactName,
       site.email,
-      `"${site.location || ''}"`,
+      site.location || "",
       site.status,
       site.score || 0,
-      site.registeredAt,
-      site.evaluatedAt || ''
+      site.registeredAt || "",
+      site.evaluatedAt || ""
     ];
 
-    const csvContent = "data:text/csv;charset=utf-8,"
-      + headers.join(",") + "\n"
-      + row.join(",");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${site.contactName.replace(/\s+/g, '_')}_result.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvString = headers.map(escapeCSV).join(",") + "\n" + row.map(escapeCSV).join(",");
+    downloadCSV(csvString, `${site.contactName.replace(/\s+/g, '_')}_result.csv`);
   };
 
   const getStatusBadge = (status: string) => {
