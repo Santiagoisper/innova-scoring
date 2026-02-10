@@ -20,7 +20,7 @@ import { Question } from "@/lib/types";
 
 export default function EvaluationSetup() {
   const { user } = useStore();
-  const { data: questions = [], isLoading } = useQuery({ queryKey: ["/api/questions"], queryFn: fetchQuestions });
+  const { data: questions = [], isLoading } = useQuery({ queryKey: ["/api/questions"], queryFn: fetchQuestions, refetchInterval: 15000 });
   const { toast } = useToast();
   const [isAddOpen, setIsAddOpen] = useState(false);
   

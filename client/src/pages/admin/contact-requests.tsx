@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export default function ContactRequests() {
   const { user } = useStore();
-  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites });
+  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites, refetchInterval: 10000 });
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const [, setLocation] = useLocation();

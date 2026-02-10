@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCenters() {
   const { user } = useStore();
-  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites });
+  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites, refetchInterval: 10000 });
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,7 +141,16 @@ export default function AdminCenters() {
       <div className="container mx-auto p-6 space-y-8 animate-in fade-in duration-500">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-heading font-bold text-primary">Center Management</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-heading font-bold text-primary">Center Management</h1>
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Live
+              </div>
+            </div>
             <p className="text-muted-foreground">Manage registered clinical sites and their evaluation status.</p>
           </div>
           

@@ -11,13 +11,13 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell 
 } from "recharts";
-import { Users, FileText, CheckCircle2, AlertTriangle, TrendingUp, ArrowRight, Loader2, Clock } from "lucide-react";
+import { Users, FileText, CheckCircle2, AlertTriangle, TrendingUp, ArrowRight, Loader2, Clock, Radio } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user } = useStore();
   const [, setLocation] = useLocation();
-  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites });
-  const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: fetchStats });
+  const { data: sites = [], isLoading } = useQuery({ queryKey: ["/api/sites"], queryFn: fetchSites, refetchInterval: 10000 });
+  const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: fetchStats, refetchInterval: 10000 });
 
   if (user?.role !== "admin") {
     return <div className="p-4">Access Denied</div>;
@@ -75,7 +75,14 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-heading font-bold text-primary">Overview Dashboard</h1>
             <p className="text-muted-foreground">Monitor site registration, evaluation progress, and network quality.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Live
+            </div>
             <Button onClick={() => setLocation("/admin/centers")}>
               View All Centers
             </Button>

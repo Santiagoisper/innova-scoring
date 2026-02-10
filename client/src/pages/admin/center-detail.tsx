@@ -31,12 +31,14 @@ export default function CenterDetail() {
   const { data: site, isLoading: siteLoading } = useQuery({
     queryKey: ["/api/sites", params?.id],
     queryFn: () => fetchSite(params!.id),
-    enabled: !!params?.id
+    enabled: !!params?.id,
+    refetchInterval: 10000,
   });
 
   const { data: questions = [] } = useQuery({
     queryKey: ["/api/questions"],
-    queryFn: fetchQuestions
+    queryFn: fetchQuestions,
+    refetchInterval: 30000,
   });
 
   const [isEditing, setIsEditing] = useState(false);

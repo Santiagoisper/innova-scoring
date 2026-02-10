@@ -10,7 +10,7 @@ import { Activity, User, Shield, FileText, Settings, AlertTriangle, Layers, Load
 
 export default function ActivityLog() {
   const { user } = useStore();
-  const { data: activityLog = [], isLoading } = useQuery({ queryKey: ["/api/activity-log"], queryFn: fetchActivityLog });
+  const { data: activityLog = [], isLoading } = useQuery({ queryKey: ["/api/activity-log"], queryFn: fetchActivityLog, refetchInterval: 10000 });
 
   const clearMutation = useMutation({
     mutationFn: clearActivityLogApi,

@@ -24,6 +24,7 @@ export default function ChatLogs() {
   const { data: sessions = [], isLoading } = useQuery<ChatSession[]>({
     queryKey: ["/api/chat-logs"],
     queryFn: fetchChatLogs,
+    refetchInterval: 10000,
   });
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
 

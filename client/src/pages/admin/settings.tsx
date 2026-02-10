@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch";
 
 export default function AdminSettings() {
   const { user: currentUser, darkMode, toggleDarkMode } = useStore();
-  const { data: adminUsers = [], isLoading } = useQuery({ queryKey: ["/api/admin-users"], queryFn: fetchAdminUsers });
+  const { data: adminUsers = [], isLoading } = useQuery({ queryKey: ["/api/admin-users"], queryFn: fetchAdminUsers, refetchInterval: 15000 });
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
