@@ -5,6 +5,7 @@ import { db } from "./db";
 import { questions as questionsTable } from "@shared/schema";
 import { z } from "zod";
 import { registerChatRoutes } from "./replit_integrations/chat";
+import { sendTokenEmail, sendEvaluationCompleteEmail, sendStatusChangeEmail } from "./email";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -186,6 +187,12 @@ export async function registerRoutes(
             sector: "Access Control",
           });
         }
+        sendTokenEmail(updated.email, updated.contactName, token, updated.description || updated.contactName)
+          .then(result => {
+            if (!result.success) console.error("Failed to send token email:", result.error);
+            else console.log("Token email sent to:", updated.email);
+          })
+          .catch(err => console.error("Token email error:", err));
         res.json(updated);
       } else {
         res.status(404).json({ message: "Site not found" });
@@ -209,6 +216,14 @@ export async function registerRoutes(
             sector: "Status Management",
           });
         }
+        if (["Approved", "Rejected", "ToConsider"].includes(status)) {
+          sendStatusChangeEmail(updated.email, updated.contactName, updated.description || updated.contactName, status)
+            .then(result => {
+              if (!result.success) console.error("Failed to send status email:", result.error);
+              else console.log("Status email sent to:", updated.email);
+            })
+            .catch(err => console.error("Status email error:", err));
+        }
         res.json(updated);
       } else {
         res.status(404).json({ message: "Site not found" });
@@ -228,6 +243,12 @@ export async function registerRoutes(
         evaluatedAt: new Date(),
       });
       if (updated) {
+        sendEvaluationCompleteEmail(updated.email, updated.contactName, updated.description || updated.contactName, score || 0)
+          .then(result => {
+            if (!result.success) console.error("Failed to send evaluation email:", result.error);
+            else console.log("Evaluation email sent to:", updated.email);
+          })
+          .catch(err => console.error("Evaluation email error:", err));
         res.json(updated);
       } else {
         res.status(404).json({ message: "Site not found" });

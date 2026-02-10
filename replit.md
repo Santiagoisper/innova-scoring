@@ -95,6 +95,6 @@ migrations/              # Drizzle migration files
 - **Drizzle ORM + Drizzle Kit**: Database ORM and migration tooling. Use `npm run db:push` to sync schema.
 - **OpenAI (via Replit AI Integrations)**: Powers the AI chatbot assistant. No API key management needed — handled by Replit.
 - **No external auth service**: Authentication is handled internally with plaintext password comparison (no hashing currently implemented).
-- **No email service configured in this codebase**: Though Resend is referenced in attached analysis documents as part of the original Next.js project, the current Express codebase generates tokens but doesn't send emails.
+- **Resend Email Service**: Automated transactional emails via `RESEND_API_KEY` secret. Sends branded HTML emails for: token generation (access credentials), evaluation submission confirmation (with score), and status change notifications (Approved/Rejected/ToConsider). Email service is in `server/email.ts` with lazy initialization — gracefully skips if API key is not configured.
 - **Recharts**: Used for score visualization (gauge charts, bar charts).
 - **Google Fonts**: Open Sans and Roboto loaded via CDN in `index.html`.
