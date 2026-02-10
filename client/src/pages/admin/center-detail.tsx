@@ -123,77 +123,299 @@ export default function CenterDetail() {
 
   const handleDownloadReport = () => {
     const doc = new jsPDF();
-    
-    doc.setFillColor(22, 163, 74);
-    doc.rect(0, 0, 210, 40, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("INNOVA TRIALS LLC REPORT", 105, 25, { align: "center" });
-    
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("SITE DETAILS", 20, 60);
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Site Name: ${site.contactName}`, 20, 70);
-    doc.text(`Location: ${site.location || "N/A"}`, 20, 76);
-    doc.text(`Status: ${site.status}`, 20, 82);
-    doc.text(`Score: ${site.score !== undefined ? site.score + "%" : "N/A"}`, 20, 88);
-    doc.text(`Registered: ${new Date(site.registeredAt).toLocaleDateString()}`, 20, 94);
-    doc.text(`Evaluated: ${site.evaluatedAt ? new Date(site.evaluatedAt).toLocaleDateString() : "Pending"}`, 120, 70);
-    doc.text(`Evaluated By: ${site.evaluatedBy || "N/A"}`, 120, 76);
-
-    doc.setDrawColor(200, 200, 200);
-    doc.line(20, 105, 190, 105);
-
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("EVALUATION SUMMARY", 20, 120);
-
-    let yPos = 135;
+    const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
+    const margin = 20;
+    const contentWidth = pageWidth - margin * 2;
 
-    questionsList.forEach((q: any, index: number) => {
-      if (yPos > pageHeight - 30) {
-        doc.addPage();
-        yPos = 30;
-      }
+    const brandDark = [0, 25, 101] as const;
+    const brandBlue = [0, 90, 210] as const;
+    const gray600 = [75, 85, 99] as const;
+    const gray400 = [156, 163, 175] as const;
+    const gray200 = [229, 231, 235] as const;
+    const white = [255, 255, 255] as const;
 
-      const ans = site.answers?.[q.id];
-      let val = "Not Answered";
-      if (typeof ans === 'object' && ans?.value) val = ans.value;
-      else if (ans) val = ans;
+    const result = calculateScore(site.answers || {}, questionsList);
 
+    const drawHeader = (pageNum: number, totalPages: number) => {
+      doc.setFillColor(...brandDark);
+      doc.rect(0, 0, pageWidth, 32, 'F');
+      doc.setFillColor(...brandBlue);
+      doc.rect(0, 32, pageWidth, 3, 'F');
+
+      doc.setTextColor(...white);
+      doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(60, 60, 60);
-      
-      const questionLines = doc.splitTextToSize(`${index + 1}. [${q.category}] ${q.text}`, 170);
-      doc.text(questionLines, 20, yPos);
-      yPos += (questionLines.length * 5) + 2;
-
+      doc.text("INNOVA TRIALS LLC", margin, 15);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Answer: ${val}`, 25, yPos);
-      yPos += 10;
-    });
-    
-    const pageCount = doc.internal.getNumberOfPages();
-    for(let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`Generated on ${new Date().toLocaleDateString()} - Innova Trials`, 105, pageHeight - 10, { align: "center" });
+      doc.text("Site Evaluation Report", margin, 22);
+
+      doc.setFontSize(7);
+      doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - margin, 22, { align: "right" });
+      doc.text("CONFIDENTIAL", pageWidth - margin, 15, { align: "right" });
+    };
+
+    const drawFooter = () => {
+      doc.setDrawColor(...gray200);
+      doc.line(margin, pageHeight - 18, pageWidth - margin, pageHeight - 18);
+      doc.setFontSize(7);
+      doc.setTextColor(...gray400);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Report generated on ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} | Innova Trials LLC | innovasitescoring.com`,
+        pageWidth / 2, pageHeight - 12, { align: "center" }
+      );
+    };
+
+    const checkPageBreak = (y: number, needed: number): number => {
+      if (y + needed > pageHeight - 25) {
+        doc.addPage();
+        return 45;
+      }
+      return y;
+    };
+
+    const drawSectionTitle = (title: string, y: number): number => {
+      y = checkPageBreak(y, 15);
+      doc.setFillColor(...brandBlue);
+      doc.rect(margin, y - 4, 3, 12, 'F');
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brandDark);
+      doc.text(title, margin + 7, y + 5);
+      doc.setDrawColor(...gray200);
+      doc.line(margin + 7, y + 8, pageWidth - margin, y + 8);
+      return y + 16;
+    };
+
+    const drawInfoRow = (label: string, value: string, x: number, y: number, w: number) => {
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...gray400);
+      doc.text(label.toUpperCase(), x, y);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...brandDark);
+      const lines = doc.splitTextToSize(value, w - 5);
+      doc.text(lines, x, y + 5);
+    };
+
+    let y = 45;
+
+    y = drawSectionTitle("SITE INFORMATION", y);
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, y - 2, contentWidth, 40, 2, 2, 'F');
+    doc.setDrawColor(...gray200);
+    doc.roundedRect(margin, y - 2, contentWidth, 40, 2, 2, 'S');
+
+    const col1 = margin + 5;
+    const col2 = margin + contentWidth / 2 + 5;
+    const colW = contentWidth / 2 - 10;
+
+    drawInfoRow("Site Name", site.contactName, col1, y + 4, colW);
+    drawInfoRow("Location", site.location || "N/A", col1, y + 17, colW);
+    drawInfoRow("Registration Date", new Date(site.registeredAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }), col1, y + 30, colW);
+
+    drawInfoRow("Email", site.email, col2, y + 4, colW);
+    drawInfoRow("Status", site.status === "TokenSent" ? "In Evaluation" : site.status, col2, y + 17, colW);
+    drawInfoRow("Evaluated By", site.evaluatedBy || "Pending", col2, y + 30, colW);
+
+    y += 48;
+
+    y = drawSectionTitle("EXECUTIVE SUMMARY", y);
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, y - 2, contentWidth, 38, 2, 2, 'F');
+    doc.setDrawColor(...gray200);
+    doc.roundedRect(margin, y - 2, contentWidth, 38, 2, 2, 'S');
+
+    const scoreVal = site.score ?? 0;
+    const scoreColor = scoreVal >= 80 ? [16, 185, 129] as const : scoreVal >= 50 ? [245, 158, 11] as const : [239, 68, 68] as const;
+
+    doc.setFontSize(28);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...scoreColor);
+    doc.text(`${scoreVal}%`, margin + 15, y + 22);
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...gray400);
+    doc.text("OVERALL SCORE", margin + 15, y + 28);
+
+    const barX = margin + 55;
+    const barW = contentWidth - 65;
+    const barH = 6;
+    const barY = y + 8;
+    doc.setFillColor(...gray200);
+    doc.roundedRect(barX, barY, barW, barH, 3, 3, 'F');
+    if (scoreVal > 0) {
+      doc.setFillColor(...scoreColor);
+      doc.roundedRect(barX, barY, Math.max(6, barW * (scoreVal / 100)), barH, 3, 3, 'F');
     }
 
-    doc.save(`Report_${site.contactName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+    const classLabel = result.classification || "Pending";
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...brandDark);
+    doc.text(`Classification: ${classLabel}`, barX, y + 24);
+
+    if (result.knockOutReason) {
+      doc.setFontSize(8);
+      doc.setTextColor(239, 68, 68);
+      doc.setFont("helvetica", "normal");
+      const koLines = doc.splitTextToSize(`⚠ ${result.knockOutReason}`, barW);
+      doc.text(koLines, barX, y + 31);
+    }
+
+    const starStr = "★".repeat(Math.min(5, Math.max(0, Math.round(scoreVal / 20)))) + "☆".repeat(5 - Math.min(5, Math.max(0, Math.round(scoreVal / 20))));
+    doc.setFontSize(12);
+    doc.setTextColor(250, 204, 21);
+    doc.text(starStr, barX + barW - 2, y + 24, { align: "right" });
+
+    y += 46;
+
+    if (result.categoryScores && Object.keys(result.categoryScores).length > 0) {
+      y = drawSectionTitle("CATEGORY BREAKDOWN", y);
+
+      const cats = Object.entries(result.categoryScores);
+      const catColW = (contentWidth - 4) / 2;
+
+      cats.forEach(([category, catScore], idx) => {
+        const colIdx = idx % 2;
+        const catX = margin + colIdx * (catColW + 4);
+
+        if (colIdx === 0) {
+          y = checkPageBreak(y, 18);
+        }
+
+        const catColor = catScore >= 80 ? [16, 185, 129] as const : catScore >= 50 ? [245, 158, 11] as const : [239, 68, 68] as const;
+
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(catX, y - 2, catColW, 14, 1, 1, 'F');
+        doc.setDrawColor(...gray200);
+        doc.roundedRect(catX, y - 2, catColW, 14, 1, 1, 'S');
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...brandDark);
+        doc.text(category, catX + 4, y + 5);
+
+        doc.setTextColor(...catColor);
+        doc.text(`${Math.round(catScore)}%`, catX + catColW - 25, y + 5);
+
+        const miniBarX = catX + 4;
+        const miniBarW = catColW - 35;
+        const miniBarY = y + 7;
+        doc.setFillColor(...gray200);
+        doc.roundedRect(miniBarX, miniBarY, miniBarW, 3, 1.5, 1.5, 'F');
+        if (catScore > 0) {
+          doc.setFillColor(...catColor);
+          doc.roundedRect(miniBarX, miniBarY, Math.max(3, miniBarW * (catScore / 100)), 3, 1.5, 1.5, 'F');
+        }
+
+        if (colIdx === 1 || idx === cats.length - 1) {
+          y += 18;
+        }
+      });
+
+      y += 4;
+    }
+
+    y = drawSectionTitle("DETAILED EVALUATION RESPONSES", y);
+
+    const categories = [...new Set(questionsList.map((q: any) => q.category))];
+    let questionNum = 1;
+
+    categories.forEach((category: string) => {
+      const catQuestions = questionsList.filter((q: any) => q.category === category);
+
+      y = checkPageBreak(y, 14);
+
+      doc.setFillColor(...brandDark);
+      doc.roundedRect(margin, y - 3, contentWidth, 10, 1, 1, 'F');
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...white);
+      doc.text(category.toUpperCase(), margin + 5, y + 4);
+
+      const catScore = result.categoryScores?.[category];
+      if (catScore !== undefined) {
+        doc.text(`${Math.round(catScore)}%`, pageWidth - margin - 5, y + 4, { align: "right" });
+      }
+
+      y += 14;
+
+      catQuestions.forEach((q: any) => {
+        const ans = site.answers?.[q.id];
+        let val = "Not Answered";
+        let starValue = 0;
+        if (typeof ans === 'object' && ans?.value !== undefined) {
+          val = String(ans.value);
+          starValue = Number(ans.value) || 0;
+        } else if (ans !== undefined && ans !== null) {
+          val = String(ans);
+          starValue = Number(ans) || 0;
+        }
+
+        const questionLines = doc.splitTextToSize(`${q.text}`, contentWidth - 15);
+        const neededHeight = (questionLines.length * 4.5) + 14;
+        y = checkPageBreak(y, neededHeight);
+
+        if (questionNum % 2 === 0) {
+          doc.setFillColor(248, 250, 252);
+          doc.rect(margin, y - 3, contentWidth, neededHeight, 'F');
+        }
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...brandBlue);
+        doc.text(`Q${questionNum}`, margin + 2, y + 1);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...gray600);
+        doc.setFontSize(8);
+        doc.text(questionLines, margin + 12, y + 1);
+        y += questionLines.length * 4.5 + 1;
+
+        if (q.type === "YesNo" && starValue > 0) {
+          const stars = "★".repeat(starValue) + "☆".repeat(5 - starValue);
+          doc.setFontSize(10);
+          doc.setTextColor(250, 204, 21);
+          doc.text(stars, margin + 12, y + 2);
+          doc.setFontSize(8);
+          doc.setTextColor(...gray600);
+          doc.text(`(${starValue}/5)`, margin + 32, y + 2);
+        } else {
+          const ansColor = val === "Not Answered" ? gray400 : brandDark;
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(...ansColor);
+          const ansLines = doc.splitTextToSize(val, contentWidth - 20);
+          doc.text(ansLines, margin + 12, y + 2);
+          y += (ansLines.length - 1) * 4;
+        }
+
+        y += 8;
+        questionNum++;
+      });
+
+      y += 4;
+    });
+
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      drawHeader(i, pageCount);
+      drawFooter();
+    }
+
+    doc.save(`Innova_Trials_Report_${site.contactName.replace(/[^a-z0-9]/gi, '_')}.pdf`);
 
     toast({
       title: "Report Downloaded",
-      description: "Detailed PDF report has been generated.",
+      description: "Professional PDF report has been generated.",
     });
   };
 
