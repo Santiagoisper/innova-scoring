@@ -24,113 +24,137 @@ export default function SiteDisclaimer() {
             <div className="mx-auto bg-amber-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                <AlertTriangle className="h-8 w-8 text-amber-600" />
             </div>
-            <CardTitle className="text-2xl font-heading">DISCLAIMER, ACKNOWLEDGMENT AND ACCEPTANCE OF TERMS</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">(Site Registration – Click-Wrap Agreement)</p>
+            <CardTitle className="text-2xl font-heading">Innova Trials LLC – Site Registration Terms (Click-Wrap Agreement)</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">By submitting this registration, you represent that you are duly authorized to act on behalf of the Site and to legally bind the Site to these Terms.</p>
           </CardHeader>
           <CardContent className="space-y-4 text-justify text-muted-foreground leading-relaxed">
-            <p className="text-sm">
-              By checking the box below and submitting this registration form, you ("Site", "Registrant" or "You") expressly acknowledge, represent, warrant, and agree to the following terms and conditions in favor of Innova Trials LLC, a limited liability company duly organized and existing under the laws of the State of Florida, United States of America, with its principal place of business in Miami, Florida ("Innova Trials" or the "Company"):
-            </p>
             <div className="bg-white p-5 rounded-md border text-sm space-y-5 max-h-[50vh] overflow-y-auto">
+              <p className="font-semibold text-foreground text-center">
+                DISCLAIMER, ACKNOWLEDGMENT AND SITE REGISTRATION TERMS<br />
+                Innova Trials LLC – Click-Wrap Agreement
+              </p>
+              <p>
+                By checking the box below and submitting this registration form, you ("Site", "Registrant", or "You") acknowledge, represent, warrant, and agree to the following terms in favor of Innova Trials LLC, a Florida limited liability company with principal place of business in Miami, Florida ("Innova Trials" or the "Company").
+              </p>
+
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">1. Voluntary Registration</h4>
+                <h4 className="font-bold text-foreground">1. Voluntary Registration and No Obligation</h4>
                 <p>
-                  You acknowledge that your registration as a clinical research site is voluntary and initiated solely at your own discretion. You understand that submission of this form does not create any obligation for Innova Trials to accept, engage, contract with, or otherwise work with you.
+                  Your submission of this registration form is voluntary and at your sole discretion. Submission does not create any partnership, joint venture, agency, fiduciary, certification, endorsement, or contractual relationship between you and Innova Trials. Innova Trials has no obligation to approve, onboard, engage, recommend, contract with, or otherwise work with you. Registration does not constitute approval, qualification, endorsement, or certification of your site.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">2. Accuracy, Completeness, and Responsibility for Information</h4>
+                <h4 className="font-bold text-foreground">2. Accuracy and Sole Responsibility</h4>
                 <p>
-                  You represent and warrant that all information, data, documents, answers, and materials provided through this registration process (the "Information") are true, accurate, complete, current, and not misleading.
-                </p>
-                <p>
-                  You acknowledge and agree that you are solely responsible for the accuracy, legality, and completeness of the Information submitted. Innova Trials assumes no responsibility for verifying, validating, or auditing the Information provided by you.
+                  You represent and warrant that all information, data, documents, and materials submitted (the "Information") are true, accurate, complete, current, and not misleading. You are solely responsible for the legality, accuracy, and completeness of the Information. Innova Trials has no duty to verify or validate the Information and shall not be liable for any reliance placed upon it by third parties.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">3. No Advice, No Reliance</h4>
+                <h4 className="font-bold text-foreground">3. No Advice; No Reliance</h4>
                 <p>
-                  You expressly acknowledge that Innova Trials does not provide medical, legal, regulatory, financial, compliance, or professional advice through this registration process.
-                </p>
-                <p>
-                  Nothing contained in the questions, forms, communications, or any subsequent interaction shall be construed as advice, guidance, endorsement, certification, or approval of your site, personnel, facilities, or capabilities.
-                </p>
-                <p>
-                  You agree that you shall not rely on any output, feedback, classification, or response from Innova Trials for decision-making, regulatory submissions, or operational actions.
+                  Nothing in the registration process, communications, feedback, categorization, or evaluation constitutes legal, medical, regulatory, compliance, financial, or professional advice. You agree that you will not rely on any communication from Innova Trials as certification, regulatory approval, compliance validation, or suitability confirmation.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">4. No Contractual Relationship</h4>
+                <h4 className="font-bold text-foreground">4. No Protected Health Information (PHI)</h4>
                 <p>
-                  Submission of this registration form does not create any contractual, fiduciary, agency, partnership, joint venture, or professional relationship between you and Innova Trials.
-                </p>
-                <p>
-                  Any future engagement, if any, shall be subject to a separate written agreement duly executed by authorized representatives of both parties.
+                  You agree not to submit any Protected Health Information (PHI) or individually identifiable patient information. You acknowledge that Innova Trials is not acting as a covered entity or business associate under HIPAA in connection with this registration. Any improper submission of PHI is solely your responsibility.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">5. Use of Information / No Warranties</h4>
+                <h4 className="font-bold text-foreground">5. Use and Processing of Information</h4>
                 <p>
-                  You authorize Innova Trials to review, store, process, analyze, and internally use the Information for evaluation, operational, research, or business purposes.
-                </p>
-                <p>
-                  All use of the Information is provided on an "AS IS" and "AS AVAILABLE" basis, without warranties of any kind, express or implied, including but not limited to warranties of accuracy, fitness for a particular purpose, regulatory acceptance, or commercial suitability.
+                  You authorize Innova Trials to store, review, analyze, process, and internally use the Information for evaluation, operational, research, compliance, business development, and network management purposes. Innova Trials may retain the Information in accordance with its internal policies and applicable law.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">6. Limitation of Liability</h4>
+                <h4 className="font-bold text-foreground">6. Right to Reject, Suspend, or Remove</h4>
                 <p>
-                  To the maximum extent permitted by applicable law, you agree that Innova Trials, its affiliates, members, managers, officers, employees, contractors, and agents shall not be liable for any direct, indirect, incidental, consequential, special, punitive, or exemplary damages, including but not limited to loss of business opportunities, loss of data, regulatory exposure, reputational harm, or third-party claims, arising out of or related to:
+                  Innova Trials may, at its sole discretion and without notice, reject, suspend, remove, or delete your registration or profile at any time, with or without cause, and without liability.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">7. Regulatory Responsibility</h4>
+                <p>
+                  You are solely responsible for compliance with all applicable local, state, federal, and international laws and regulations, including those relating to clinical research, healthcare operations, licensing, data protection, and ethics approvals. Innova Trials makes no representations or warranties regarding your compliance status.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">8. Indemnification</h4>
+                <p>
+                  You agree to indemnify, defend, and hold harmless Innova Trials, its members, managers, officers, employees, contractors, affiliates, and agents from and against any and all claims, liabilities, damages, penalties, fines, losses, costs, and expenses (including reasonable attorneys' fees) arising out of or related to:
                 </p>
                 <ul className="list-disc list-inside pl-2 space-y-1">
-                  <li>your registration,</li>
-                  <li>the Information you submit,</li>
-                  <li>any use or non-use of such Information, or</li>
-                  <li>any decision made based on the registration process.</li>
+                  <li>(a) inaccurate or misleading Information provided by you;</li>
+                  <li>(b) your breach of these terms;</li>
+                  <li>(c) your violation of applicable law;</li>
+                  <li>(d) any claim by a third party related to your site operations.</li>
                 </ul>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">7. Indemnification</h4>
+                <h4 className="font-bold text-foreground">9. Disclaimer of Warranties</h4>
                 <p>
-                  You agree to fully indemnify, defend, and hold harmless Innova Trials from and against any and all claims, damages, liabilities, losses, penalties, fines, costs, and expenses (including reasonable attorneys' fees) arising from:
-                </p>
-                <ul className="list-disc list-inside pl-2 space-y-1">
-                  <li>inaccurate or misleading Information provided by you,</li>
-                  <li>any breach of this Disclaimer, or</li>
-                  <li>any violation of applicable laws, regulations, or third-party rights related to your activities.</li>
-                </ul>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-bold text-foreground">8. Regulatory Responsibility</h4>
-                <p>
-                  You acknowledge that you are solely responsible for compliance with all applicable local, state, federal, and international laws and regulations, including but not limited to those related to clinical research, healthcare, data protection, ethics committees, and regulatory authorities.
-                </p>
-                <p>
-                  Innova Trials makes no representations or guarantees regarding regulatory compliance or approval of your site.
+                  The registration platform and any related services are provided on an "AS IS" and "AS AVAILABLE" basis. To the fullest extent permitted under Florida law, Innova Trials disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose, non-infringement, accuracy, or availability.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">9. Governing Law and Jurisdiction</h4>
+                <h4 className="font-bold text-foreground">10. Limitation of Liability</h4>
                 <p>
-                  This Disclaimer shall be governed by and construed in accordance with the laws of the State of Florida, without regard to conflict of law principles.
+                  To the maximum extent permitted by law, Innova Trials shall not be liable for any indirect, incidental, special, consequential, punitive, or exemplary damages, including loss of business opportunity, reputational harm, regulatory exposure, or lost profits.
                 </p>
                 <p>
-                  You irrevocably agree that any dispute arising out of or related to this Disclaimer or your registration shall be exclusively submitted to the state or federal courts located in Miami-Dade County, Florida, and you consent to personal jurisdiction therein.
+                  In all cases, Innova Trials' total aggregate liability arising out of or related to this registration shall not exceed USD 100.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-bold text-foreground">10. Electronic Acceptance and Binding Effect</h4>
+                <h4 className="font-bold text-foreground">11. Force Majeure</h4>
                 <p>
-                  You acknowledge that checking the acceptance box and submitting this form constitutes an electronic signature and legally binding agreement, equivalent to a handwritten signature, under applicable U.S. and Florida law.
+                  Innova Trials shall not be liable for any failure or delay resulting from causes beyond its reasonable control, including system failure, cyberattack, natural disaster, pandemic, governmental action, or third-party service interruption.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">12. Class Action Waiver</h4>
+                <p>
+                  You agree that any dispute shall be brought solely in your individual capacity and not as a plaintiff or class member in any purported class or representative proceeding.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">13. Waiver of Jury Trial</h4>
+                <p>
+                  You and Innova Trials knowingly and voluntarily waive any right to a trial by jury in any litigation arising out of or relating to this registration or these terms.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">14. Governing Law and Exclusive Jurisdiction</h4>
+                <p>
+                  These terms shall be governed by and construed under the laws of the State of Florida, without regard to conflict of law principles. Any dispute shall be brought exclusively in the state or federal courts located in Miami-Dade County, Florida. You irrevocably consent to personal jurisdiction in such courts.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">15. Electronic Signature</h4>
+                <p>
+                  By checking the acceptance box and submitting this form, you acknowledge that you are providing an electronic signature that is legally binding under applicable federal and Florida law, including the Florida Electronic Signature Act and the U.S. E-SIGN Act, and that it has the same force and effect as a handwritten signature.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">16. Entire Agreement; Severability</h4>
+                <p>
+                  These terms constitute the entire agreement between you and Innova Trials regarding site registration and supersede any prior discussions or communications. If any provision is deemed unenforceable, the remaining provisions shall remain in full force and effect.
                 </p>
               </div>
             </div>
@@ -146,7 +170,7 @@ export default function SiteDisclaimer() {
                 htmlFor="accept-terms"
                 className="text-sm font-medium leading-relaxed cursor-pointer select-none text-foreground"
               >
-                I have read, understood, and agree to the Disclaimer, Acknowledgment and Acceptance of Terms of Innova Trials LLC.
+                I have read, understood, and agree to the Innova Trials LLC Disclaimer, Acknowledgment, and Site Registration Terms.
               </label>
             </div>
           </CardContent>
