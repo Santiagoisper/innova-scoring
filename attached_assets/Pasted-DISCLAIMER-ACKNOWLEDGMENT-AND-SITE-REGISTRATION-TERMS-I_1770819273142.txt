@@ -1,0 +1,68 @@
+DISCLAIMER, ACKNOWLEDGMENT AND SITE REGISTRATION TERMS
+Innova Trials LLC – Click-Wrap Agreement
+
+By checking the box below and submitting this registration form, you (“Site”, “Registrant”, or “You”) acknowledge, represent, warrant, and agree to the following terms in favor of Innova Trials LLC, a Florida limited liability company with principal place of business in Miami, Florida (“Innova Trials” or the “Company”).
+
+1. Voluntary Registration and No Obligation
+Your submission of this registration form is voluntary and at your sole discretion. Submission does not create any partnership, joint venture, agency, fiduciary, certification, endorsement, or contractual relationship between you and Innova Trials. Innova Trials has no obligation to approve, onboard, engage, recommend, contract with, or otherwise work with you. Registration does not constitute approval, qualification, endorsement, or certification of your site.
+
+2. Accuracy and Sole Responsibility
+You represent and warrant that all information, data, documents, and materials submitted (the “Information”) are true, accurate, complete, current, and not misleading. You are solely responsible for the legality, accuracy, and completeness of the Information. Innova Trials has no duty to verify or validate the Information and shall not be liable for any reliance placed upon it by third parties.
+
+3. No Advice; No Reliance
+Nothing in the registration process, communications, feedback, categorization, or evaluation constitutes legal, medical, regulatory, compliance, financial, or professional advice. You agree that you will not rely on any communication from Innova Trials as certification, regulatory approval, compliance validation, or suitability confirmation.
+
+4. No Protected Health Information (PHI)
+You agree not to submit any Protected Health Information (PHI) or individually identifiable patient information. You acknowledge that Innova Trials is not acting as a covered entity or business associate under HIPAA in connection with this registration. Any improper submission of PHI is solely your responsibility.
+
+5. Use and Processing of Information
+You authorize Innova Trials to store, review, analyze, process, and internally use the Information for evaluation, operational, research, compliance, business development, and network management purposes. Innova Trials may retain the Information in accordance with its internal policies and applicable law.
+
+6. Right to Reject, Suspend, or Remove
+Innova Trials may, at its sole discretion and without notice, reject, suspend, remove, or delete your registration or profile at any time, with or without cause, and without liability.
+
+7. Regulatory Responsibility
+You are solely responsible for compliance with all applicable local, state, federal, and international laws and regulations, including those relating to clinical research, healthcare operations, licensing, data protection, and ethics approvals. Innova Trials makes no representations or warranties regarding your compliance status.
+
+8. Indemnification
+You agree to indemnify, defend, and hold harmless Innova Trials, its members, managers, officers, employees, contractors, affiliates, and agents from and against any and all claims, liabilities, damages, penalties, fines, losses, costs, and expenses (including reasonable attorneys’ fees) arising out of or related to:
+(a) inaccurate or misleading Information provided by you;
+(b) your breach of these terms;
+(c) your violation of applicable law;
+(d) any claim by a third party related to your site operations.
+
+9. Disclaimer of Warranties
+The registration platform and any related services are provided on an “AS IS” and “AS AVAILABLE” basis. To the fullest extent permitted under Florida law, Innova Trials disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose, non-infringement, accuracy, or availability.
+
+10. Limitation of Liability
+To the maximum extent permitted by law, Innova Trials shall not be liable for any indirect, incidental, special, consequential, punitive, or exemplary damages, including loss of business opportunity, reputational harm, regulatory exposure, or lost profits.
+In all cases, Innova Trials’ total aggregate liability arising out of or related to this registration shall not exceed USD 100.
+
+11. Force Majeure
+Innova Trials shall not be liable for any failure or delay resulting from causes beyond its reasonable control, including system failure, cyberattack, natural disaster, pandemic, governmental action, or third-party service interruption.
+
+12. Class Action Waiver
+You agree that any dispute shall be brought solely in your individual capacity and not as a plaintiff or class member in any purported class or representative proceeding.
+
+13. Waiver of Jury Trial
+You and Innova Trials knowingly and voluntarily waive any right to a trial by jury in any litigation arising out of or relating to this registration or these terms.
+
+14. Governing Law and Exclusive Jurisdiction
+These terms shall be governed by and construed under the laws of the State of Florida, without regard to conflict of law principles. Any dispute shall be brought exclusively in the state or federal courts located in Miami-Dade County, Florida. You irrevocably consent to personal jurisdiction in such courts.
+
+15. Electronic Signature
+By checking the acceptance box and submitting this form, you acknowledge that you are providing an electronic signature that is legally binding under applicable federal and Florida law, including the Florida Electronic Signature Act and the U.S. E-SIGN Act, and that it has the same force and effect as a handwritten signature.
+
+16. Entire Agreement; Severability
+These terms constitute the entire agreement between you and Innova Trials regarding site registration and supersede any prior discussions or communications. If any provision is deemed unenforceable, the remaining provisions shall remain in full force and effect.
+---
+
+Implementation Details
+- Create the /register page with basic site fields (site name, country, address, registrant name, email, phone, therapeutic areas, prior trial experience).
+- Create a Terms component that renders the full terms in a scroll box and enforces checkbox acceptance.
+- Compute SHA-256 of the terms text on the server and store it as terms_text_sha256.
+- Capture IP and user agent server-side in /api/register.
+- Save record in DB.
+- After success, show a confirmation screen that repeats “You agreed to Terms Version 1.0 (Effective 2026-02-11)”.
+
+Acceptance must be blocked unless checkbox is checked, and the stored evidence must include terms_version and terms_text_sha256.
