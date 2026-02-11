@@ -155,3 +155,9 @@ export async function fetchTermsAcceptances() {
   if (!res.ok) throw new Error("Failed to fetch terms acceptances");
   return res.json();
 }
+
+export async function fetchTermsAcceptanceBySiteId(siteId: string) {
+  const res = await fetch(`/api/terms-acceptance/${siteId}`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch terms acceptance");
+  return res.json();
+}

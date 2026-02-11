@@ -3,14 +3,14 @@ import { useRoute, useLocation } from "wouter";
 import { useStore } from "@/lib/store";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { fetchSite, fetchQuestions, updateSiteStatus as updateSiteStatusApi, generateToken as generateTokenApi, updateSiteAnswers as updateSiteAnswersApi } from "@/lib/api";
+import { fetchSite, fetchQuestions, updateSiteStatus as updateSiteStatusApi, generateToken as generateTokenApi, updateSiteAnswers as updateSiteAnswersApi, fetchTermsAcceptanceBySiteId } from "@/lib/api";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
-import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2, ShieldCheck, ShieldX } from "lucide-react";
 import { QUESTIONS, type SiteClassification } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,12 @@ export default function CenterDetail() {
     queryKey: ["/api/questions"],
     queryFn: fetchQuestions,
     refetchInterval: 30000,
+  });
+
+  const { data: termsRecord } = useQuery({
+    queryKey: ["/api/terms-acceptance", params?.id],
+    queryFn: () => fetchTermsAcceptanceBySiteId(params!.id),
+    enabled: !!params?.id,
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -767,6 +773,66 @@ export default function CenterDetail() {
                     {site.token || "Not generated"}
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card data-testid="card-legal-compliance">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {termsRecord ? <ShieldCheck className="h-5 w-5 text-emerald-600" /> : <ShieldX className="h-5 w-5 text-muted-foreground" />}
+                  Legal Compliance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {termsRecord ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-600" data-testid="badge-terms-accepted">Terms Accepted</Badge>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Accepted By</label>
+                      <p className="font-medium text-sm" data-testid="text-terms-registrant">{termsRecord.registrantName}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Email</label>
+                      <p className="text-sm" data-testid="text-terms-email">{termsRecord.registrantEmail}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Accepted On (UTC)</label>
+                      <p className="text-sm" data-testid="text-terms-date">
+                        {new Date(termsRecord.acceptedAtUtc).toLocaleString("en-US", {
+                          year: "numeric", month: "long", day: "numeric",
+                          hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "UTC"
+                        })} UTC
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Terms Version</label>
+                      <p className="text-sm font-medium" data-testid="text-terms-version">v{termsRecord.termsVersion} (Effective: {termsRecord.termsEffectiveDate})</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">IP Address</label>
+                      <p className="text-sm font-mono" data-testid="text-terms-ip">{termsRecord.ipAddress || "N/A"}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">User Agent</label>
+                      <p className="text-xs text-muted-foreground break-all" data-testid="text-terms-useragent">{termsRecord.userAgent || "N/A"}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">SHA-256 Hash</label>
+                      <div className="p-2 bg-muted rounded font-mono text-[10px] break-all" data-testid="text-terms-hash">
+                        {termsRecord.termsTextSha256}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                    <ShieldX className="h-10 w-10 mb-3 opacity-20" />
+                    <p className="text-sm font-medium">Terms Not Accepted</p>
+                    <p className="text-xs">This site has not yet accepted the registration terms.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

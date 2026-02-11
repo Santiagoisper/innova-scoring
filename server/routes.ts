@@ -444,7 +444,7 @@ export async function registerRoutes(
           registrantName || "Site Representative",
           termsVersion || "1.0",
           termsEffectiveDate || "2026-02-11",
-          record.acceptedAt ? new Date(record.acceptedAt).toISOString() : new Date().toISOString()
+          record.acceptedAtUtc ? new Date(record.acceptedAtUtc).toISOString() : new Date().toISOString()
         ).catch(err => console.error("Terms confirmation email error:", err));
       }
 
@@ -458,6 +458,15 @@ export async function registerRoutes(
     try {
       const records = await storage.getAllTermsAcceptances();
       res.json(records);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/terms-acceptance/:siteId", async (req, res) => {
+    try {
+      const record = await storage.getTermsAcceptanceBySiteId(req.params.siteId);
+      res.json(record);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

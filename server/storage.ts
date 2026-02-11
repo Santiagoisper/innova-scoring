@@ -42,6 +42,7 @@ export interface IStorage {
 
   createTermsAcceptance(entry: InsertTermsAcceptance): Promise<TermsAcceptance>;
   getAllTermsAcceptances(): Promise<TermsAcceptance[]>;
+  getTermsAcceptanceBySiteId(siteId: string): Promise<TermsAcceptance | null>;
 
   getStats(): Promise<{
     totalSites: number;
@@ -176,6 +177,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAllTermsAcceptances(): Promise<TermsAcceptance[]> {
     return db.select().from(termsAcceptance).orderBy(desc(termsAcceptance.acceptedAtUtc));
+  }
+
+  async getTermsAcceptanceBySiteId(siteId: string): Promise<TermsAcceptance | null> {
+    const [record] = await db.select().from(termsAcceptance).where(eq(termsAcceptance.siteId, siteId)).limit(1);
+    return record || null;
   }
 
   async getStats(): Promise<{
