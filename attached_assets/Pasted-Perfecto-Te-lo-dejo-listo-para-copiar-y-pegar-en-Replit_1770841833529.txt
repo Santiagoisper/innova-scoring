@@ -1,0 +1,381 @@
+Perfecto. Te lo dejo listo para copiar y pegar en Replit.
+Está escrito como final technical specification in English, sin ambigüedades y sin narrativa innecesaria.
+
+FULL SPECIFICATION – CLIENT REPORT MODULE (ALL EDITABLE BY SUPER ADMIN)
+Context
+
+The scoring engine already exists and must NOT be modified.
+
+We need to build a Client-Facing Report Module that:
+
+Generates standardized institutional reports based on final scoring results.
+
+Applies configurable institutional rules.
+
+Allows ALL configuration to be editable by a single SUPER_ADMIN.
+
+Preserves historical consistency (snapshots).
+
+Generates versioned PDF reports.
+
+Computes SHA-256 hash of each report.
+
+Supports client acknowledgment/signature.
+
+Maintains full audit trail (append-only).
+
+This is NOT a PDF exporter.
+It is an institutional evaluation output engine.
+
+1. ROLES
+SUPER_ADMIN (single user)
+
+Only one active SUPER_ADMIN account.
+
+Full edit permissions on:
+
+rules
+
+templates
+
+domains
+
+score mappings
+
+2FA required (if supported).
+
+Re-authentication required for critical changes.
+
+All actions logged (IP + timestamp + user agent).
+
+2. DATABASE STRUCTURE
+reports
+
+id (uuid)
+
+site_id
+
+evaluation_id
+
+report_version (string: REPORT-[SITEID]-[YYYYMMDD]-vX)
+
+generated_by_user_id
+
+generated_at_utc
+
+status_at_generation
+
+score_snapshot_json
+
+rules_snapshot_json
+
+templates_snapshot_json
+
+mappings_snapshot_json
+
+narrative_snapshot_json
+
+pdf_storage_path
+
+hash_sha256
+
+is_locked (boolean)
+
+previous_report_id (nullable)
+
+Reports are immutable once locked.
+
+report_signatures
+
+id (uuid)
+
+report_id (fk)
+
+signed_by_name
+
+signed_by_role
+
+signed_at_utc
+
+ip_address
+
+hash_at_signature
+
+signature_method
+
+signature_payload (json)
+
+Signature only valid if hash matches report hash.
+
+admin_rules (fully editable by SUPER_ADMIN)
+
+id
+
+domain_key
+
+trigger_key
+
+rule_priority (int)
+
+forces_minimum_status (Approved / Conditionally Approved / Not Approved)
+
+blocks_approval (boolean)
+
+requires_capa (boolean)
+
+required_action_text
+
+evidence_required_text
+
+recommended_timeline_days
+
+applies_to_phase (nullable)
+
+applies_to_sponsor (nullable)
+
+active (boolean)
+
+version_number
+
+created_at_utc
+
+updated_at_utc
+
+updated_by_user_id
+
+Rules are never deleted.
+Only deactivated.
+All edits increment version_number.
+
+report_templates
+
+id
+
+status_type (Approved / Conditionally Approved / Not Approved / Under Evaluation)
+
+executive_summary_text
+
+reevaluation_clause_text
+
+domain_paragraph_templates_json
+
+version_number
+
+updated_by_user_id
+
+updated_at_utc
+
+Fully editable by SUPER_ADMIN.
+Changes apply only to future reports.
+
+domains
+
+id
+
+domain_key
+
+display_name
+
+description
+
+display_order
+
+is_visible_in_report
+
+version_number
+
+updated_at_utc
+
+updated_by_user_id
+
+score_status_mapping
+
+id
+
+min_score
+
+max_score
+
+status_label (Adequate / Partially Adequate / Critical Gap / Not Evidenced)
+
+version_number
+
+updated_by_user_id
+
+updated_at_utc
+
+audit_log (append-only)
+
+id
+
+entity_type
+
+entity_id
+
+action_type
+
+actor_user_id
+
+ip_address
+
+user_agent
+
+created_at_utc
+
+before_state_json
+
+after_state_json
+
+details_json
+
+No edits.
+No deletes.
+
+3. REPORT GENERATION FLOW
+
+When user clicks "Generate Detailed Report":
+
+Step 1 – Snapshot
+
+Freeze:
+
+scoring results
+
+active rules
+
+active templates
+
+active mappings
+
+Store snapshots in reports table.
+
+Step 2 – Apply Rules
+
+Apply active admin_rules.
+
+Enforce forces_minimum_status.
+
+Generate CAPA items from triggered rules.
+
+Prioritize by rule_priority.
+
+Step 3 – Determine Final Status
+
+Use:
+
+scoring result
+
+rule enforcement
+
+Step 4 – Generate PDF
+
+Sections:
+
+Cover Page
+
+Executive Summary
+
+Domain Evaluation
+
+Critical Gaps (Top 5 by priority)
+
+CAPA Plan
+
+Re-evaluation Clause
+
+Integrity Verification (SHA-256)
+
+Restrictions:
+
+Do NOT show numeric scores.
+
+Do NOT show questionnaire answers.
+
+Do NOT show stars or percentages.
+
+Step 5 – Versioning
+
+Format:
+REPORT-[SITEID]-[YYYYMMDD]-vX
+
+Increment X automatically.
+
+Never overwrite older reports.
+
+Step 6 – Hash
+
+Compute SHA-256 of final PDF binary.
+
+Store in reports.hash_sha256.
+
+Embed hash inside PDF.
+
+Step 7 – Locking
+
+If signed:
+
+set is_locked = true
+
+report becomes immutable
+
+Regenerating creates new version.
+
+4. CLIENT ACKNOWLEDGMENT
+
+Client can:
+
+View report version
+
+View SHA-256 hash
+
+Click “I Acknowledge”
+
+On acknowledgment:
+
+Verify hash matches
+
+Store signature record
+
+Lock report
+
+Cannot modify a locked report.
+
+5. CRITICAL CHANGE DETECTION (SUPER_ADMIN)
+
+A change is considered CRITICAL if:
+
+It reduces forces_minimum_status severity.
+
+It disables blocks_approval rule.
+
+It expands score range classified as Adequate.
+
+It modifies Not Approved template significantly.
+
+For critical changes:
+
+Show warning modal.
+
+Require re-authentication.
+
+Require mandatory “reason for change” text.
+
+Log everything in audit_log.
+
+No blocking. Just controlled accountability.
+
+6. DESIGN PRINCIPLES
+
+Everything editable by SUPER_ADMIN.
+
+Nothing historically mutable.
+
+Every report cryptographically verifiable.
+
+Every rule change auditable.
+
+No hard-coded institutional logic.
+
+This system must behave as:
+
+An institutional governance engine with historical memory and cryptographic integrity.

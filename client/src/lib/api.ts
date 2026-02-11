@@ -161,3 +161,113 @@ export async function fetchTermsAcceptanceBySiteId(siteId: string) {
   if (!res.ok) throw new Error("Failed to fetch terms acceptance");
   return res.json();
 }
+
+export async function fetchReports() {
+  const res = await fetch("/api/reports", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch reports");
+  return res.json();
+}
+
+export async function fetchReport(id: string) {
+  const res = await fetch(`/api/reports/${id}`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch report");
+  return res.json();
+}
+
+export async function fetchReportsBySiteId(siteId: string) {
+  const res = await fetch(`/api/reports/site/${siteId}`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch site reports");
+  return res.json();
+}
+
+export async function generateSiteReport(data: {
+  siteId: string;
+  generatedByUserId: string;
+  generatedByName: string;
+  categoryScores: Record<string, number>;
+  scoringStatus: string;
+  globalScore: number;
+}) {
+  const res = await apiRequest("POST", "/api/reports/generate", data);
+  return res.json();
+}
+
+export async function fetchReportSignatures(reportId: string) {
+  const res = await fetch(`/api/reports/${reportId}/signatures`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch signatures");
+  return res.json();
+}
+
+export async function acknowledgeReport(reportId: string, data: {
+  signedByName: string;
+  signedByRole: string;
+  hashVerification: string;
+}) {
+  const res = await apiRequest("POST", `/api/reports/${reportId}/acknowledge`, data);
+  return res.json();
+}
+
+export async function fetchAdminRules() {
+  const res = await fetch("/api/admin-rules", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch admin rules");
+  return res.json();
+}
+
+export async function createAdminRule(data: any) {
+  const res = await apiRequest("POST", "/api/admin-rules", data);
+  return res.json();
+}
+
+export async function updateAdminRule(id: string, data: any) {
+  const res = await apiRequest("PATCH", `/api/admin-rules/${id}`, data);
+  return res.json();
+}
+
+export async function fetchReportTemplates() {
+  const res = await fetch("/api/report-templates", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch report templates");
+  return res.json();
+}
+
+export async function updateReportTemplate(id: string, data: any) {
+  const res = await apiRequest("PATCH", `/api/report-templates/${id}`, data);
+  return res.json();
+}
+
+export async function fetchDomains() {
+  const res = await fetch("/api/domains", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch domains");
+  return res.json();
+}
+
+export async function updateDomain(id: string, data: any) {
+  const res = await apiRequest("PATCH", `/api/domains/${id}`, data);
+  return res.json();
+}
+
+export async function fetchScoreMappings() {
+  const res = await fetch("/api/score-mappings", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch score mappings");
+  return res.json();
+}
+
+export async function createScoreMapping(data: any) {
+  const res = await apiRequest("POST", "/api/score-mappings", data);
+  return res.json();
+}
+
+export async function updateScoreMapping(id: string, data: any) {
+  const res = await apiRequest("PATCH", `/api/score-mappings/${id}`, data);
+  return res.json();
+}
+
+export async function deleteScoreMapping(id: string) {
+  const res = await apiRequest("DELETE", `/api/score-mappings/${id}`);
+  return res.json();
+}
+
+export async function fetchReportAuditLog() {
+  const res = await fetch("/api/report-audit-log", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch audit log");
+  return res.json();
+}

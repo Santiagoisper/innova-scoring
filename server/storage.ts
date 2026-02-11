@@ -1,13 +1,21 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { db } from "./db";
 import {
   adminUsers, sites, questions, activityLog, chatLogs, termsAcceptance,
+  reports, reportSignatures, adminRules, reportTemplates, domains, scoreStatusMapping, reportAuditLog,
   type AdminUser, type InsertAdminUser,
   type Site, type InsertSite,
   type Question, type InsertQuestion,
   type ActivityLogEntry, type InsertActivityLog,
   type ChatLog, type InsertChatLog,
   type TermsAcceptance, type InsertTermsAcceptance,
+  type Report, type InsertReport,
+  type ReportSignature, type InsertReportSignature,
+  type AdminRule, type InsertAdminRule,
+  type ReportTemplate, type InsertReportTemplate,
+  type Domain, type InsertDomain,
+  type ScoreStatusMapping, type InsertScoreStatusMapping,
+  type ReportAuditLog, type InsertReportAuditLog,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -43,6 +51,44 @@ export interface IStorage {
   createTermsAcceptance(entry: InsertTermsAcceptance): Promise<TermsAcceptance>;
   getAllTermsAcceptances(): Promise<TermsAcceptance[]>;
   getTermsAcceptanceBySiteId(siteId: string): Promise<TermsAcceptance | null>;
+
+  getReport(id: string): Promise<Report | undefined>;
+  getReportsBySiteId(siteId: string): Promise<Report[]>;
+  getAllReports(): Promise<Report[]>;
+  createReport(report: InsertReport): Promise<Report>;
+  updateReport(id: string, updates: Partial<InsertReport>): Promise<Report | undefined>;
+  getLatestReportBySiteId(siteId: string): Promise<Report | undefined>;
+
+  getReportSignature(id: string): Promise<ReportSignature | undefined>;
+  getSignaturesByReportId(reportId: string): Promise<ReportSignature[]>;
+  createReportSignature(signature: InsertReportSignature): Promise<ReportSignature>;
+
+  getAdminRule(id: string): Promise<AdminRule | undefined>;
+  getAllAdminRules(): Promise<AdminRule[]>;
+  getActiveAdminRules(): Promise<AdminRule[]>;
+  createAdminRule(rule: InsertAdminRule): Promise<AdminRule>;
+  updateAdminRule(id: string, updates: Partial<InsertAdminRule>): Promise<AdminRule | undefined>;
+
+  getReportTemplate(id: string): Promise<ReportTemplate | undefined>;
+  getAllReportTemplates(): Promise<ReportTemplate[]>;
+  getReportTemplateByStatus(statusType: string): Promise<ReportTemplate | undefined>;
+  createReportTemplate(template: InsertReportTemplate): Promise<ReportTemplate>;
+  updateReportTemplate(id: string, updates: Partial<InsertReportTemplate>): Promise<ReportTemplate | undefined>;
+
+  getDomain(id: string): Promise<Domain | undefined>;
+  getAllDomains(): Promise<Domain[]>;
+  createDomain(domain: InsertDomain): Promise<Domain>;
+  updateDomain(id: string, updates: Partial<InsertDomain>): Promise<Domain | undefined>;
+
+  getScoreStatusMapping(id: string): Promise<ScoreStatusMapping | undefined>;
+  getAllScoreStatusMappings(): Promise<ScoreStatusMapping[]>;
+  createScoreStatusMapping(mapping: InsertScoreStatusMapping): Promise<ScoreStatusMapping>;
+  updateScoreStatusMapping(id: string, updates: Partial<InsertScoreStatusMapping>): Promise<ScoreStatusMapping | undefined>;
+  deleteScoreStatusMapping(id: string): Promise<boolean>;
+
+  getAllReportAuditLogs(): Promise<ReportAuditLog[]>;
+  getReportAuditLogsByEntity(entityType: string, entityId: string): Promise<ReportAuditLog[]>;
+  createReportAuditLog(entry: InsertReportAuditLog): Promise<ReportAuditLog>;
 
   getStats(): Promise<{
     totalSites: number;
@@ -182,6 +228,173 @@ export class DatabaseStorage implements IStorage {
   async getTermsAcceptanceBySiteId(siteId: string): Promise<TermsAcceptance | null> {
     const [record] = await db.select().from(termsAcceptance).where(eq(termsAcceptance.siteId, siteId)).limit(1);
     return record || null;
+  }
+
+  async getReport(id: string): Promise<Report | undefined> {
+    const [report] = await db.select().from(reports).where(eq(reports.id, id));
+    return report;
+  }
+
+  async getReportsBySiteId(siteId: string): Promise<Report[]> {
+    return db.select().from(reports).where(eq(reports.siteId, siteId)).orderBy(desc(reports.generatedAtUtc));
+  }
+
+  async getAllReports(): Promise<Report[]> {
+    return db.select().from(reports).orderBy(desc(reports.generatedAtUtc));
+  }
+
+  async createReport(report: InsertReport): Promise<Report> {
+    const [created] = await db.insert(reports).values(report).returning();
+    return created;
+  }
+
+  async updateReport(id: string, updates: Partial<InsertReport>): Promise<Report | undefined> {
+    const [updated] = await db.update(reports).set(updates).where(eq(reports.id, id)).returning();
+    return updated;
+  }
+
+  async getLatestReportBySiteId(siteId: string): Promise<Report | undefined> {
+    const [report] = await db.select().from(reports).where(eq(reports.siteId, siteId)).orderBy(desc(reports.generatedAtUtc)).limit(1);
+    return report;
+  }
+
+  async getReportSignature(id: string): Promise<ReportSignature | undefined> {
+    const [sig] = await db.select().from(reportSignatures).where(eq(reportSignatures.id, id));
+    return sig;
+  }
+
+  async getSignaturesByReportId(reportId: string): Promise<ReportSignature[]> {
+    return db.select().from(reportSignatures).where(eq(reportSignatures.reportId, reportId)).orderBy(desc(reportSignatures.signedAtUtc));
+  }
+
+  async createReportSignature(signature: InsertReportSignature): Promise<ReportSignature> {
+    const [created] = await db.insert(reportSignatures).values(signature).returning();
+    return created;
+  }
+
+  async getAdminRule(id: string): Promise<AdminRule | undefined> {
+    const [rule] = await db.select().from(adminRules).where(eq(adminRules.id, id));
+    return rule;
+  }
+
+  async getAllAdminRules(): Promise<AdminRule[]> {
+    return db.select().from(adminRules).orderBy(desc(adminRules.rulePriority));
+  }
+
+  async getActiveAdminRules(): Promise<AdminRule[]> {
+    return db.select().from(adminRules).where(eq(adminRules.active, true)).orderBy(desc(adminRules.rulePriority));
+  }
+
+  async createAdminRule(rule: InsertAdminRule): Promise<AdminRule> {
+    const [created] = await db.insert(adminRules).values(rule).returning();
+    return created;
+  }
+
+  async updateAdminRule(id: string, updates: Partial<InsertAdminRule>): Promise<AdminRule | undefined> {
+    const updateData: any = { ...updates, updatedAtUtc: new Date() };
+    if (!updateData.versionNumber) {
+      const existing = await this.getAdminRule(id);
+      if (existing) updateData.versionNumber = existing.versionNumber + 1;
+    }
+    const [updated] = await db.update(adminRules).set(updateData).where(eq(adminRules.id, id)).returning();
+    return updated;
+  }
+
+  async getReportTemplate(id: string): Promise<ReportTemplate | undefined> {
+    const [template] = await db.select().from(reportTemplates).where(eq(reportTemplates.id, id));
+    return template;
+  }
+
+  async getAllReportTemplates(): Promise<ReportTemplate[]> {
+    return db.select().from(reportTemplates).orderBy(reportTemplates.statusType);
+  }
+
+  async getReportTemplateByStatus(statusType: string): Promise<ReportTemplate | undefined> {
+    const [template] = await db.select().from(reportTemplates).where(eq(reportTemplates.statusType, statusType));
+    return template;
+  }
+
+  async createReportTemplate(template: InsertReportTemplate): Promise<ReportTemplate> {
+    const [created] = await db.insert(reportTemplates).values(template).returning();
+    return created;
+  }
+
+  async updateReportTemplate(id: string, updates: Partial<InsertReportTemplate>): Promise<ReportTemplate | undefined> {
+    const updateData: any = { ...updates, updatedAtUtc: new Date() };
+    if (!updateData.versionNumber) {
+      const existing = await this.getReportTemplate(id);
+      if (existing) updateData.versionNumber = existing.versionNumber + 1;
+    }
+    const [updated] = await db.update(reportTemplates).set(updateData).where(eq(reportTemplates.id, id)).returning();
+    return updated;
+  }
+
+  async getDomain(id: string): Promise<Domain | undefined> {
+    const [domain] = await db.select().from(domains).where(eq(domains.id, id));
+    return domain;
+  }
+
+  async getAllDomains(): Promise<Domain[]> {
+    return db.select().from(domains).orderBy(domains.displayOrder);
+  }
+
+  async createDomain(domain: InsertDomain): Promise<Domain> {
+    const [created] = await db.insert(domains).values(domain).returning();
+    return created;
+  }
+
+  async updateDomain(id: string, updates: Partial<InsertDomain>): Promise<Domain | undefined> {
+    const updateData: any = { ...updates, updatedAtUtc: new Date() };
+    if (!updateData.versionNumber) {
+      const existing = await this.getDomain(id);
+      if (existing) updateData.versionNumber = existing.versionNumber + 1;
+    }
+    const [updated] = await db.update(domains).set(updateData).where(eq(domains.id, id)).returning();
+    return updated;
+  }
+
+  async getScoreStatusMapping(id: string): Promise<ScoreStatusMapping | undefined> {
+    const [mapping] = await db.select().from(scoreStatusMapping).where(eq(scoreStatusMapping.id, id));
+    return mapping;
+  }
+
+  async getAllScoreStatusMappings(): Promise<ScoreStatusMapping[]> {
+    return db.select().from(scoreStatusMapping).orderBy(desc(scoreStatusMapping.minScore));
+  }
+
+  async createScoreStatusMapping(mapping: InsertScoreStatusMapping): Promise<ScoreStatusMapping> {
+    const [created] = await db.insert(scoreStatusMapping).values(mapping).returning();
+    return created;
+  }
+
+  async updateScoreStatusMapping(id: string, updates: Partial<InsertScoreStatusMapping>): Promise<ScoreStatusMapping | undefined> {
+    const updateData: any = { ...updates, updatedAtUtc: new Date() };
+    if (!updateData.versionNumber) {
+      const existing = await this.getScoreStatusMapping(id);
+      if (existing) updateData.versionNumber = existing.versionNumber + 1;
+    }
+    const [updated] = await db.update(scoreStatusMapping).set(updateData).where(eq(scoreStatusMapping.id, id)).returning();
+    return updated;
+  }
+
+  async deleteScoreStatusMapping(id: string): Promise<boolean> {
+    const result = await db.delete(scoreStatusMapping).where(eq(scoreStatusMapping.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getAllReportAuditLogs(): Promise<ReportAuditLog[]> {
+    return db.select().from(reportAuditLog).orderBy(desc(reportAuditLog.createdAtUtc));
+  }
+
+  async getReportAuditLogsByEntity(entityType: string, entityId: string): Promise<ReportAuditLog[]> {
+    return db.select().from(reportAuditLog)
+      .where(and(eq(reportAuditLog.entityType, entityType), eq(reportAuditLog.entityId, entityId)))
+      .orderBy(desc(reportAuditLog.createdAtUtc));
+  }
+
+  async createReportAuditLog(entry: InsertReportAuditLog): Promise<ReportAuditLog> {
+    const [created] = await db.insert(reportAuditLog).values(entry).returning();
+    return created;
   }
 
   async getStats(): Promise<{

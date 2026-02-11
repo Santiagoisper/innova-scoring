@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
-import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2, ShieldCheck, ShieldX } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2, ShieldCheck, ShieldX, ClipboardList } from "lucide-react";
 import { QUESTIONS, type SiteClassification } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import jsPDF from "jspdf";
 import { calculateScore } from "@/lib/questions";
+import { generateSiteReport } from "@/lib/api";
 
 export default function CenterDetail() {
   const [, params] = useRoute("/admin/centers/:id");
@@ -77,6 +78,30 @@ export default function CenterDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sites", params?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
+    }
+  });
+
+  const reportMutation = useMutation({
+    mutationFn: async () => {
+      const scoring = calculateScore(site.answers as any || {}, questions);
+      return generateSiteReport({
+        siteId: site.id,
+        generatedByUserId: user?.id || "",
+        generatedByName: user?.name || "Admin",
+        categoryScores: scoring.categoryScores,
+        scoringStatus: scoring.status,
+        globalScore: scoring.score,
+      });
+    },
+    onSuccess: (report: any) => {
+      toast({
+        title: "Report Generated",
+        description: `Report ${report.reportVersion || report.report_version} has been created successfully.`,
+      });
+      setLocation(`/admin/reports/${report.id}`);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   });
 
@@ -564,6 +589,16 @@ export default function CenterDetail() {
               
               <Button variant="outline" onClick={handleDownloadReport}>
                 <FileDown className="mr-2 h-4 w-4" /> Download Report
+              </Button>
+
+              <Button 
+                variant="outline" 
+                onClick={() => reportMutation.mutate()} 
+                disabled={reportMutation.isPending || !site.answers || Object.keys(site.answers as any || {}).length === 0}
+                data-testid="btn-generate-report"
+              >
+                {reportMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ClipboardList className="mr-2 h-4 w-4" />}
+                Generate Detailed Report
               </Button>
 
               <DropdownMenu>

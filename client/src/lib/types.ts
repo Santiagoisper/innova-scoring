@@ -54,7 +54,7 @@ export interface User {
   permission?: "readonly" | "readwrite";
 }
 
-export type Permission = "readonly" | "readwrite";
+export type Permission = "readonly" | "readwrite" | "super_admin";
 
 export interface AdminUser {
   id: string;

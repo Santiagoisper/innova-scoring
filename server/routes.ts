@@ -6,6 +6,23 @@ import { questions as questionsTable } from "@shared/schema";
 import { z } from "zod";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { sendTokenEmail, sendEvaluationCompleteEmail, sendStatusChangeEmail, sendTermsAcceptanceConfirmationEmail } from "./email";
+import { generateReport, computeReportHash } from "./report-engine";
+
+function detectCriticalRuleChange(existing: any, updates: any): boolean {
+  const statusSeverity: Record<string, number> = {
+    "Not Approved": 3,
+    "Conditionally Approved": 2,
+    "Approved": 1,
+  };
+  if (updates.forcesMinimumStatus && existing.forcesMinimumStatus) {
+    const oldSev = statusSeverity[existing.forcesMinimumStatus] || 0;
+    const newSev = statusSeverity[updates.forcesMinimumStatus] || 0;
+    if (newSev < oldSev) return true;
+  }
+  if (updates.blocksApproval === false && existing.blocksApproval === true) return true;
+  if (updates.active === false && existing.active === true && existing.blocksApproval) return true;
+  return false;
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -467,6 +484,390 @@ export async function registerRoutes(
     try {
       const record = await storage.getTermsAcceptanceBySiteId(req.params.siteId);
       res.json(record);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== REPORTS ==========
+  app.get("/api/reports", async (_req, res) => {
+    try {
+      const allReports = await storage.getAllReports();
+      res.json(allReports);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/reports/:id", async (req, res) => {
+    try {
+      const report = await storage.getReport(req.params.id);
+      if (report) {
+        res.json(report);
+      } else {
+        res.status(404).json({ message: "Report not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/reports/site/:siteId", async (req, res) => {
+    try {
+      const siteReports = await storage.getReportsBySiteId(req.params.siteId);
+      res.json(siteReports);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/reports/generate", async (req, res) => {
+    try {
+      const { siteId, generatedByUserId, generatedByName, categoryScores, scoringStatus, globalScore } = req.body;
+
+      const site = await storage.getSite(siteId);
+      if (!site) return res.status(404).json({ message: "Site not found" });
+
+      const result = await generateReport(siteId, generatedByUserId, categoryScores, scoringStatus, globalScore);
+
+      const hashData = {
+        reportVersion: result.reportVersion,
+        siteId,
+        finalStatus: result.finalStatus,
+        scoreSnapshot: result.scoreSnapshot,
+        capaItems: result.capaItems,
+        generatedAt: new Date().toISOString(),
+      };
+      const hashSha256 = computeReportHash(hashData);
+
+      const report = await storage.createReport({
+        siteId,
+        reportVersion: result.reportVersion,
+        generatedByUserId,
+        statusAtGeneration: site.status,
+        finalStatus: result.finalStatus,
+        scoreSnapshotJson: result.scoreSnapshot,
+        rulesSnapshotJson: result.rulesSnapshot,
+        templatesSnapshotJson: result.templatesSnapshot,
+        mappingsSnapshotJson: result.mappingsSnapshot,
+        narrativeSnapshotJson: result.narrativeSnapshot,
+        capaItemsJson: result.capaItems,
+        hashSha256,
+        isLocked: false,
+        previousReportId: result.previousReportId,
+      });
+
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+
+      await storage.createReportAuditLog({
+        entityType: "report",
+        entityId: report.id,
+        actionType: "generated",
+        actorUserId: generatedByUserId,
+        actorName: generatedByName || "Unknown",
+        ipAddress,
+        userAgent,
+        afterStateJson: { reportVersion: result.reportVersion, finalStatus: result.finalStatus },
+        isCriticalChange: false,
+      });
+
+      await storage.createActivityLog({
+        user: generatedByName || "Admin",
+        action: "Generated Report",
+        target: `${site.contactName} - ${result.reportVersion}`,
+        type: "info",
+        sector: "Reports",
+      });
+
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/reports/:id/signatures", async (req, res) => {
+    try {
+      const signatures = await storage.getSignaturesByReportId(req.params.id);
+      res.json(signatures);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/reports/:id/acknowledge", async (req, res) => {
+    try {
+      const report = await storage.getReport(req.params.id);
+      if (!report) return res.status(404).json({ message: "Report not found" });
+      if (report.isLocked) return res.status(400).json({ message: "Report is already locked" });
+
+      const { signedByName, signedByRole, hashVerification } = req.body;
+
+      if (hashVerification !== report.hashSha256) {
+        return res.status(400).json({ message: "Hash verification failed. Report integrity cannot be confirmed." });
+      }
+
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+
+      const signature = await storage.createReportSignature({
+        reportId: report.id,
+        signedByName,
+        signedByRole,
+        ipAddress,
+        userAgent,
+        hashAtSignature: report.hashSha256!,
+        signatureMethod: "acknowledgment",
+        signaturePayload: { acknowledgedAt: new Date().toISOString() },
+      });
+
+      await storage.updateReport(report.id, { isLocked: true });
+
+      await storage.createReportAuditLog({
+        entityType: "report",
+        entityId: report.id,
+        actionType: "acknowledged",
+        actorName: signedByName,
+        ipAddress,
+        userAgent,
+        afterStateJson: { signatureId: signature.id, isLocked: true },
+        isCriticalChange: false,
+      });
+
+      res.json({ signature, locked: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== ADMIN RULES ==========
+  app.get("/api/admin-rules", async (_req, res) => {
+    try {
+      const rules = await storage.getAllAdminRules();
+      res.json(rules);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/admin-rules", async (req, res) => {
+    try {
+      const rule = await storage.createAdminRule(req.body);
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+      await storage.createReportAuditLog({
+        entityType: "admin_rule",
+        entityId: rule.id,
+        actionType: "created",
+        actorUserId: req.body.updatedByUserId,
+        actorName: req.body.actorName || "Super Admin",
+        ipAddress,
+        userAgent,
+        afterStateJson: rule,
+        isCriticalChange: false,
+      });
+      res.json(rule);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/admin-rules/:id", async (req, res) => {
+    try {
+      const existing = await storage.getAdminRule(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Rule not found" });
+
+      const isCritical = detectCriticalRuleChange(existing, req.body);
+
+      if (isCritical && !req.body.changeReason) {
+        return res.status(400).json({ message: "Critical change detected. A reason is required.", isCritical: true });
+      }
+
+      const updated = await storage.updateAdminRule(req.params.id, req.body);
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+      await storage.createReportAuditLog({
+        entityType: "admin_rule",
+        entityId: req.params.id,
+        actionType: "updated",
+        actorUserId: req.body.updatedByUserId,
+        actorName: req.body.actorName || "Super Admin",
+        ipAddress,
+        userAgent,
+        beforeStateJson: existing,
+        afterStateJson: updated,
+        isCriticalChange: isCritical,
+        changeReason: req.body.changeReason,
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== REPORT TEMPLATES ==========
+  app.get("/api/report-templates", async (_req, res) => {
+    try {
+      const templates = await storage.getAllReportTemplates();
+      res.json(templates);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/report-templates/:id", async (req, res) => {
+    try {
+      const existing = await storage.getReportTemplate(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Template not found" });
+
+      const isCritical = existing.statusType === "Not Approved" &&
+        req.body.executiveSummaryText && req.body.executiveSummaryText !== existing.executiveSummaryText;
+
+      if (isCritical && !req.body.changeReason) {
+        return res.status(400).json({ message: "Critical change detected on Not Approved template. A reason is required.", isCritical: true });
+      }
+
+      const updated = await storage.updateReportTemplate(req.params.id, req.body);
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+      await storage.createReportAuditLog({
+        entityType: "report_template",
+        entityId: req.params.id,
+        actionType: "updated",
+        actorUserId: req.body.updatedByUserId,
+        actorName: req.body.actorName || "Super Admin",
+        ipAddress,
+        userAgent,
+        beforeStateJson: existing,
+        afterStateJson: updated,
+        isCriticalChange: isCritical,
+        changeReason: req.body.changeReason,
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== DOMAINS ==========
+  app.get("/api/domains", async (_req, res) => {
+    try {
+      const allDomains = await storage.getAllDomains();
+      res.json(allDomains);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/domains/:id", async (req, res) => {
+    try {
+      const existing = await storage.getDomain(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Domain not found" });
+      const updated = await storage.updateDomain(req.params.id, req.body);
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+      await storage.createReportAuditLog({
+        entityType: "domain",
+        entityId: req.params.id,
+        actionType: "updated",
+        actorUserId: req.body.updatedByUserId,
+        actorName: req.body.actorName || "Super Admin",
+        ipAddress,
+        userAgent,
+        beforeStateJson: existing,
+        afterStateJson: updated,
+        isCriticalChange: false,
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== SCORE STATUS MAPPINGS ==========
+  app.get("/api/score-mappings", async (_req, res) => {
+    try {
+      const mappings = await storage.getAllScoreStatusMappings();
+      res.json(mappings);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/score-mappings", async (req, res) => {
+    try {
+      const mapping = await storage.createScoreStatusMapping(req.body);
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+      await storage.createReportAuditLog({
+        entityType: "score_mapping",
+        entityId: mapping.id,
+        actionType: "created",
+        actorUserId: req.body.updatedByUserId,
+        actorName: req.body.actorName || "Super Admin",
+        ipAddress,
+        userAgent,
+        afterStateJson: mapping,
+        isCriticalChange: false,
+      });
+      res.json(mapping);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/score-mappings/:id", async (req, res) => {
+    try {
+      const existing = await storage.getScoreStatusMapping(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Mapping not found" });
+
+      const isCritical = existing.statusLabel === "Adequate" &&
+        req.body.minScore !== undefined && req.body.minScore < existing.minScore;
+
+      if (isCritical && !req.body.changeReason) {
+        return res.status(400).json({ message: "Critical change: expanding Adequate range. A reason is required.", isCritical: true });
+      }
+
+      const updated = await storage.updateScoreStatusMapping(req.params.id, req.body);
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+      await storage.createReportAuditLog({
+        entityType: "score_mapping",
+        entityId: req.params.id,
+        actionType: "updated",
+        actorUserId: req.body.updatedByUserId,
+        actorName: req.body.actorName || "Super Admin",
+        ipAddress,
+        userAgent,
+        beforeStateJson: existing,
+        afterStateJson: updated,
+        isCriticalChange: isCritical,
+        changeReason: req.body.changeReason,
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/score-mappings/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteScoreStatusMapping(req.params.id);
+      if (deleted) {
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ message: "Mapping not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== REPORT AUDIT LOG ==========
+  app.get("/api/report-audit-log", async (_req, res) => {
+    try {
+      const logs = await storage.getAllReportAuditLogs();
+      res.json(logs);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

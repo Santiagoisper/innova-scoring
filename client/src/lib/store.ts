@@ -7,7 +7,7 @@ export interface UserSession {
   role: "admin" | "site";
   siteId?: string;
   email?: string;
-  permission?: "readonly" | "readwrite";
+  permission?: "readonly" | "readwrite" | "super_admin";
 }
 
 interface AppState {

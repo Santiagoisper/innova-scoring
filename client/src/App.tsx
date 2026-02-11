@@ -24,6 +24,10 @@ import ContactRequests from "@/pages/admin/contact-requests.tsx";
 import ActivityLog from "@/pages/admin/activity-log.tsx";
 import AdminSettings from "@/pages/admin/settings.tsx";
 import ChatLogs from "@/pages/admin/chat-logs.tsx";
+import ReportConfig from "@/pages/admin/report-config.tsx";
+import AdminReports from "@/pages/admin/reports.tsx";
+import ReportDetail from "@/pages/admin/report-detail.tsx";
+import SiteReport from "@/pages/site/report.tsx";
 
 function Router() {
   return (
@@ -43,10 +47,14 @@ function Router() {
       <Route path="/admin/activity-log" component={ActivityLog} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/chat-logs" component={ChatLogs} />
+      <Route path="/admin/report-config" component={ReportConfig} />
+      <Route path="/admin/reports" component={AdminReports} />
+      <Route path="/admin/reports/:id" component={ReportDetail} />
 
       {/* Site Routes */}
       <Route path="/site/disclaimer" component={SiteDisclaimer} />
       <Route path="/site/evaluation" component={SiteEvaluation} />
+      <Route path="/site/report" component={SiteReport} />
       
       <Route component={NotFound} />
     </Switch>
