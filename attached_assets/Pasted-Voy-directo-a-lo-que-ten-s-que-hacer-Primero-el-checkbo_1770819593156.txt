@@ -1,0 +1,67 @@
+Voy directo a lo que tenés que hacer.
+
+Primero, el checkbox debe ser obligatorio.
+No puede estar pre-marcado.
+No puede permitir enviar el formulario sin estar tildado.
+El botón de envío debe decir algo claro como:
+
+“Submit Registration”
+
+Y arriba o inmediatamente antes del botón debe estar el checkbox con el texto completo o un link visible al texto completo.
+
+Segundo, el usuario debe poder acceder al texto completo antes de aceptar.
+Tenés dos opciones válidas:
+
+Opción A (más fuerte): el texto completo visible en la misma página, scrollable.
+Opción B: link claro que diga “View Site Registration Terms” que abra el documento completo.
+
+Lo que no sirve es esconderlo en el footer.
+
+Tercero, tenés que guardar evidencia. Esto es crítico.
+
+El sistema debe registrar automáticamente:
+
+– Fecha y hora exacta (timestamp en UTC)
+– Dirección IP
+– User agent / tipo de navegador
+– Versión exacta del texto aceptado (muy importante)
+– Nombre legal del site y email
+– Confirmación de que el checkbox fue marcado
+
+Sin esto, el click-wrap pierde fuerza probatoria.
+
+Cuarto, guardá la versión del documento.
+Cada vez que modifiques el texto, creá una versión nueva con número de versión y fecha.
+
+Ejemplo:
+Version 1.0 – Effective January 15, 2026
+Version 1.1 – Effective March 2, 2026
+
+Y el sistema debe guardar qué versión aceptó cada site.
+
+Quinto, mandá email automático de confirmación.
+
+Después de enviar el formulario, enviá un email que diga algo así:
+
+“You have successfully submitted your site registration to Innova Trials LLC. By submitting the registration on [date], you agreed to the Site Registration Terms (Version X.X).”
+
+Ese email es otra prueba adicional.
+
+Sexto, nunca modifiques retroactivamente términos ya aceptados.
+Si actualizás términos, que solo apliquen a registros nuevos o pedí re-aceptación.
+
+Séptimo, el diseño visual importa.
+
+El checkbox no debe estar escondido, en gris claro, ni debajo de múltiples bloques que lo hagan confuso.
+En EE.UU., los jueces miran si fue “conspicuous” y “reasonably noticeable”.
+
+Octavo, guardá backups de logs.
+Si el sistema pierde el registro de aceptación, el texto no sirve.
+
+Ahora, algo importante que muchos no hacen:
+
+Si el registro es internacional, agregá una línea arriba del checkbox que diga:
+
+“By submitting this form, you confirm that you have the legal authority to bind the Site.”
+
+Esto evita que alguien después diga “yo era solo coordinador, no tenía autoridad”.

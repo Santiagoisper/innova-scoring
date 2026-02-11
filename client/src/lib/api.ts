@@ -136,3 +136,22 @@ export async function fetchChatLogs() {
   if (!res.ok) throw new Error("Failed to fetch chat logs");
   return res.json();
 }
+
+export async function submitTermsAcceptance(data: {
+  siteId: string;
+  registrantName: string;
+  registrantEmail: string;
+  siteName?: string;
+  termsVersion: string;
+  termsEffectiveDate: string;
+  termsTextSha256: string;
+}) {
+  const res = await apiRequest("POST", "/api/terms-acceptance", data);
+  return res.json();
+}
+
+export async function fetchTermsAcceptances() {
+  const res = await fetch("/api/terms-acceptance", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch terms acceptances");
+  return res.json();
+}

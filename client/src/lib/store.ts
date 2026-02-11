@@ -6,6 +6,7 @@ export interface UserSession {
   name: string;
   role: "admin" | "site";
   siteId?: string;
+  email?: string;
   permission?: "readonly" | "readwrite";
 }
 

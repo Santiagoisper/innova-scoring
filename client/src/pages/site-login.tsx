@@ -28,7 +28,8 @@ export default function SiteLogin() {
         id: result.id,
         name: result.name || result.contactName,
         role: "site",
-        siteId: result.siteId || result.id
+        siteId: result.siteId || result.id,
+        email: email,
       });
       toast({
         title: "Welcome back",

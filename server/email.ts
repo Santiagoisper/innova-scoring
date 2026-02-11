@@ -261,6 +261,60 @@ export async function sendStatusChangeEmail(
   }
 }
 
+export async function sendTermsAcceptanceConfirmationEmail(
+  to: string,
+  contactName: string,
+  termsVersion: string,
+  termsEffectiveDate: string,
+  acceptedDateUtc: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const body = `
+      <h2 style="color:#333;margin:0 0 16px;font-size:22px;">Terms Acceptance Confirmation</h2>
+      <p style="color:#555;font-size:15px;line-height:1.6;">
+        Hello <strong>${contactName}</strong>,
+      </p>
+      <p style="color:#555;font-size:15px;line-height:1.6;">
+        You have successfully submitted your site registration to Innova Trials LLC.
+      </p>
+      <div style="background-color:#f0f7ff;border:2px solid ${BRAND_COLOR};border-radius:10px;padding:24px;margin:24px 0;">
+        <p style="color:#555;font-size:14px;line-height:1.8;margin:0;">
+          By submitting the registration on <strong>${acceptedDateUtc}</strong>, you agreed to the
+          <strong>Site Registration Terms (Version ${termsVersion})</strong>, effective <strong>${termsEffectiveDate}</strong>,
+          via checkbox click-wrap agreement.
+        </p>
+      </div>
+      <div style="background-color:#e8f5e9;border-left:4px solid #28a745;padding:16px;border-radius:0 8px 8px 0;margin:20px 0;">
+        <p style="color:#2e7d32;font-size:14px;margin:0;">
+          This email serves as confirmation of your acceptance. Please retain it for your records.
+        </p>
+      </div>
+      <p style="color:#555;font-size:15px;line-height:1.6;">
+        If you did not submit this registration or have any questions, please contact your Innova Trials administrator immediately.
+      </p>
+    `;
+
+    const client = getResend();
+    if (!client) return { success: false, error: "Email service not configured" };
+
+    const { error } = await client.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject: `Innova Trials - Terms Acceptance Confirmation (Version ${termsVersion})`,
+      html: baseTemplate("Terms Acceptance Confirmation", body),
+    });
+
+    if (error) {
+      console.error("Resend error (terms confirmation):", error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("Email send error (terms confirmation):", err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function sendAdminNotificationEmail(
   adminEmails: string[],
   siteName: string,

@@ -71,6 +71,22 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: t
 export const insertSiteSchema = createInsertSchema(sites).omit({ id: true, registeredAt: true, updatedAt: true });
 export const insertQuestionSchema = createInsertSchema(questions).omit({ id: true });
 export const insertActivityLogSchema = createInsertSchema(activityLog).omit({ id: true, date: true });
+export const termsAcceptance = pgTable("terms_acceptance", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull(),
+  registrantName: text("registrant_name").notNull(),
+  registrantEmail: text("registrant_email").notNull(),
+  siteName: text("site_name"),
+  accepted: boolean("accepted").notNull().default(true),
+  acceptedAtUtc: timestamp("accepted_at_utc").notNull().defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  termsVersion: text("terms_version").notNull().default("1.0"),
+  termsEffectiveDate: text("terms_effective_date").notNull().default("2026-02-11"),
+  termsTextSha256: text("terms_text_sha256").notNull(),
+});
+
+export const insertTermsAcceptanceSchema = createInsertSchema(termsAcceptance).omit({ id: true, acceptedAtUtc: true });
 export const insertChatLogSchema = createInsertSchema(chatLogs).omit({ id: true, createdAt: true });
 
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
@@ -83,3 +99,5 @@ export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLogEntry = typeof activityLog.$inferSelect;
 export type InsertChatLog = z.infer<typeof insertChatLogSchema>;
 export type ChatLog = typeof chatLogs.$inferSelect;
+export type InsertTermsAcceptance = z.infer<typeof insertTermsAcceptanceSchema>;
+export type TermsAcceptance = typeof termsAcceptance.$inferSelect;

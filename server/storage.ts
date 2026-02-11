@@ -1,12 +1,13 @@
 import { eq, desc } from "drizzle-orm";
 import { db } from "./db";
 import {
-  adminUsers, sites, questions, activityLog, chatLogs,
+  adminUsers, sites, questions, activityLog, chatLogs, termsAcceptance,
   type AdminUser, type InsertAdminUser,
   type Site, type InsertSite,
   type Question, type InsertQuestion,
   type ActivityLogEntry, type InsertActivityLog,
   type ChatLog, type InsertChatLog,
+  type TermsAcceptance, type InsertTermsAcceptance,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -38,6 +39,9 @@ export interface IStorage {
   getAllChatLogs(): Promise<ChatLog[]>;
   createChatLog(entry: InsertChatLog): Promise<ChatLog>;
   getChatLogsBySession(sessionId: string): Promise<ChatLog[]>;
+
+  createTermsAcceptance(entry: InsertTermsAcceptance): Promise<TermsAcceptance>;
+  getAllTermsAcceptances(): Promise<TermsAcceptance[]>;
 
   getStats(): Promise<{
     totalSites: number;
@@ -163,6 +167,15 @@ export class DatabaseStorage implements IStorage {
 
   async getChatLogsBySession(sessionId: string): Promise<ChatLog[]> {
     return db.select().from(chatLogs).where(eq(chatLogs.sessionId, sessionId)).orderBy(chatLogs.createdAt);
+  }
+
+  async createTermsAcceptance(entry: InsertTermsAcceptance): Promise<TermsAcceptance> {
+    const [created] = await db.insert(termsAcceptance).values(entry).returning();
+    return created;
+  }
+
+  async getAllTermsAcceptances(): Promise<TermsAcceptance[]> {
+    return db.select().from(termsAcceptance).orderBy(desc(termsAcceptance.acceptedAtUtc));
   }
 
   async getStats(): Promise<{

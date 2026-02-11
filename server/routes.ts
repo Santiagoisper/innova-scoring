@@ -5,7 +5,7 @@ import { db } from "./db";
 import { questions as questionsTable } from "@shared/schema";
 import { z } from "zod";
 import { registerChatRoutes } from "./replit_integrations/chat";
-import { sendTokenEmail, sendEvaluationCompleteEmail, sendStatusChangeEmail } from "./email";
+import { sendTokenEmail, sendEvaluationCompleteEmail, sendStatusChangeEmail, sendTermsAcceptanceConfirmationEmail } from "./email";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -405,6 +405,59 @@ export async function registerRoutes(
     try {
       const stats = await storage.getStats();
       res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== TERMS ACCEPTANCE ==========
+  app.post("/api/terms-acceptance", async (req, res) => {
+    try {
+      const { siteId, registrantName, registrantEmail, siteName, termsVersion, termsEffectiveDate, termsTextSha256 } = req.body;
+      const ipAddress = req.headers["x-forwarded-for"]?.toString()?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+      const userAgent = req.headers["user-agent"] || "unknown";
+
+      const record = await storage.createTermsAcceptance({
+        siteId,
+        registrantName,
+        registrantEmail,
+        siteName: siteName || null,
+        accepted: true,
+        ipAddress,
+        userAgent,
+        termsVersion: termsVersion || "1.0",
+        termsEffectiveDate: termsEffectiveDate || "2026-02-11",
+        termsTextSha256,
+      });
+
+      await storage.createActivityLog({
+        user: registrantName,
+        action: "Accepted Terms",
+        target: `Terms v${termsVersion || "1.0"}`,
+        type: "success",
+        sector: "Legal Compliance",
+      });
+
+      if (registrantEmail) {
+        sendTermsAcceptanceConfirmationEmail(
+          registrantEmail,
+          registrantName || "Site Representative",
+          termsVersion || "1.0",
+          termsEffectiveDate || "2026-02-11",
+          record.acceptedAt ? new Date(record.acceptedAt).toISOString() : new Date().toISOString()
+        ).catch(err => console.error("Terms confirmation email error:", err));
+      }
+
+      res.json(record);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/terms-acceptance", async (_req, res) => {
+    try {
+      const records = await storage.getAllTermsAcceptances();
+      res.json(records);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
