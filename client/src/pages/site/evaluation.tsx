@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Upload, FileText, X, Star } from "lucide-react";
+import { Loader2, CheckCircle2, Upload, FileText, X, Check, XCircle } from "lucide-react";
 
 export default function SiteEvaluation() {
   const { user } = useStore();
@@ -99,8 +99,12 @@ export default function SiteEvaluation() {
   const onSubmit = async (data: any) => {
     const richAnswers: Record<string, any> = {};
     Object.keys(data).forEach(key => {
+      if (key.endsWith("_details")) return;
+      const detailsKey = `${key}_details`;
+      const details = data[detailsKey] || undefined;
       richAnswers[key] = {
         value: data[key],
+        details: details,
         attachment: attachments[key] ? attachments[key].map(f => ({
           name: f.name,
           type: f.type,
@@ -197,34 +201,48 @@ export default function SiteEvaluation() {
                       render={({ field }) => (
                         <div className="space-y-3">
                           {q.type === "YesNo" ? (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1" data-testid={`star-rating-${q.id}`}>
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <button
-                                    key={star}
-                                    type="button"
-                                    onClick={() => field.onChange(star)}
-                                    className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
-                                    data-testid={`star-${q.id}-${star}`}
-                                  >
-                                    <Star
-                                      className={`h-7 w-7 transition-colors ${
-                                        star <= (field.value || 0)
-                                          ? "fill-yellow-400 text-yellow-400"
-                                          : "fill-transparent text-gray-300"
-                                      }`}
-                                    />
-                                  </button>
-                                ))}
-                                <span className="ml-3 text-sm text-muted-foreground">
-                                  {field.value ? `${field.value}/5` : "Not rated"}
-                                </span>
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-3" data-testid={`yesno-${q.id}`}>
+                                <button
+                                  type="button"
+                                  onClick={() => field.onChange("Yes")}
+                                  className={`flex items-center gap-2 px-5 py-2.5 rounded-lg border-2 font-medium text-sm transition-all ${
+                                    field.value === "Yes"
+                                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm"
+                                      : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50"
+                                  }`}
+                                  data-testid={`btn-yes-${q.id}`}
+                                >
+                                  <Check className={`h-4 w-4 ${field.value === "Yes" ? "text-emerald-600" : "text-gray-400"}`} />
+                                  Yes
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => field.onChange("No")}
+                                  className={`flex items-center gap-2 px-5 py-2.5 rounded-lg border-2 font-medium text-sm transition-all ${
+                                    field.value === "No"
+                                      ? "border-red-400 bg-red-50 text-red-700 shadow-sm"
+                                      : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50"
+                                  }`}
+                                  data-testid={`btn-no-${q.id}`}
+                                >
+                                  <XCircle className={`h-4 w-4 ${field.value === "No" ? "text-red-500" : "text-gray-400"}`} />
+                                  No
+                                </button>
                               </div>
-                              <div className="flex gap-4 text-xs text-muted-foreground">
-                                <span>1 = No / Absent</span>
-                                <span>3 = Meets standard</span>
-                                <span>5 = Excellent</span>
-                              </div>
+                              <Controller
+                                name={`${q.id}_details`}
+                                control={form.control}
+                                render={({ field: detailsField }) => (
+                                  <Textarea
+                                    placeholder={field.value === "Yes" ? "Please provide additional details..." : "Select 'Yes' to add details"}
+                                    className={`resize-none transition-all ${field.value !== "Yes" ? "opacity-50 bg-muted cursor-not-allowed" : ""}`}
+                                    disabled={field.value !== "Yes"}
+                                    {...detailsField}
+                                    data-testid={`details-${q.id}`}
+                                  />
+                                )}
+                              />
                             </div>
                           ) : (
                             <Textarea 

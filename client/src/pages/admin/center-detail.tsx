@@ -14,7 +14,6 @@ import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircl
 import { QUESTIONS, type SiteClassification } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Star } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,14 +117,34 @@ export default function CenterDetail() {
   const handleAnswerChange = (questionId: string, value: string | number) => {
     const currentAnswer = editedAnswers[questionId];
     let attachment = undefined;
+    let details = undefined;
     
-    if (typeof currentAnswer === 'object' && currentAnswer?.attachment) {
-      attachment = currentAnswer.attachment;
+    if (typeof currentAnswer === 'object' && currentAnswer !== null) {
+      if (currentAnswer.attachment) attachment = currentAnswer.attachment;
+      if (currentAnswer.details) details = currentAnswer.details;
     }
 
     setEditedAnswers(prev => ({
       ...prev,
-      [questionId]: attachment ? { value, attachment } : value
+      [questionId]: { value, details, attachment }
+    }));
+  };
+
+  const handleDetailsChange = (questionId: string, detailsText: string) => {
+    const currentAnswer = editedAnswers[questionId];
+    let value = "";
+    let attachment = undefined;
+    
+    if (typeof currentAnswer === 'object' && currentAnswer !== null) {
+      value = currentAnswer.value || "";
+      if (currentAnswer.attachment) attachment = currentAnswer.attachment;
+    } else if (currentAnswer !== undefined && currentAnswer !== null) {
+      value = String(currentAnswer);
+    }
+
+    setEditedAnswers(prev => ({
+      ...prev,
+      [questionId]: { value, details: detailsText, attachment }
     }));
   };
 
@@ -358,17 +377,16 @@ export default function CenterDetail() {
       catQuestions.forEach((q: any) => {
         const ans = site.answers?.[q.id];
         let val = "Not Answered";
-        let starValue = 0;
+        let details = "";
         if (typeof ans === 'object' && ans?.value !== undefined) {
           val = String(ans.value);
-          starValue = Number(ans.value) || 0;
+          details = ans.details ? String(ans.details) : "";
         } else if (ans !== undefined && ans !== null) {
           val = String(ans);
-          starValue = Number(ans) || 0;
         }
 
         const questionLines = doc.splitTextToSize(`${q.text}`, contentWidth - 15);
-        const neededHeight = (questionLines.length * 4.5) + 14;
+        const neededHeight = (questionLines.length * 4.5) + 14 + (details ? 10 : 0);
         y = checkPageBreak(y, neededHeight);
 
         if (questionNum % 2 === 0) {
@@ -387,14 +405,30 @@ export default function CenterDetail() {
         doc.text(questionLines, margin + 12, y + 1);
         y += questionLines.length * 4.5 + 1;
 
-        if (q.type === "YesNo" && starValue > 0) {
-          const stars = "★".repeat(starValue) + "☆".repeat(5 - starValue);
-          doc.setFontSize(10);
-          doc.setTextColor(250, 204, 21);
-          doc.text(stars, margin + 12, y + 2);
-          doc.setFontSize(8);
-          doc.setTextColor(...gray600);
-          doc.text(`(${starValue}/5)`, margin + 32, y + 2);
+        if (q.type === "YesNo") {
+          const isYes = val === "Yes";
+          const isNo = val === "No";
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          if (isYes) {
+            doc.setTextColor(16, 185, 129);
+            doc.text("✓ Yes", margin + 12, y + 2);
+          } else if (isNo) {
+            doc.setTextColor(239, 68, 68);
+            doc.text("✗ No", margin + 12, y + 2);
+          } else {
+            doc.setTextColor(...gray400);
+            doc.text("Not Answered", margin + 12, y + 2);
+          }
+          if (details) {
+            y += 6;
+            doc.setFontSize(7);
+            doc.setFont("helvetica", "italic");
+            doc.setTextColor(...gray600);
+            const detailLines = doc.splitTextToSize(details, contentWidth - 20);
+            doc.text(detailLines, margin + 12, y + 2);
+            y += (detailLines.length - 1) * 3.5;
+          }
         } else {
           const ansColor = val === "Not Answered" ? gray400 : brandDark;
           doc.setFontSize(8);
@@ -601,11 +635,13 @@ export default function CenterDetail() {
                         const answerEntry = isEditing ? editedAnswers[q.id] : site.answers[q.id];
                         
                         let answerValue = "";
+                        let answerDetails = "";
                         let attachments: any[] = [];
                         
                         if (typeof answerEntry === 'object' && answerEntry !== null && !Array.isArray(answerEntry)) {
                           if ('value' in answerEntry) {
                             answerValue = String(answerEntry.value || "");
+                            answerDetails = answerEntry.details ? String(answerEntry.details) : "";
                             if (answerEntry.attachment) {
                                attachments = Array.isArray(answerEntry.attachment) 
                                   ? answerEntry.attachment 
@@ -623,29 +659,38 @@ export default function CenterDetail() {
                             {isEditing ? (
                               <div className="space-y-2">
                                 {q.type === "YesNo" ? (
-                                  <div className="flex items-center gap-1">
-                                    {[1, 2, 3, 4, 5].map((star) => {
-                                      const currentStars = typeof answerValue === 'string' ? parseInt(answerValue, 10) : Number(answerValue);
-                                      return (
-                                        <button
-                                          key={star}
-                                          type="button"
-                                          onClick={() => handleAnswerChange(q.id, star)}
-                                          className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
-                                        >
-                                          <Star
-                                            className={`h-6 w-6 transition-colors ${
-                                              star <= (isNaN(currentStars) ? 0 : currentStars)
-                                                ? "fill-yellow-400 text-yellow-400"
-                                                : "fill-transparent text-gray-300"
-                                            }`}
-                                          />
-                                        </button>
-                                      );
-                                    })}
-                                    <span className="ml-2 text-sm text-muted-foreground">
-                                      {answerValue ? `${answerValue}/5` : "Not rated"}
-                                    </span>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAnswerChange(q.id, "Yes")}
+                                        className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                                          answerValue === "Yes"
+                                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                                            : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+                                        }`}
+                                      >
+                                        <CheckCircle2 className="h-4 w-4" /> Yes
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAnswerChange(q.id, "No")}
+                                        className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                                          answerValue === "No"
+                                            ? "border-red-400 bg-red-50 text-red-700"
+                                            : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+                                        }`}
+                                      >
+                                        <XCircle className="h-4 w-4" /> No
+                                      </button>
+                                    </div>
+                                    <Input
+                                      value={answerDetails}
+                                      onChange={(e) => handleDetailsChange(q.id, e.target.value)}
+                                      placeholder={answerValue === "Yes" ? "Additional details..." : "Select 'Yes' to add details"}
+                                      disabled={answerValue !== "Yes"}
+                                      className={answerValue !== "Yes" ? "opacity-50" : ""}
+                                    />
                                   </div>
                                 ) : (
                                   <Input 
@@ -659,23 +704,27 @@ export default function CenterDetail() {
                               <div className="flex justify-between items-start gap-4">
                                 <div className="flex flex-col gap-2 flex-1">
                                   {q.type === "YesNo" ? (
-                                    <div className="flex items-center gap-1">
-                                      {[1, 2, 3, 4, 5].map((star) => {
-                                        const currentStars = typeof answerValue === 'string' ? parseInt(answerValue, 10) : Number(answerValue);
-                                        return (
-                                          <Star
-                                            key={star}
-                                            className={`h-5 w-5 ${
-                                              star <= (isNaN(currentStars) ? 0 : currentStars)
-                                                ? "fill-yellow-400 text-yellow-400"
-                                                : "fill-transparent text-gray-300"
-                                            }`}
-                                          />
-                                        );
-                                      })}
-                                      <span className="ml-2 text-sm text-muted-foreground">
-                                        {answerValue && !isNaN(Number(answerValue)) ? `${answerValue}/5` : (answerValue || "Not Answered")}
-                                      </span>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2">
+                                        {answerValue === "Yes" ? (
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                            <CheckCircle2 className="h-3.5 w-3.5" /> Yes
+                                          </span>
+                                        ) : answerValue === "No" ? (
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                            <XCircle className="h-3.5 w-3.5" /> No
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                            Not Answered
+                                          </span>
+                                        )}
+                                      </div>
+                                      {answerDetails && (
+                                        <p className="text-sm text-muted-foreground bg-muted/30 p-2 rounded border-l-2 border-primary/30 italic">
+                                          {answerDetails}
+                                        </p>
+                                      )}
                                     </div>
                                   ) : (
                                     <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit bg-gray-100 text-gray-800`}>
