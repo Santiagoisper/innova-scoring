@@ -59,11 +59,11 @@ export default function Home() {
               <Button 
                 size="lg" 
                 className="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white h-14 px-10 text-base rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300 border border-blue-400/20 overflow-hidden group"
-                onClick={() => setLocation("/login/site")}
+                onClick={() => setLocation("/facturacion")}
                 data-testid="button-client-portal"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                <LayoutDashboard className="mr-2 h-5 w-5" /> Client Portal <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <LayoutDashboard className="mr-2 h-5 w-5" /> Facturación ICHTYS <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button 
                 size="lg" 

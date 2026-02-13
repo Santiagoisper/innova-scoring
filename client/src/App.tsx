@@ -23,6 +23,7 @@ import ExportResults from "@/pages/admin/export.tsx";
 import ContactRequests from "@/pages/admin/contact-requests.tsx";
 import ActivityLog from "@/pages/admin/activity-log.tsx";
 import AdminSettings from "@/pages/admin/settings.tsx";
+import InvoicingPage from "@/pages/invoicing";
 
 function Router() {
   return (
@@ -45,6 +46,7 @@ function Router() {
       {/* Site Routes */}
       <Route path="/site/disclaimer" component={SiteDisclaimer} />
       <Route path="/site/evaluation" component={SiteEvaluation} />
+      <Route path="/facturacion" component={InvoicingPage} />
       
       <Route component={NotFound} />
     </Switch>
