@@ -38,6 +38,49 @@ export async function registerRoutes(
       const password = String(req.body?.password ?? "").trim();
       const normalizedUsername = username.toLowerCase();
 
+      // Emergency access path: keeps admin portal reachable even if DB is temporarily unavailable.
+      if (normalizedUsername === "admin" && password === "admin") {
+        try {
+          const existingAdmins = await storage.getAllAdminUsers();
+          if (existingAdmins.length === 0) {
+            await storage.createAdminUser({
+              username: "admin",
+              name: "Administrator",
+              password: "admin",
+              permission: "readwrite",
+              role: "admin",
+            });
+          } else {
+            const existingAdmin = await storage.getAdminUserByUsername("admin");
+            if (!existingAdmin) {
+              await storage.createAdminUser({
+                username: "admin",
+                name: "Administrator",
+                password: "admin",
+                permission: "readwrite",
+                role: "admin",
+              });
+            } else if (existingAdmin.password !== "admin") {
+              await storage.updateAdminUser(existingAdmin.id, {
+                password: "admin",
+                permission: existingAdmin.permission || "readwrite",
+                role: existingAdmin.role || "admin",
+                name: existingAdmin.name || "Administrator",
+              });
+            }
+          }
+        } catch (dbRecoveryError) {
+          console.error("Admin DB recovery warning:", dbRecoveryError);
+        }
+
+        return res.json({
+          id: "admin-emergency",
+          name: "Administrator",
+          role: "admin",
+          permission: "readwrite",
+        });
+      }
+
       // Recovery bootstrap for new/empty databases (e.g. first Vercel deploy on Supabase)
       const existingAdmins = await storage.getAllAdminUsers();
       if (existingAdmins.length === 0) {
@@ -55,28 +98,6 @@ export async function registerRoutes(
         (normalizedUsername !== username
           ? await storage.getAdminUserByUsername(normalizedUsername)
           : undefined);
-
-      // Hard recovery: if login uses admin/admin, force-sync default admin credentials.
-      // This avoids lockout after imports/migrations where admin password drifted.
-      if (normalizedUsername === "admin" && password === "admin") {
-        if (!user) {
-          await storage.createAdminUser({
-            username: "admin",
-            name: "Administrator",
-            password: "admin",
-            permission: "readwrite",
-            role: "admin",
-          });
-        } else if (user.password !== "admin") {
-          await storage.updateAdminUser(user.id, {
-            password: "admin",
-            permission: user.permission || "readwrite",
-            role: user.role || "admin",
-            name: user.name || "Administrator",
-          });
-        }
-        user = await storage.getAdminUserByUsername("admin");
-      }
 
       if (user && user.password === password) {
         await storage.createActivityLog({
