@@ -1,4 +1,5 @@
 {
+  "buildCommand": "npm run build:vercel",
   "functions": {
     "api/[...path].ts": {
       "maxDuration": 60
