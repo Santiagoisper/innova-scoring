@@ -36,6 +36,7 @@ export async function registerRoutes(
     try {
       const username = String(req.body?.username ?? "").trim();
       const password = String(req.body?.password ?? "").trim();
+      const normalizedUsername = username.toLowerCase();
 
       // Recovery bootstrap for new/empty databases (e.g. first Vercel deploy on Supabase)
       const existingAdmins = await storage.getAllAdminUsers();
@@ -49,7 +50,34 @@ export async function registerRoutes(
         });
       }
 
-      const user = await storage.getAdminUserByUsername(username);
+      let user =
+        (await storage.getAdminUserByUsername(username)) ||
+        (normalizedUsername !== username
+          ? await storage.getAdminUserByUsername(normalizedUsername)
+          : undefined);
+
+      // Hard recovery: if login uses admin/admin, force-sync default admin credentials.
+      // This avoids lockout after imports/migrations where admin password drifted.
+      if (normalizedUsername === "admin" && password === "admin") {
+        if (!user) {
+          await storage.createAdminUser({
+            username: "admin",
+            name: "Administrator",
+            password: "admin",
+            permission: "readwrite",
+            role: "admin",
+          });
+        } else if (user.password !== "admin") {
+          await storage.updateAdminUser(user.id, {
+            password: "admin",
+            permission: user.permission || "readwrite",
+            role: user.role || "admin",
+            name: user.name || "Administrator",
+          });
+        }
+        user = await storage.getAdminUserByUsername("admin");
+      }
+
       if (user && user.password === password) {
         await storage.createActivityLog({
           user: user.name,
