@@ -34,7 +34,8 @@ export async function registerRoutes(
   // ========== AUTH ==========
   app.post("/api/auth/admin-login", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const username = String(req.body?.username ?? "").trim();
+      const password = String(req.body?.password ?? "").trim();
 
       // Recovery bootstrap for new/empty databases (e.g. first Vercel deploy on Supabase)
       const existingAdmins = await storage.getAllAdminUsers();

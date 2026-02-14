@@ -18,6 +18,24 @@ export default function AdminLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  const getErrorMessage = (error: unknown): string => {
+    const raw = (error as any)?.message;
+    if (!raw || typeof raw !== "string") return "Invalid credentials.";
+    const firstBrace = raw.indexOf("{");
+    if (firstBrace !== -1) {
+      try {
+        const parsed = JSON.parse(raw.slice(firstBrace));
+        if (parsed?.message && typeof parsed.message === "string") {
+          return parsed.message;
+        }
+      } catch {
+        // fall through to raw parsing
+      }
+    }
+    const parts = raw.split(": ");
+    return parts.length > 1 ? parts.slice(1).join(": ") : raw;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -39,7 +57,7 @@ export default function AdminLogin() {
       toast({
         variant: "destructive",
         title: "Access Denied",
-        description: "Invalid credentials.",
+        description: getErrorMessage(error),
       });
     }
     setIsLoading(false);
