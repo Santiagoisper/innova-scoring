@@ -285,7 +285,11 @@ export async function registerRoutes(
   app.post("/api/sites/:id/update-status", async (req, res) => {
     try {
       const { status, adminName } = req.body;
-      const updated = await storage.updateSite(req.params.id, { status });
+      const updated = await storage.updateSite(req.params.id, {
+        status,
+        evaluatedBy: adminName || undefined,
+        evaluatedAt: ["Approved", "Rejected", "ToConsider"].includes(status) ? new Date() : undefined,
+      });
       if (updated) {
         if (adminName) {
           await storage.createActivityLog({
@@ -349,6 +353,8 @@ export async function registerRoutes(
       const updated = await storage.updateSite(req.params.id, {
         answers: mergedAnswers,
         score: score ?? site.score,
+        evaluatedBy: adminName || site.evaluatedBy || undefined,
+        evaluatedAt: score !== undefined ? new Date() : site.evaluatedAt || undefined,
       });
       if (adminName) {
         await storage.createActivityLog({

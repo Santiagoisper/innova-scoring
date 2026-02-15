@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
-import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2, ShieldCheck, ShieldX, ClipboardList } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2, ShieldCheck, ShieldX, ClipboardList, UserRound } from "lucide-react";
 import { QUESTIONS, type SiteClassification } from "@/lib/questions";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -525,6 +525,12 @@ export default function CenterDetail() {
       return [];
     });
 
+  const primaryContact = (() => {
+    if (!site?.description) return "";
+    const match = site.description.match(/Primary Contact:\s*(.+)/i);
+    return match?.[1]?.trim() || "";
+  })();
+
   return (
     <Layout>
       <div className="container mx-auto p-6 space-y-8 animate-in slide-in-from-right-8 duration-500">
@@ -544,6 +550,9 @@ export default function CenterDetail() {
             </h1>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {site.email}</span>
+              {primaryContact && (
+                <span className="flex items-center gap-1"><UserRound className="h-4 w-4" /> {primaryContact}</span>
+              )}
               <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {site.location || "N/A"}</span>
               <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Registered: {new Date(site.registeredAt).toLocaleDateString()}</span>
               {site.updatedAt && (

@@ -20,12 +20,23 @@ export default function ExportResults() {
     (s.location && s.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const CSV_DELIMITER = ";";
+
   const escapeCSV = (value: any): string => {
-    const str = String(value ?? "");
-    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-      return '"' + str.replace(/"/g, '""') + '"';
+    const str = String(value ?? "").replace(/\r?\n/g, " ");
+    if (str.includes(CSV_DELIMITER) || str.includes('"') || str.includes("\n") || str.includes("\r")) {
+      return `"${str.replace(/"/g, '""')}"`;
     }
     return str;
+  };
+
+  const buildCSV = (headers: string[], rows: any[][]): string => {
+    const lines = [
+      `sep=${CSV_DELIMITER}`,
+      headers.map(escapeCSV).join(CSV_DELIMITER),
+      ...rows.map((row) => row.map(escapeCSV).join(CSV_DELIMITER)),
+    ];
+    return lines.join("\r\n");
   };
 
   const downloadCSV = (csvString: string, filename: string) => {
@@ -54,8 +65,7 @@ export default function ExportResults() {
       s.evaluatedAt || ""
     ]);
     
-    const csvString = headers.map(escapeCSV).join(",") + "\n" 
-      + rows.map((row: any[]) => row.map(escapeCSV).join(",")).join("\n");
+    const csvString = buildCSV(headers, rows);
       
     downloadCSV(csvString, "innova_trials_results.csv");
   };
@@ -83,7 +93,7 @@ export default function ExportResults() {
       site.evaluatedAt || ""
     ];
 
-    const csvString = headers.map(escapeCSV).join(",") + "\n" + row.map(escapeCSV).join(",");
+    const csvString = buildCSV(headers, [row]);
     downloadCSV(csvString, `${site.contactName.replace(/\s+/g, '_')}_result.csv`);
   };
 

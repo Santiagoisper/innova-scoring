@@ -43,18 +43,30 @@ export default function AdminReports() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "Approved":
+        return <Badge data-testid="badge-status-approved" className="bg-emerald-600 hover:bg-emerald-700">Approved</Badge>;
+      case "Conditionally Approved":
+        return <Badge data-testid="badge-status-conditional" className="bg-amber-500 hover:bg-amber-600">Conditionally Approved</Badge>;
+      case "Not Approved":
+        return <Badge data-testid="badge-status-not-approved" className="bg-red-600 hover:bg-red-700">Not Approved</Badge>;
       case "Adequate":
         return <Badge data-testid="badge-status-adequate" className="bg-emerald-600 hover:bg-emerald-700">Adequate</Badge>;
       case "Partially Adequate":
         return <Badge data-testid="badge-status-partial" className="bg-amber-500 hover:bg-amber-600">Partially Adequate</Badge>;
       case "Critical Gap":
         return <Badge data-testid="badge-status-critical" className="bg-red-600 hover:bg-red-700">Critical Gap</Badge>;
-      case "Not Evidenced":
-        return <Badge data-testid="badge-status-not-evidenced" variant="secondary">Not Evidenced</Badge>;
       default:
         return <Badge data-testid="badge-status-other" variant="outline">{status || "N/A"}</Badge>;
     }
   };
+
+  const availableStatuses = Array.from(
+    new Set(
+      reports
+        .map((r: any) => r.finalStatus)
+        .filter((s: any) => typeof s === "string" && s.trim().length > 0)
+    )
+  ).sort();
 
   const filteredReports = reports.filter((r: any) => {
     const siteName = getSiteName(r.siteId).toLowerCase();
@@ -114,10 +126,9 @@ export default function AdminReports() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="Adequate">Adequate</SelectItem>
-              <SelectItem value="Partially Adequate">Partially Adequate</SelectItem>
-              <SelectItem value="Critical Gap">Critical Gap</SelectItem>
-              <SelectItem value="Not Evidenced">Not Evidenced</SelectItem>
+              {availableStatuses.map((status) => (
+                <SelectItem key={status} value={status}>{status}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -151,8 +162,8 @@ export default function AdminReports() {
                       {getStatusBadge(report.finalStatus)}
                     </TableCell>
                     <TableCell data-testid={`text-date-${report.id}`}>
-                      {report.generatedAt
-                        ? new Date(report.generatedAt).toLocaleDateString("en-US", {
+                      {report.generatedAtUtc
+                        ? new Date(report.generatedAtUtc).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
@@ -162,7 +173,7 @@ export default function AdminReports() {
                         : "N/A"}
                     </TableCell>
                     <TableCell>
-                      {report.locked ? (
+                      {report.isLocked ? (
                         <span className="flex items-center gap-1 text-emerald-600" data-testid={`status-locked-${report.id}`}>
                           <Lock className="h-4 w-4" /> Locked
                         </span>
@@ -174,7 +185,7 @@ export default function AdminReports() {
                     </TableCell>
                     <TableCell>
                       <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono" data-testid={`text-hash-${report.id}`}>
-                        {report.sha256Hash ? report.sha256Hash.substring(0, 12) + "..." : "N/A"}
+                        {report.hashSha256 ? report.hashSha256.substring(0, 12) + "..." : "N/A"}
                       </code>
                     </TableCell>
                     <TableCell className="text-right">

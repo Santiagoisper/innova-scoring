@@ -6,32 +6,27 @@ interface StarRatingProps {
 }
 
 export function StarRating({ score, size = "md" }: StarRatingProps) {
-  // Logic:
-  // 5 stars: 80-100%
-  // 4 stars: 60-79%
-  // 3 stars: 40-59%
-  // 2 stars: 20-39%
-  // 1 stars: 0-19%
-
-  let stars = 0;
-  if (score >= 80) stars = 5;
-  else if (score >= 60) stars = 4;
-  else if (score >= 40) stars = 3;
-  else if (score >= 20) stars = 2;
-  else stars = 1;
+  const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
+  const exactStars = safeScore / 20; // 0..5
+  const roundedStars = Math.round(exactStars * 2) / 2; // 0.5 increments
+  const fullStars = Math.floor(roundedStars);
+  const hasHalfStar = roundedStars - fullStars === 0.5;
 
   const iconSize = size === "sm" ? "h-3 w-3" : size === "md" ? "h-4 w-4" : "h-6 w-6";
 
   return (
-    <div className="flex gap-0.5" title={`Score: ${score}% - ${stars} Stars`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={`${iconSize} ${
-            i <= stars ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted-foreground/20"
-          }`}
-        />
-      ))}
+    <div className="flex gap-0.5" title={`Score: ${safeScore}% - ${roundedStars} Stars`}>
+      {[1, 2, 3, 4, 5].map((i) => {
+        if (i <= fullStars) {
+          return <Star key={i} className={`${iconSize} fill-yellow-400 text-yellow-400`} />;
+        }
+
+        if (hasHalfStar && i === fullStars + 1) {
+          return <StarHalf key={i} className={`${iconSize} fill-yellow-400 text-yellow-400`} />;
+        }
+
+        return <Star key={i} className={`${iconSize} fill-muted text-muted-foreground/20`} />;
+      })}
     </div>
   );
 }

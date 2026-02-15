@@ -67,6 +67,89 @@ export default function AdminDashboard() {
     .sort((a, b) => (b.value as number) - (a.value as number))
     .slice(0, 5);
 
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const toTimestamp = (value: any) => {
+    if (!value) return null;
+    const ts = new Date(value).getTime();
+    return Number.isFinite(ts) ? ts : null;
+  };
+  const pct = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 100) : 0);
+
+  const tokenOrBeyondStatuses = new Set(["TokenSent", "InProcess", "Completed", "Approved", "Rejected", "ToConsider"]);
+  const completedStatuses = new Set(["Completed", "Approved", "Rejected", "ToConsider"]);
+  const decisionStatuses = new Set(["Approved", "Rejected", "ToConsider"]);
+
+  const funnelRegistered = totalSites;
+  const funnelTokenSent = sites.filter((s: any) => tokenOrBeyondStatuses.has(s.status) || !!s.tokenSentAt).length;
+  const funnelCompleted = sites.filter((s: any) => completedStatuses.has(s.status) || !!s.evaluatedAt).length;
+  const funnelDecisioned = sites.filter((s: any) => decisionStatuses.has(s.status)).length;
+
+  const funnelData = [
+    { label: "Registered", count: funnelRegistered, conversion: 100 },
+    { label: "Token Sent", count: funnelTokenSent, conversion: pct(funnelTokenSent, funnelRegistered) },
+    { label: "Evaluation Completed", count: funnelCompleted, conversion: pct(funnelCompleted, funnelTokenSent || funnelRegistered) },
+    { label: "Final Decision", count: funnelDecisioned, conversion: pct(funnelDecisioned, funnelCompleted || funnelRegistered) },
+  ];
+
+  const reevaluationQueue = sites
+    .map((site: any) => {
+      const evaluatedAtTs = toTimestamp(site.evaluatedAt);
+      const tokenSentAtTs = toTimestamp(site.tokenSentAt);
+
+      if (site.status === "Approved" || site.status === "ToConsider") {
+        if (!evaluatedAtTs) return null;
+        const ageDays = Math.floor((now - evaluatedAtTs) / dayMs);
+        const threshold = 180;
+        if (ageDays >= threshold) {
+          return {
+            id: site.id,
+            contactName: site.contactName,
+            location: site.location,
+            status: site.status,
+            reason: "Approval age exceeded",
+            daysOverdue: ageDays - threshold,
+          };
+        }
+      }
+
+      if (site.status === "Rejected") {
+        if (!evaluatedAtTs) return null;
+        const ageDays = Math.floor((now - evaluatedAtTs) / dayMs);
+        const threshold = 90;
+        if (ageDays >= threshold) {
+          return {
+            id: site.id,
+            contactName: site.contactName,
+            location: site.location,
+            status: site.status,
+            reason: "Rejected cooling period passed",
+            daysOverdue: ageDays - threshold,
+          };
+        }
+      }
+
+      if (site.status === "TokenSent") {
+        if (!tokenSentAtTs) return null;
+        const ageDays = Math.floor((now - tokenSentAtTs) / dayMs);
+        const threshold = 14;
+        if (ageDays >= threshold) {
+          return {
+            id: site.id,
+            contactName: site.contactName,
+            location: site.location,
+            status: site.status,
+            reason: "Token pending too long",
+            daysOverdue: ageDays - threshold,
+          };
+        }
+      }
+
+      return null;
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => (b.daysOverdue || 0) - (a.daysOverdue || 0));
+
   return (
     <Layout>
       <div className="container mx-auto p-6 space-y-8 animate-in fade-in duration-500">
@@ -150,6 +233,62 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="col-span-1 lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Pipeline Funnel</CardTitle>
+              <CardDescription>Progression from registration to final decision.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {funnelData.map((stage) => (
+                  <div key={stage.label} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{stage.label}</span>
+                      <span className="text-muted-foreground">{stage.count} ({stage.conversion}%)</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-primary transition-all duration-300" style={{ width: `${stage.conversion}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-1">
+            <CardHeader>
+              <CardTitle>Re-evaluation Queue</CardTitle>
+              <CardDescription>Sites requiring follow-up, renewal, or re-open.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {reevaluationQueue.slice(0, 6).map((item: any) => (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                    onClick={() => setLocation(`/admin/centers/${item.id}`)}
+                  >
+                    <p className="text-sm font-medium truncate">{item.contactName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{item.location || "No location"}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <Badge variant="outline">{item.status}</Badge>
+                      <span className="text-xs text-amber-700 font-medium">+{item.daysOverdue}d</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{item.reason}</p>
+                  </div>
+                ))}
+                {reevaluationQueue.length === 0 && (
+                  <div className="text-center py-6 text-sm text-muted-foreground">No items in the queue.</div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full" onClick={() => setLocation("/admin/centers")}>
+                Open Center Management <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+
           {/* Top Rated Sites */}
           <Card className="col-span-1 lg:col-span-2">
             <CardHeader>
