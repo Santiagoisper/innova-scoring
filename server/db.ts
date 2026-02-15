@@ -23,10 +23,19 @@ const connectionString = sanitizeUrl(rawUrl);
 const useSSL =
   !/localhost|127\.0\.0\.1/i.test(connectionString) &&
   (/supabase\.co/i.test(connectionString) || /sslmode=require/i.test(connectionString));
+const isServerless = Boolean(process.env.VERCEL);
+const maxPoolSize = Number.parseInt(
+  process.env.PGPOOL_MAX || (isServerless ? "1" : "10"),
+  10,
+);
 
 export const pool = new pg.Pool({
   connectionString,
   ssl: useSSL ? { rejectUnauthorized: false } : undefined,
+  max: Number.isFinite(maxPoolSize) && maxPoolSize > 0 ? maxPoolSize : 1,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 10000,
+  maxUses: 7500,
 });
 
 export const db = drizzle(pool, { schema });
