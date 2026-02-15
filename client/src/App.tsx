@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { seedDatabase } from "@/lib/api";
-import { Chatbot } from "@/components/chatbot";
 import { useStore } from "@/lib/store";
 
 // Pages
@@ -24,7 +23,6 @@ import ExportResults from "@/pages/admin/export.tsx";
 import ContactRequests from "@/pages/admin/contact-requests.tsx";
 import ActivityLog from "@/pages/admin/activity-log.tsx";
 import AdminSettings from "@/pages/admin/settings.tsx";
-import ChatLogs from "@/pages/admin/chat-logs.tsx";
 import ReportConfig from "@/pages/admin/report-config.tsx";
 import AdminReports from "@/pages/admin/reports.tsx";
 import ReportDetail from "@/pages/admin/report-detail.tsx";
@@ -109,13 +107,6 @@ function Router() {
           </RequireAdmin>
         )}
       </Route>
-      <Route path="/admin/chat-logs">
-        {() => (
-          <RequireAdmin>
-            <ChatLogs />
-          </RequireAdmin>
-        )}
-      </Route>
       <Route path="/admin/report-config">
         {() => (
           <RequireAdmin>
@@ -158,7 +149,6 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
-        <Chatbot />
       </TooltipProvider>
     </QueryClientProvider>
   );

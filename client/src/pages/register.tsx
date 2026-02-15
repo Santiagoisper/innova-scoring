@@ -15,7 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 const registerSchema = z.object({
-  contactName: z.string().min(2, "Contact name is required"),
+  siteName: z.string().min(2, "Site name is required"),
+  primaryContactName: z.string().min(2, "Primary contact name is required"),
   email: z.string().email("Invalid email address"),
   description: z.string().min(20, "Please provide a brief description of at least 20 characters"),
   location: z.string().min(2, "City is required"),
@@ -40,7 +41,9 @@ export default function Register() {
   const onSubmit = async (data: RegisterForm) => {
     try {
       await registerSite({
-        ...data,
+        contactName: data.siteName,
+        email: data.email,
+        description: `Primary Contact: ${data.primaryContactName}\n${data.description}`,
         location: `${data.location}, ${data.country}`,
         city: data.location,
         country: data.country,
@@ -219,10 +222,18 @@ export default function Register() {
             <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="contactName" className="text-slate-700">Primary Contact Name</Label>
-                <Input id="contactName" placeholder="Dr. Jane Smith" {...form.register("contactName")} className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[#005AD2] focus:ring-[#005AD2]/20" />
-                {form.formState.errors.contactName && (
-                  <p className="text-xs text-red-400">{form.formState.errors.contactName.message}</p>
+                <Label htmlFor="siteName" className="text-slate-700">Site Name</Label>
+                <Input id="siteName" placeholder="St. Mary Clinical Research Center" {...form.register("siteName")} className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[#005AD2] focus:ring-[#005AD2]/20" />
+                {form.formState.errors.siteName && (
+                  <p className="text-xs text-red-400">{form.formState.errors.siteName.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="primaryContactName" className="text-slate-700">Primary Contact Name</Label>
+                <Input id="primaryContactName" placeholder="Dr. Jane Smith" {...form.register("primaryContactName")} className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-[#005AD2] focus:ring-[#005AD2]/20" />
+                {form.formState.errors.primaryContactName && (
+                  <p className="text-xs text-red-400">{form.formState.errors.primaryContactName.message}</p>
                 )}
               </div>
 

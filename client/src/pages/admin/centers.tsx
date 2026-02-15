@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Filter, Eye, Send, Plus, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getCountryFlagUrl } from "@/lib/country-flags";
 
 export default function AdminCenters() {
   const { user } = useStore();
@@ -317,7 +318,25 @@ export default function AdminCenters() {
                       <div className="font-medium">{site.contactName}</div>
                       <div className="text-xs text-muted-foreground">{site.email}</div>
                     </TableCell>
-                    <TableCell>{site.location || "N/A"}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const country = site.country || (site.location?.split(",").pop()?.trim() ?? "");
+                        const flagUrl = getCountryFlagUrl(country, 20);
+                        return (
+                          <span className="inline-flex items-center gap-2">
+                            {flagUrl && (
+                              <img
+                                src={flagUrl}
+                                alt={country ? `${country} flag` : "Country flag"}
+                                className="h-4 w-5 rounded-[2px] border border-black/10 object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                            <span>{site.location || "N/A"}</span>
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell>{getStatusBadge(site.status)}</TableCell>
                     <TableCell>
                       {site.score !== undefined ? (
