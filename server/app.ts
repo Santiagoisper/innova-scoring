@@ -1,6 +1,7 @@
 import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
+import { serveStatic } from "./static";
 
 declare module "http" {
   interface IncomingMessage {
@@ -48,6 +49,14 @@ export async function createApp() {
   });
 
   await registerRoutes(httpServer, app);
+
+  // In production (including Vercel), serve the built SPA from dist/public.
+  if (process.env.NODE_ENV === "production") {
+    serveStatic(app);
+  } else {
+    const { setupVite } = await import("./vite");
+    await setupVite(httpServer, app);
+  }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
