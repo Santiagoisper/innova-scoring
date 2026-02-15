@@ -50,12 +50,15 @@ export async function createApp() {
 
   await registerRoutes(httpServer, app);
 
-  // In production (including Vercel), serve the built SPA from dist/public.
-  if (process.env.NODE_ENV === "production") {
+  // On Vercel, static assets are served by Vercel itself (outputDirectory),
+  // so the API function should not try to mount local static files.
+  if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
+    if (process.env.NODE_ENV !== "production") {
+      const { setupVite } = await import("./vite");
+      await setupVite(httpServer, app);
+    }
   }
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
