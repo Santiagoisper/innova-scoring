@@ -7,6 +7,23 @@ import { z } from "zod";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { sendTokenEmail, sendEvaluationCompleteEmail, sendStatusChangeEmail, sendTermsAcceptanceConfirmationEmail } from "./email";
 import { generateReport, computeReportHash } from "./report-engine";
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
+
+async function runCommand(command: string, args: string[], cwd = process.cwd()) {
+  const { stdout, stderr } = await execFileAsync(command, args, {
+    cwd,
+    windowsHide: true,
+    maxBuffer: 1024 * 1024 * 10,
+  });
+
+  return {
+    stdout: (stdout || "").trim(),
+    stderr: (stderr || "").trim(),
+  };
+}
 
 function detectCriticalRuleChange(existing: any, updates: any): boolean {
   const statusSeverity: Record<string, number> = {
@@ -1024,6 +1041,68 @@ export async function registerRoutes(
       res.json({ success: true, message: "Seed completed" });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ========== SYSTEM DEPLOY ==========
+  app.post("/api/system/deploy", async (req, res) => {
+    const requestedBy = String(req.body?.requestedBy || "Unknown").trim() || "Unknown";
+
+    try {
+      const changed = await runCommand("git", ["status", "--porcelain"]);
+      const currentBranch = await runCommand("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
+      const branch = currentBranch.stdout || "main";
+
+      const operations: string[] = [];
+      let committed = false;
+
+      if (changed.stdout) {
+        await runCommand("git", ["add", "-A"]);
+        const commitMessage = `Auto deploy from settings (${new Date().toISOString()})`;
+        await runCommand("git", ["commit", "-m", commitMessage]);
+        committed = true;
+        operations.push("git add -A");
+        operations.push(`git commit -m "${commitMessage}"`);
+      } else {
+        operations.push("No local changes to commit");
+      }
+
+      await runCommand("git", ["push", "origin", branch]);
+      operations.push(`git push origin ${branch}`);
+
+      const deployResult = await runCommand("vercel", ["--prod", "--yes"]);
+      operations.push("vercel --prod --yes");
+
+      await storage.createActivityLog({
+        user: requestedBy,
+        action: "Triggered Auto Deploy",
+        target: `Branch ${branch}`,
+        type: "success",
+        sector: "System",
+      });
+
+      res.json({
+        ok: true,
+        committed,
+        branch,
+        operations,
+        deployOutput: deployResult.stdout || deployResult.stderr || "Deploy completed",
+      });
+    } catch (error: any) {
+      const details = (error?.stderr || error?.stdout || error?.message || "Unknown error").toString();
+
+      await storage.createActivityLog({
+        user: requestedBy,
+        action: "Auto Deploy Failed",
+        target: details.slice(0, 120),
+        type: "warning",
+        sector: "System",
+      });
+
+      res.status(500).json({
+        message: "Auto deploy failed",
+        details,
+      });
     }
   });
 

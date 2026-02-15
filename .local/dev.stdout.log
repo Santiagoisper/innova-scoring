@@ -1,0 +1,6 @@
+
+> rest-express@1.0.0 dev
+> node --env-file=.env --import tsx server/index.ts
+
+5:29:34 PM [express] serving on port 5000
+5:29:40 PM [express] GET /api/questions 500 in 638ms :: {"message":"self-signed certificate in certificate chain"}

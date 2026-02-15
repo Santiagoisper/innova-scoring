@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useStore } from "@/lib/store";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { fetchAdminUsers, createAdminUser, deleteAdminUser as deleteAdminUserApi } from "@/lib/api";
+import { fetchAdminUsers, createAdminUser, deleteAdminUser as deleteAdminUserApi, triggerAutoDeploy } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, UserPlus, Shield, ShieldAlert, ShieldCheck, Lock, Save, Loader2, Moon, Sun } from "lucide-react";
+import { Trash2, UserPlus, Shield, ShieldCheck, Lock, Loader2, Moon, Sun, Rocket } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
@@ -41,6 +41,24 @@ export default function AdminSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin-users"] });
     }
+  });
+
+  const deployMutation = useMutation({
+    mutationFn: () => triggerAutoDeploy(currentUser?.name || "Administrator"),
+    onSuccess: (result: any) => {
+      toast({
+        title: "Deploy Completed",
+        description: result?.deployOutput || "Push and deploy finished successfully.",
+      });
+    },
+    onError: (error: any) => {
+      const msg = error?.message || "Auto deploy failed";
+      toast({
+        variant: "destructive",
+        title: "Deploy Failed",
+        description: msg,
+      });
+    },
   });
 
   const handleAddUser = () => {
@@ -216,6 +234,34 @@ export default function AdminSettings() {
                 checked={darkMode}
                 onCheckedChange={toggleDarkMode}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Rocket className="h-5 w-5 text-primary" />
+              Git & Deploy
+            </CardTitle>
+            <CardDescription>
+              Commit all local changes, push to remote, and deploy to Vercel in one step.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                This action runs: <span className="font-mono">git add -A</span>, <span className="font-mono">git commit</span>, <span className="font-mono">git push</span>, and <span className="font-mono">vercel --prod --yes</span>.
+              </p>
+              <Button
+                onClick={() => deployMutation.mutate()}
+                disabled={!canEdit || deployMutation.isPending}
+                className="gap-2"
+                data-testid="button-auto-deploy"
+              >
+                {deployMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+                Push & Deploy
+              </Button>
             </div>
           </CardContent>
         </Card>

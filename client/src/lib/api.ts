@@ -271,3 +271,8 @@ export async function fetchReportAuditLog() {
   if (!res.ok) throw new Error("Failed to fetch audit log");
   return res.json();
 }
+
+export async function triggerAutoDeploy(requestedBy: string) {
+  const res = await apiRequest("POST", "/api/system/deploy", { requestedBy });
+  return res.json();
+}
