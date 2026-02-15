@@ -1,10 +1,14 @@
-import { createApp } from "../server/app.ts";
-
 let appPromise: Promise<any> | null = null;
 
 async function getApp() {
   if (!appPromise) {
-    appPromise = createApp().then(({ app }) => app);
+    appPromise = import("../dist/app.cjs").then((mod: any) => {
+      const createApp = mod?.createApp || mod?.default?.createApp;
+      if (typeof createApp !== "function") {
+        throw new Error("createApp export not found in dist/app.cjs");
+      }
+      return createApp().then(({ app }: any) => app);
+    });
   }
   return appPromise;
 }

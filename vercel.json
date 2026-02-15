@@ -14,8 +14,7 @@
   ],
   "functions": {
     "api/[...path].ts": {
-      "maxDuration": 60,
-      "includeFiles": "{server,shared}/**"
+      "maxDuration": 60
     }
   },
   "rewrites": [
