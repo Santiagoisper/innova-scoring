@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Switch, Route } from "wouter";
+import { useEffect, type ReactNode } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { seedDatabase } from "@/lib/api";
 import { Chatbot } from "@/components/chatbot";
+import { useStore } from "@/lib/store";
 
 // Pages
 import Home from "@/pages/home";
@@ -29,6 +30,20 @@ import AdminReports from "@/pages/admin/reports.tsx";
 import ReportDetail from "@/pages/admin/report-detail.tsx";
 import SiteReport from "@/pages/site/report.tsx";
 
+function RequireAdmin({ children }: { children: ReactNode }) {
+  const { user } = useStore();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (user?.role !== "admin") {
+      setLocation("/login/admin");
+    }
+  }, [user, setLocation]);
+
+  if (user?.role !== "admin") return null;
+  return <>{children}</>;
+}
+
 function Router() {
   return (
     <Switch>
@@ -38,18 +53,90 @@ function Router() {
       <Route path="/login/site" component={SiteLogin} />
       
       {/* Admin Routes */}
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/centers" component={AdminCenters} />
-      <Route path="/admin/centers/:id" component={CenterDetail} />
-      <Route path="/admin/evaluation-setup" component={EvaluationSetup} />
-      <Route path="/admin/export" component={ExportResults} />
-      <Route path="/admin/contact-requests" component={ContactRequests} />
-      <Route path="/admin/activity-log" component={ActivityLog} />
-      <Route path="/admin/settings" component={AdminSettings} />
-      <Route path="/admin/chat-logs" component={ChatLogs} />
-      <Route path="/admin/report-config" component={ReportConfig} />
-      <Route path="/admin/reports" component={AdminReports} />
-      <Route path="/admin/reports/:id" component={ReportDetail} />
+      <Route path="/admin">
+        {() => (
+          <RequireAdmin>
+            <AdminDashboard />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/centers">
+        {() => (
+          <RequireAdmin>
+            <AdminCenters />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/centers/:id">
+        {() => (
+          <RequireAdmin>
+            <CenterDetail />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/evaluation-setup">
+        {() => (
+          <RequireAdmin>
+            <EvaluationSetup />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/export">
+        {() => (
+          <RequireAdmin>
+            <ExportResults />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/contact-requests">
+        {() => (
+          <RequireAdmin>
+            <ContactRequests />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/activity-log">
+        {() => (
+          <RequireAdmin>
+            <ActivityLog />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/settings">
+        {() => (
+          <RequireAdmin>
+            <AdminSettings />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/chat-logs">
+        {() => (
+          <RequireAdmin>
+            <ChatLogs />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/report-config">
+        {() => (
+          <RequireAdmin>
+            <ReportConfig />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/reports">
+        {() => (
+          <RequireAdmin>
+            <AdminReports />
+          </RequireAdmin>
+        )}
+      </Route>
+      <Route path="/admin/reports/:id">
+        {() => (
+          <RequireAdmin>
+            <ReportDetail />
+          </RequireAdmin>
+        )}
+      </Route>
 
       {/* Site Routes */}
       <Route path="/site/disclaimer" component={SiteDisclaimer} />
