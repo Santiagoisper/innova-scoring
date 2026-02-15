@@ -17,17 +17,14 @@
       "maxDuration": 60
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/[...path].ts"
+      "source": "/api/(.*)",
+      "destination": "/api/[...path].ts"
     },
     {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
