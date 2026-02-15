@@ -1070,8 +1070,9 @@ export async function registerRoutes(
       await runCommand("git", ["push", "origin", branch]);
       operations.push(`git push origin ${branch}`);
 
-      const deployResult = await runCommand("vercel", ["--prod", "--yes"]);
-      operations.push("vercel --prod --yes");
+      const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
+      const deployResult = await runCommand(npxCommand, ["vercel", "--prod", "--yes"]);
+      operations.push("npx vercel --prod --yes");
 
       await storage.createActivityLog({
         user: requestedBy,
