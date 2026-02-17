@@ -7,7 +7,7 @@
     "dev:client": "vite dev --port 5000",
     "dev": "node --env-file=.env --import tsx server/index.ts",
     "build": "npm run db:push && tsx script/build.ts",
-    "build:vercel": "tsx script/vercel-preflight.ts && tsx script/build.ts",
+    "build:vercel": "tsx script/vercel-preflight.ts && npm run db:push && tsx script/build.ts",
     "start": "node --env-file=.env dist/index.cjs",
     "check": "tsc",
     "test": "vitest run",
