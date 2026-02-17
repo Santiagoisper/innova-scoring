@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { questions as questionsTable } from "@shared/schema";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { sendTokenEmail, sendEvaluationCompleteEmail, sendStatusChangeEmail, sendTermsAcceptanceConfirmationEmail } from "./email";
 import { generateReport, computeReportHash } from "./report-engine";
@@ -47,6 +48,23 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   registerChatRoutes(app);
+
+  app.get("/api/health", async (_req, res) => {
+    res.json({ ok: true, service: "innova-scoring-api" });
+  });
+
+  app.get("/api/health/db", async (_req, res) => {
+    try {
+      await db.execute(sql`select 1`);
+      res.json({ ok: true, database: "connected" });
+    } catch (error: any) {
+      res.status(500).json({
+        ok: false,
+        database: "disconnected",
+        message: error?.message || "Database check failed",
+      });
+    }
+  });
 
   // ========== AUTH ==========
   app.post("/api/auth/admin-login", async (req, res) => {
