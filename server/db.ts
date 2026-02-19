@@ -8,21 +8,22 @@ function sanitizeUrl(url: string): string {
 
 const rawUrl =
   process.env.DATABASE_URL ||
-  process.env.SUPABASE_DATABASE_URL ||
+  process.env.NEON_DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING;
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.SUPABASE_DATABASE_URL;
 
 if (!rawUrl) {
   throw new Error(
-    "Set DATABASE_URL, SUPABASE_DATABASE_URL, or POSTGRES_URL for database connection",
+    "Set DATABASE_URL (recommended for Neon/Vercel), NEON_DATABASE_URL, or POSTGRES_URL for database connection",
   );
 }
 
 const connectionString = sanitizeUrl(rawUrl);
 const useSSL =
   !/localhost|127\.0\.0\.1/i.test(connectionString) &&
-  (/supabase\.co/i.test(connectionString) || /sslmode=require/i.test(connectionString));
+  !/sslmode=disable/i.test(connectionString);
 const isServerless = Boolean(process.env.VERCEL);
 const maxPoolSize = Number.parseInt(
   process.env.PGPOOL_MAX || (isServerless ? "1" : "10"),

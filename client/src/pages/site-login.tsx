@@ -26,7 +26,7 @@ export default function SiteLogin() {
       const result = await siteLogin(email, token);
       login({
         id: result.id,
-        name: result.name || result.contactName,
+        name: result.name,
         role: "site",
         siteId: result.siteId || result.id,
         email: email,

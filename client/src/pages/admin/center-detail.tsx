@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/star-rating";
 import { ArrowLeft, Mail, MapPin, Calendar, FileText, Download, File, CheckCircle2, XCircle, Clock, AlertTriangle, FileDown, Send, Edit, Save, RefreshCw, Loader2, ShieldCheck, ShieldX, ClipboardList, UserRound } from "lucide-react";
 import { QUESTIONS, type SiteClassification } from "@/lib/questions";
+import type { Question } from "@/lib/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,16 +49,24 @@ export default function CenterDetail() {
   });
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedAnswers, setEditedAnswers] = useState<Record<string, any>>({});
+  const [editedAnswers, setEditedAnswers] = useState<Record<string, unknown>>({});
+
+  const questionsList: Question[] = (questions ?? []).map((q) => ({
+    ...q,
+    type: (q.type === "YesNo" || q.type === "Text" || q.type === "Select" ? q.type : "YesNo") as "YesNo" | "Text" | "Select",
+    isKnockOut: q.isKnockOut ?? false,
+    enabled: q.enabled ?? true,
+    keywords: q.keywords ?? undefined,
+  }));
 
   useEffect(() => {
     if (site) {
-      setEditedAnswers(site.answers || {});
+      setEditedAnswers((site.answers as Record<string, unknown>) || {});
     }
   }, [site]);
 
   const statusMutation = useMutation({
-    mutationFn: ({ status }: { status: string }) => updateSiteStatusApi(site.id, status, user?.name || "Admin"),
+    mutationFn: ({ status }: { status: string }) => updateSiteStatusApi(site!.id, status, user?.name || "Admin"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sites", params?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
@@ -65,7 +74,7 @@ export default function CenterDetail() {
   });
 
   const tokenMutation = useMutation({
-    mutationFn: () => generateTokenApi(site.id, user?.name || "Admin"),
+    mutationFn: () => generateTokenApi(site!.id, user?.name || "Admin"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sites", params?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
@@ -73,8 +82,8 @@ export default function CenterDetail() {
   });
 
   const answersMutation = useMutation({
-    mutationFn: ({ answers, score }: { answers: any; score: number }) => 
-      updateSiteAnswersApi(site.id, answers, score, user?.name || "Admin"),
+    mutationFn: ({ answers, score }: { answers: Record<string, unknown>; score: number }) => 
+      updateSiteAnswersApi(site!.id, answers, score, user?.name || "Admin"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sites", params?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/sites"] });
@@ -83,9 +92,9 @@ export default function CenterDetail() {
 
   const reportMutation = useMutation({
     mutationFn: async () => {
-      const scoring = calculateScore(site.answers as any || {}, questions);
+      const scoring = calculateScore((site!.answers as Record<string, unknown>) || {}, questionsList);
       return generateSiteReport({
-        siteId: site.id,
+        siteId: site!.id,
         generatedByUserId: user?.id || "",
         generatedByName: user?.name || "Admin",
         categoryScores: scoring.categoryScores,
@@ -93,10 +102,10 @@ export default function CenterDetail() {
         globalScore: scoring.score,
       });
     },
-    onSuccess: (report: any) => {
+    onSuccess: (report: { id: string; reportVersion?: string }) => {
       toast({
         title: "Report Generated",
-        description: `Report ${report.reportVersion || report.report_version} has been created successfully.`,
+        description: `Report ${report.reportVersion ?? ""} has been created successfully.`,
       });
       setLocation(`/admin/reports/${report.id}`);
     },
@@ -114,8 +123,6 @@ export default function CenterDetail() {
       </Layout>
     );
   }
-
-  const questionsList = questions.length > 0 ? questions : QUESTIONS;
 
   const handleGenerateToken = () => {
     tokenMutation.mutate();
@@ -140,9 +147,9 @@ export default function CenterDetail() {
   };
 
   const handleAnswerChange = (questionId: string, value: string | number) => {
-    const currentAnswer = editedAnswers[questionId];
-    let attachment = undefined;
-    let details = undefined;
+    const currentAnswer = editedAnswers[questionId] as Record<string, unknown> | undefined;
+    let attachment: unknown = undefined;
+    let details: unknown = undefined;
     
     if (typeof currentAnswer === 'object' && currentAnswer !== null) {
       if (currentAnswer.attachment) attachment = currentAnswer.attachment;
@@ -156,12 +163,12 @@ export default function CenterDetail() {
   };
 
   const handleDetailsChange = (questionId: string, detailsText: string) => {
-    const currentAnswer = editedAnswers[questionId];
+    const currentAnswer = editedAnswers[questionId] as Record<string, unknown> | undefined;
     let value = "";
-    let attachment = undefined;
+    let attachment: unknown = undefined;
     
     if (typeof currentAnswer === 'object' && currentAnswer !== null) {
-      value = currentAnswer.value || "";
+      value = String(currentAnswer.value ?? "");
       if (currentAnswer.attachment) attachment = currentAnswer.attachment;
     } else if (currentAnswer !== undefined && currentAnswer !== null) {
       value = String(currentAnswer);
@@ -187,7 +194,7 @@ export default function CenterDetail() {
     const gray200 = [229, 231, 235] as const;
     const white = [255, 255, 255] as const;
 
-    const result = calculateScore(site.answers || {}, questionsList);
+    const result = calculateScore((site.answers as Record<string, unknown>) || {}, questionsList);
 
     const drawHeader = (pageNum: number, totalPages: number) => {
       doc.setFillColor(...brandDark);
@@ -288,7 +295,7 @@ export default function CenterDetail() {
 
     doc.setFontSize(28);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...scoreColor);
+    doc.setTextColor(...(scoreColor as [number, number, number]));
     doc.text(`${scoreVal}%`, margin + 15, y + 22);
 
     doc.setFontSize(8);
@@ -303,7 +310,7 @@ export default function CenterDetail() {
     doc.setFillColor(...gray200);
     doc.roundedRect(barX, barY, barW, barH, 3, 3, 'F');
     if (scoreVal > 0) {
-      doc.setFillColor(...scoreColor);
+      doc.setFillColor(...(scoreColor as [number, number, number]));
       doc.roundedRect(barX, barY, Math.max(6, barW * (scoreVal / 100)), barH, 3, 3, 'F');
     }
 
@@ -354,7 +361,7 @@ export default function CenterDetail() {
         doc.setTextColor(...brandDark);
         doc.text(category, catX + 4, y + 5);
 
-        doc.setTextColor(...catColor);
+        doc.setTextColor(...(catColor as [number, number, number]));
         doc.text(`${Math.round(catScore)}%`, catX + catColW - 25, y + 5);
 
         const miniBarX = catX + 4;
@@ -363,7 +370,7 @@ export default function CenterDetail() {
         doc.setFillColor(...gray200);
         doc.roundedRect(miniBarX, miniBarY, miniBarW, 3, 1.5, 1.5, 'F');
         if (catScore > 0) {
-          doc.setFillColor(...catColor);
+          doc.setFillColor(...(catColor as [number, number, number]));
           doc.roundedRect(miniBarX, miniBarY, Math.max(3, miniBarW * (catScore / 100)), 3, 1.5, 1.5, 'F');
         }
 
@@ -377,11 +384,11 @@ export default function CenterDetail() {
 
     y = drawSectionTitle("DETAILED EVALUATION RESPONSES", y);
 
-    const categories = [...new Set(questionsList.map((q: any) => q.category))];
+    const categories = Array.from(new Set(questionsList.map((q) => q.category)));
     let questionNum = 1;
 
     categories.forEach((category: string) => {
-      const catQuestions = questionsList.filter((q: any) => q.category === category);
+      const catQuestions = questionsList.filter((q) => q.category === category);
 
       y = checkPageBreak(y, 14);
 
@@ -399,13 +406,15 @@ export default function CenterDetail() {
 
       y += 14;
 
-      catQuestions.forEach((q: any) => {
-        const ans = site.answers?.[q.id];
+      catQuestions.forEach((q) => {
+        const answersMap = (site.answers || {}) as Record<string, unknown>;
+        const ans = answersMap[q.id];
         let val = "Not Answered";
         let details = "";
-        if (typeof ans === 'object' && ans?.value !== undefined) {
-          val = String(ans.value);
-          details = ans.details ? String(ans.details) : "";
+        if (typeof ans === 'object' && ans !== null) {
+          const o = ans as Record<string, unknown>;
+          if (o.value !== undefined) val = String(o.value);
+          details = o.details ? String(o.details) : "";
         } else if (ans !== undefined && ans !== null) {
           val = String(ans);
         }
@@ -458,7 +467,7 @@ export default function CenterDetail() {
           const ansColor = val === "Not Answered" ? gray400 : brandDark;
           doc.setFontSize(8);
           doc.setFont("helvetica", "italic");
-          doc.setTextColor(...ansColor);
+          doc.setTextColor(...(ansColor as [number, number, number]));
           const ansLines = doc.splitTextToSize(val, contentWidth - 20);
           doc.text(ansLines, margin + 12, y + 2);
           y += (ansLines.length - 1) * 4;
@@ -471,7 +480,7 @@ export default function CenterDetail() {
       y += 4;
     });
 
-    const pageCount = doc.internal.getNumberOfPages();
+    const pageCount = (doc.internal as { getNumberOfPages?: () => number }).getNumberOfPages?.() ?? 1;
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       drawHeader(i, pageCount);
@@ -510,16 +519,18 @@ export default function CenterDetail() {
     });
   };
 
-  const allAttachments = Object.entries(site.answers || {})
-    .flatMap(([qId, answer]: [string, any]) => {
-      if (typeof answer === 'object' && answer?.attachment) {
-        const question = questionsList.find((q: any) => q.id === qId);
-        const attachmentList = Array.isArray(answer.attachment) ? answer.attachment : [answer.attachment];
+  const answersMap = (site.answers || {}) as Record<string, unknown>;
+  const allAttachments = Object.entries(answersMap)
+    .flatMap(([qId, answer]): Array<{ questionId: string; questionText: string; attachment: unknown }> => {
+      if (typeof answer === 'object' && answer !== null && (answer as Record<string, unknown>).attachment) {
+        const question = questionsList.find((q) => q.id === qId);
+        const att = (answer as Record<string, unknown>).attachment;
+        const attachmentList = Array.isArray(att) ? att : [att];
         
-        return attachmentList.map((att: any) => ({
+        return attachmentList.map((attachment) => ({
           questionId: qId,
           questionText: question?.text || "Unknown Question",
-          attachment: att
+          attachment,
         }));
       }
       return [];
@@ -565,14 +576,14 @@ export default function CenterDetail() {
           
           <div className="flex flex-col gap-4 items-end">
             {site.score !== undefined && (() => {
-              const result = calculateScore(site.answers || {}, questionsList);
+              const result = calculateScore((site.answers as Record<string, unknown>) || {}, questionsList);
               return (
                 <div className="flex flex-col items-end bg-white p-4 rounded-lg border shadow-sm">
                   <span className="text-sm text-muted-foreground uppercase font-bold tracking-wider mb-1">Overall Score</span>
                   <div className="flex items-center gap-3">
                     <span className="text-4xl font-bold text-primary">{site.score}%</span>
                     <div className="flex flex-col items-center">
-                      <StarRating score={site.score} size="md" />
+                      <StarRating score={site.score ?? 0} size="md" />
                       <span className={`text-xs font-semibold mt-1 px-2 py-0.5 rounded-full ${
                         result.classification === "Sobresaliente" ? "bg-emerald-100 text-emerald-700" :
                         result.classification === "Aprobado" ? "bg-blue-100 text-blue-700" :
@@ -603,7 +614,7 @@ export default function CenterDetail() {
               <Button 
                 variant="outline" 
                 onClick={() => reportMutation.mutate()} 
-                disabled={reportMutation.isPending || !site.answers || Object.keys(site.answers as any || {}).length === 0}
+                disabled={reportMutation.isPending || !site.answers || Object.keys((site.answers as Record<string, unknown>) || {}).length === 0}
                 data-testid="btn-generate-report"
               >
                 {reportMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ClipboardList className="mr-2 h-4 w-4" />}
@@ -657,7 +668,7 @@ export default function CenterDetail() {
                   </CardContent>
                 </Card>
 
-                {site.answers && Object.keys(site.answers).length > 0 ? (
+                {site.answers && Object.keys(site.answers as Record<string, unknown>).length > 0 ? (
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                       <div>
@@ -675,21 +686,20 @@ export default function CenterDetail() {
                       </Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {questionsList.map((q: any) => {
-                        const answerEntry = isEditing ? editedAnswers[q.id] : site.answers[q.id];
+                      {questionsList.map((q) => {
+                        const answerEntry = isEditing ? editedAnswers[q.id] : (answersMap as Record<string, unknown>)[q.id];
                         
                         let answerValue = "";
                         let answerDetails = "";
                         let attachments: any[] = [];
                         
                         if (typeof answerEntry === 'object' && answerEntry !== null && !Array.isArray(answerEntry)) {
-                          if ('value' in answerEntry) {
-                            answerValue = String(answerEntry.value || "");
-                            answerDetails = answerEntry.details ? String(answerEntry.details) : "";
-                            if (answerEntry.attachment) {
-                               attachments = Array.isArray(answerEntry.attachment) 
-                                  ? answerEntry.attachment 
-                                  : [answerEntry.attachment];
+                          const entry = answerEntry as Record<string, unknown>;
+                          if ('value' in entry) {
+                            answerValue = String(entry.value ?? "");
+                            answerDetails = entry.details ? String(entry.details) : "";
+                            if (entry.attachment) {
+                               attachments = Array.isArray(entry.attachment) ? entry.attachment : [entry.attachment];
                             }
                           }
                         } else if (answerEntry !== undefined && answerEntry !== null && typeof answerEntry !== 'object') {

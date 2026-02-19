@@ -2,6 +2,13 @@
 
 Herramienta interna de Innova Trials para evaluar centros de investigacion clinica.
 
+## Neon + Vercel
+
+La app funciona sobre PostgreSQL (Drizzle). Para migrar desde Supabase a Neon, sigue:
+
+- `docs/neon-migration.md`
+- `docs/vercel-neon-checklist.md`
+
 ## Stack
 
 - **Frontend**: Next.js 14 + React 18 + TypeScript
