@@ -12,6 +12,7 @@ Opcionales recomendadas:
 - `RESEND_API_KEY` (si quieres envio de emails)
 - `OPENAI_API_KEY` (si quieres chat AI)
 - `PGPOOL_MAX` (por defecto se usa `1` en Vercel)
+- `ALLOW_EMERGENCY_ADMIN=true` — **solo para recuperación**: en producción el login `admin`/`admin` está deshabilitado por defecto. Si pierdes acceso al panel, activa esta variable temporalmente, entra, crea un admin real y cambia la contraseña; luego quita la variable.
 
 ## Orden recomendado
 
@@ -23,7 +24,7 @@ Opcionales recomendadas:
 ## Validaciones rapidas
 
 1. `GET /api/sites` debe responder `200`.
-2. Login admin (`admin` / `admin`) debe responder correctamente.
+2. Login admin: en desarrollo `admin`/`admin` funciona; en producción solo si `ALLOW_EMERGENCY_ADMIN=true` o tras crear un usuario admin por seed/API.
 3. Crear un sitio y verificar persistencia al recargar.
 
 ## Notas

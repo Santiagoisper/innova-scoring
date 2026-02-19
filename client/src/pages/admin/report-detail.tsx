@@ -64,9 +64,9 @@ export default function ReportDetail() {
   });
 
   const { data: site } = useQuery({
-    queryKey: ["/api/sites", report?.siteId || report?.site_id],
-    queryFn: () => fetchSite(String(report?.siteId || report?.site_id)),
-    enabled: !!(report?.siteId || report?.site_id),
+    queryKey: ["/api/sites", report?.siteId],
+    queryFn: () => fetchSite(String(report!.siteId)),
+    enabled: !!report?.siteId,
   });
 
   const { data: signatures = [] } = useQuery({
@@ -113,23 +113,22 @@ export default function ReportDetail() {
     });
   };
 
-  const narrative = report?.narrativeSnapshotJson || {};
-  const scoreSnapshot = report?.scoreSnapshotJson || {};
-  const domainEvaluations: any[] = scoreSnapshot.domainEvaluations || [];
-  const capaItems: any[] = report?.capaItemsJson || [];
-  const reportSiteId = report?.siteId || report?.site_id;
-  const reportGeneratedAt = report?.generatedAtUtc || report?.generated_at_utc || report?.generatedAt;
-  const reportHash = report?.hashSha256 || report?.sha256Hash || report?.hash_sha256;
-  const reportLocked = report?.isLocked ?? report?.locked ?? report?.is_locked ?? false;
-  const generatedByUserId = report?.generatedByUserId || report?.generated_by_user_id;
+  const narrative = (report?.narrativeSnapshotJson ?? {}) as Record<string, unknown>;
+  const scoreSnapshot = (report?.scoreSnapshotJson ?? {}) as Record<string, unknown>;
+  const domainEvaluations = (scoreSnapshot.domainEvaluations ?? []) as Array<Record<string, unknown>>;
+  const capaItems = (report?.capaItemsJson ?? []) as Array<Record<string, unknown>>;
+  const reportSiteId = report?.siteId;
+  const reportGeneratedAt = report?.generatedAtUtc;
+  const reportHash = report?.hashSha256;
+  const reportLocked = report?.isLocked ?? false;
+  const generatedByUserId = report?.generatedByUserId;
   const generatedByResolved =
-    report?.generatedByName ||
-    adminUsers.find((a: any) => String(a.id) === String(generatedByUserId))?.name ||
-    generatedByUserId ||
+    (adminUsers as Array<{ id: string; name?: string }>).find((a) => String(a.id) === String(generatedByUserId))?.name ??
+    generatedByUserId ??
     "N/A";
 
   const criticalGaps = [...domainEvaluations]
-    .sort((a, b) => (STATUS_PRIORITY[a.statusLabel] ?? 99) - (STATUS_PRIORITY[b.statusLabel] ?? 99))
+    .sort((a, b) => (STATUS_PRIORITY[String(a.statusLabel)] ?? 99) - (STATUS_PRIORITY[String(b.statusLabel)] ?? 99))
     .slice(0, 5);
 
   const handleDownloadPDF = () => {
@@ -221,7 +220,7 @@ export default function ReportDetail() {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...gray600);
-      const lines = doc.splitTextToSize(narrative.executiveSummary, contentWidth - 10);
+      const lines = doc.splitTextToSize(String(narrative.executiveSummary), contentWidth - 10);
       y = checkPageBreak(y, lines.length * 5);
       doc.text(lines, margin + 7, y);
       y += lines.length * 5 + 8;
@@ -324,7 +323,7 @@ export default function ReportDetail() {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...gray600);
-      const lines = doc.splitTextToSize(narrative.reevaluationClause, contentWidth - 10);
+      const lines = doc.splitTextToSize(String(narrative.reevaluationClause), contentWidth - 10);
       y = checkPageBreak(y, lines.length * 5);
       doc.text(lines, margin + 7, y);
       y += lines.length * 5 + 8;
@@ -416,13 +415,13 @@ export default function ReportDetail() {
             </div>
             <div className="mt-4">
               <p className="text-white/60 text-xs uppercase tracking-wider mb-1">Final Status</p>
-              {getFinalStatusBadge(report.finalStatus)}
+              {getFinalStatusBadge(String(report.finalStatus ?? ""))}
             </div>
           </div>
         </Card>
 
         {/* Executive Summary */}
-        {narrative.executiveSummary && (
+        {narrative.executiveSummary ? (
           <Card data-testid="section-executive-summary">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#0066a1]">
@@ -431,14 +430,14 @@ export default function ReportDetail() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap" data-testid="text-executive-summary">
-                {narrative.executiveSummary}
+                {String(narrative.executiveSummary ?? "")}
               </p>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {/* Domain Evaluation */}
-        {domainEvaluations.length > 0 && (
+        {domainEvaluations.length > 0 ? (
           <Card data-testid="section-domain-evaluation">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#0066a1]">
@@ -454,12 +453,12 @@ export default function ReportDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {domainEvaluations.map((d: any, idx: number) => (
+                  {domainEvaluations.map((d: Record<string, unknown>, idx: number) => (
                     <TableRow key={idx} data-testid={`row-domain-${idx}`}>
-                      <TableCell className="font-medium">{d.displayName || d.domain || "Unknown"}</TableCell>
+                      <TableCell className="font-medium">{String(d.displayName ?? d.domain ?? "Unknown")}</TableCell>
                       <TableCell>
-                        <Badge className={`${getStatusColor(d.statusLabel)} text-white`} data-testid={`badge-domain-status-${idx}`}>
-                          {d.statusLabel || "N/A"}
+                        <Badge className={`${getStatusColor(String(d.statusLabel ?? ""))} text-white`} data-testid={`badge-domain-status-${idx}`}>
+                          {String(d.statusLabel ?? "N/A")}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -468,10 +467,10 @@ export default function ReportDetail() {
               </Table>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {/* Critical Gaps */}
-        {criticalGaps.length > 0 && (
+        {criticalGaps.length > 0 ? (
           <Card data-testid="section-critical-gaps">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-red-600">
@@ -480,26 +479,26 @@ export default function ReportDetail() {
             </CardHeader>
             <CardContent>
               <ol className="space-y-3">
-                {criticalGaps.map((d: any, idx: number) => (
+                {criticalGaps.map((d: Record<string, unknown>, idx: number) => (
                   <li key={idx} className="flex items-center gap-3" data-testid={`item-gap-${idx}`}>
                     <span className="flex-shrink-0 w-7 h-7 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-sm font-bold">
                       {idx + 1}
                     </span>
                     <div className="flex-1">
-                      <span className="font-medium">{d.displayName || d.domain || "Unknown"}</span>
+                      <span className="font-medium">{String(d.displayName ?? d.domain ?? "Unknown")}</span>
                     </div>
-                    <Badge className={`${getStatusColor(d.statusLabel)} text-white`}>
-                      {d.statusLabel || "N/A"}
+                    <Badge className={`${getStatusColor(String(d.statusLabel ?? ""))} text-white`}>
+                      {String(d.statusLabel ?? "N/A")}
                     </Badge>
                   </li>
                 ))}
               </ol>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {/* CAPA Plan */}
-        {capaItems.length > 0 && (
+        {capaItems.length > 0 ? (
           <Card data-testid="section-capa-plan">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#0066a1]">
@@ -518,18 +517,18 @@ export default function ReportDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {capaItems.map((item: any, idx: number) => (
+                  {capaItems.map((item: Record<string, unknown>, idx: number) => (
                     <TableRow key={idx} data-testid={`row-capa-${idx}`}>
                       <TableCell>
-                        <Badge variant="outline" className="font-bold">{item.priority || idx + 1}</Badge>
+                        <Badge variant="outline" className="font-bold">{String(item.priority ?? idx + 1)}</Badge>
                       </TableCell>
-                      <TableCell className="font-medium">{item.domain || "N/A"}</TableCell>
-                      <TableCell>{item.requiredAction || item.action || "N/A"}</TableCell>
-                      <TableCell>{item.evidenceRequired || item.evidence || "N/A"}</TableCell>
+                      <TableCell className="font-medium">{String(item.domain ?? "N/A")}</TableCell>
+                      <TableCell>{String(item.requiredAction ?? item.action ?? "N/A")}</TableCell>
+                      <TableCell>{String(item.evidenceRequired ?? item.evidence ?? "N/A")}</TableCell>
                       <TableCell>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                          {item.timelineDays || item.timeline || "N/A"}
+                          {String(item.timelineDays ?? item.timeline ?? "N/A")}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -538,10 +537,10 @@ export default function ReportDetail() {
               </Table>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {/* Re-evaluation Clause */}
-        {narrative.reevaluationClause && (
+        {narrative.reevaluationClause ? (
           <Card data-testid="section-reevaluation">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#0066a1]">
@@ -550,11 +549,11 @@ export default function ReportDetail() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap" data-testid="text-reevaluation-clause">
-                {narrative.reevaluationClause}
+                {String(narrative.reevaluationClause ?? "")}
               </p>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {/* Integrity Verification */}
         <Card data-testid="section-integrity">

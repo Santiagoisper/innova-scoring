@@ -9,8 +9,8 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: fetchStats });
 
-  const activeQuestionsCount = stats?.activeQuestions ?? stats?.activeQuestionsCount ?? 0;
-  const activeCategoriesCount = stats?.categories ?? stats?.activeCategoriesCount ?? 0;
+  const activeQuestionsCount = stats?.activeQuestions ?? 0;
+  const activeCategoriesCount = stats?.categories ?? 0;
 
   return (
     <Layout>

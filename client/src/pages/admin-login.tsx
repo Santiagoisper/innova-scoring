@@ -46,7 +46,7 @@ export default function AdminLogin() {
         id: user.id,
         name: user.name,
         role: "admin",
-        permission: user.permission
+        permission: (user.permission as "readonly" | "readwrite" | "super_admin") || "readonly",
       });
       toast({
         title: "Admin Access Granted",

@@ -227,3 +227,5 @@ export type ScoreStatusMapping = typeof scoreStatusMapping.$inferSelect;
 export type InsertScoreStatusMapping = z.infer<typeof insertScoreStatusMappingSchema>;
 export type ReportAuditLog = typeof reportAuditLog.$inferSelect;
 export type InsertReportAuditLog = z.infer<typeof insertReportAuditLogSchema>;
+
+export { conversations, messages } from "./models/chat";

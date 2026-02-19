@@ -116,7 +116,14 @@ export default function SiteEvaluation() {
     let score = 0;
     let status: string = "Completed";
     if (typeof calculateScore === 'function') {
-      const result = calculateScore(richAnswers, questions);
+      const questionsList = (questions ?? []).map((q) => ({
+        ...q,
+        type: (q.type === "YesNo" || q.type === "Text" || q.type === "Select" ? q.type : "YesNo") as "YesNo" | "Text" | "Select",
+        isKnockOut: q.isKnockOut ?? false,
+        enabled: q.enabled ?? true,
+        keywords: q.keywords ?? undefined,
+      }));
+      const result = calculateScore(richAnswers, questionsList);
       score = result.score;
       if (result.status === "Approved") {
         status = "Approved";

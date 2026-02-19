@@ -40,7 +40,7 @@ export default function SiteReport() {
     mutationFn: () => acknowledgeReport(selectedReportId!, {
       signedByName: user?.name || "Site Representative",
       signedByRole: "site",
-      hashVerification: selectedReport?.hashSha256 || selectedReport?.hash_sha256 || "",
+      hashVerification: selectedReport?.hashSha256 ?? "",
     }),
     onSuccess: () => {
       toast({ title: "Report Acknowledged", description: "The report has been locked and your acknowledgment recorded." });
@@ -66,12 +66,14 @@ export default function SiteReport() {
   }
 
   const report = selectedReport;
-  const narrative = report?.narrativeSnapshotJson || report?.narrative_snapshot_json;
-  const scoreSnapshot = report?.scoreSnapshotJson || report?.score_snapshot_json;
-  const capaItems = report?.capaItemsJson || report?.capa_items_json || [];
-  const hash = report?.hashSha256 || report?.hash_sha256;
-  const isLocked = report?.isLocked ?? report?.is_locked ?? false;
-  const domainEvals = scoreSnapshot?.domainEvaluations || [];
+  const narrative = (report?.narrativeSnapshotJson ?? {}) as Record<string, unknown>;
+  const scoreSnapshot = (report?.scoreSnapshotJson ?? {}) as Record<string, unknown> | null;
+  const capaItems = (report?.capaItemsJson ?? []) as Array<Record<string, unknown>>;
+  const hash = report?.hashSha256;
+  const isLocked = report?.isLocked ?? false;
+  const domainEvals: Array<Record<string, unknown>> = Array.isArray((scoreSnapshot as Record<string, unknown> | null)?.domainEvaluations)
+    ? ((scoreSnapshot as Record<string, unknown>)!.domainEvaluations as Array<Record<string, unknown>>)
+    : [];
 
   const statusColor = (label: string) => {
     if (label === "Adequate") return "bg-emerald-100 text-emerald-800";
@@ -113,17 +115,17 @@ export default function SiteReport() {
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-semibold text-lg">{r.reportVersion || r.report_version}</h3>
+                      <h3 className="font-semibold text-lg">{r.reportVersion}</h3>
                       <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                         <Clock className="h-3 w-3" />
-                        {new Date(r.generatedAtUtc || r.generated_at_utc).toLocaleDateString()}
+                        {new Date(r.generatedAtUtc).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className={`${finalStatusColor(r.finalStatus || r.final_status)} text-white`}>
-                        {r.finalStatus || r.final_status}
+                      <Badge className={`${finalStatusColor(r.finalStatus)} text-white`}>
+                        {r.finalStatus}
                       </Badge>
-                      {(r.isLocked ?? r.is_locked) ? (
+                      {r.isLocked ? (
                         <Lock className="h-4 w-4 text-amber-600" />
                       ) : (
                         <Unlock className="h-4 w-4 text-gray-400" />
@@ -146,10 +148,10 @@ export default function SiteReport() {
           <Button variant="ghost" className="text-white mb-2" onClick={() => setSelectedReportId(null)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Reports
           </Button>
-          <h1 className="text-2xl font-bold">{report?.reportVersion || report?.report_version}</h1>
+          <h1 className="text-2xl font-bold">{report?.reportVersion}</h1>
           <div className="flex items-center gap-3 mt-2">
-            <Badge className={`${finalStatusColor(report?.finalStatus || report?.final_status || "")} text-white`}>
-              {report?.finalStatus || report?.final_status}
+            <Badge className={`${finalStatusColor(report?.finalStatus ?? "")} text-white`}>
+              {report?.finalStatus}
             </Badge>
             {isLocked ? (
               <span className="flex items-center gap-1 text-sm"><Lock className="h-4 w-4" /> Locked</span>
@@ -161,12 +163,12 @@ export default function SiteReport() {
       </div>
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
-        {narrative?.executiveSummary && (
+        {narrative?.executiveSummary ? (
           <Card>
             <CardHeader><CardTitle className="text-[#0066a1]">Executive Summary</CardTitle></CardHeader>
-            <CardContent><p className="text-gray-700 leading-relaxed">{narrative.executiveSummary}</p></CardContent>
+            <CardContent><p className="text-gray-700 leading-relaxed">{String(narrative.executiveSummary)}</p></CardContent>
           </Card>
-        )}
+        ) : null}
 
         {domainEvals.length > 0 && (
           <Card>
@@ -235,12 +237,12 @@ export default function SiteReport() {
           </Card>
         )}
 
-        {narrative?.reevaluationClause && (
+        {narrative?.reevaluationClause ? (
           <Card>
             <CardHeader><CardTitle className="text-[#0066a1]">Re-evaluation Clause</CardTitle></CardHeader>
-            <CardContent><p className="text-gray-700 leading-relaxed">{narrative.reevaluationClause}</p></CardContent>
+            <CardContent><p className="text-gray-700 leading-relaxed">{String(narrative.reevaluationClause)}</p></CardContent>
           </Card>
-        )}
+        ) : null}
 
         <Card>
           <CardHeader><CardTitle className="text-[#0066a1] flex items-center gap-2"><Shield className="h-5 w-5" /> Integrity Verification</CardTitle></CardHeader>
